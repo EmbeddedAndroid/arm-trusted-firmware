@@ -590,6 +590,13 @@ subsections:
           - title: Arduino UNO Q
             scope: uno_q
 
+          - title: Wildcat
+            scope: wildcat
+
+            subsections:
+              - title: Hamoa
+                scope: hamoa
+
       - title: Raspberry Pi
         scope: rpi
 
