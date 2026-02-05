@@ -72,6 +72,7 @@
  * Platform specific page table and MMU setup constants.
  */
 #define MAX_MMAP_REGIONS		(PLAT_QTI_MMAP_ENTRIES)
+#define MAX_XLAT_TABLES			12
 
 #define PLAT_PHY_ADDR_SPACE_SIZE	(1ull << 36)
 #define PLAT_VIRT_ADDR_SPACE_SIZE	(1ull << 36)
