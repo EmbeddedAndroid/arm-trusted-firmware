@@ -779,6 +779,11 @@ QTI platform port and SoC drivers
 :|F|: include/drivers/qti/
 :|F|: tools/qti/
 
+QTI Hamoa AL BL31QTILIB compatibility layer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:|M|: Bharath N <bhn@qti.qualcomm.com>
+:|F|: plat/qti/wildcat/bl31qtilib/
+
 QTI chipinfo, clock and platform info drivers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 :|M|: Naresh Nunna <nnunna@qti.qualcomm.com>
