@@ -19,14 +19,24 @@ else
 PDC_SEQ_CFG := $(PDC_DRV_PATH)/$(CHIPSET)/pdc_seq_cfg.c
 endif
 
+include $(PDC_COMMON)/pdc_config.mk
+
+PDC_ENABLE_TCS ?= 1
+PDC_SEQ_TARGET_SOURCE ?= $(PDC_DRV_PATH)/pdc_seq_cmd.c
+
 PLAT_INCLUDES += \
 	-I$(PDC_COMMON)
 
 BL31_SOURCES += \
 	$(PDC_DRV_PATH)/pdc.c					\
 	$(PDC_DRV_PATH)/pdc_seq.c				\
-	$(PDC_DRV_PATH)/pdc_tcs.c				\
+	$(PDC_SEQ_TARGET_SOURCE)				\
 	$(PDC_SEQ_CFG)						\
 	$(PDC_COMMON)/interrupt_table.c				\
-	$(PDC_COMMON)/gpio_table.c				\
+	$(PDC_COMMON)/gpio_table.c
+
+ifeq ($(PDC_ENABLE_TCS),1)
+BL31_SOURCES += \
+	$(PDC_DRV_PATH)/pdc_tcs.c				\
 	$(PDC_COMMON)/tcs_resource.c
+endif
