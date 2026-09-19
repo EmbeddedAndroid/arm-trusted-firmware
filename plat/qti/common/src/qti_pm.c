@@ -10,6 +10,7 @@
 #include <bl31/bl31.h>
 #include <common/debug.h>
 #include <drivers/delay_timer.h>
+#include <drivers/qti/sail_comm/sail_comm.h>
 #include <drivers/qti/sec_core/sec_core.h>
 #include <lib/mmio.h>
 #include <lib/psci/psci.h>
@@ -202,12 +203,14 @@ static __dead2 void assert_ps_hold(void)
 __dead2 void qti_system_off(void)
 {
 	qti_pmic_prepare_shutdown();
+	qti_sail_notify_shutdown();
 	assert_ps_hold();
 }
 
 __dead2 void qti_system_reset(void)
 {
 	qti_pmic_prepare_reset();
+	qti_sail_notify_reset();
 	assert_ps_hold();
 }
 
