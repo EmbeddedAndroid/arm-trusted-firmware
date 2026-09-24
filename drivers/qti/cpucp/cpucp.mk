@@ -19,3 +19,13 @@ BL31_SOURCES += \
 	$(CPUCP_DRV_PATH)/cpucp.c			\
 	$(CPUCP_DRV_PATH)/$(CHIPSET)/cpu_config.c	\
 	drivers/arm/css/scmi/scmi_common.c
+
+# Where the boot firmware only loads the CPUCP firmware, BL31 fills in its
+# fuse data and starts it.
+QTI_CPUCP_START	?=	0
+$(eval $(call assert_boolean,QTI_CPUCP_START))
+
+ifeq ($(QTI_CPUCP_START),1)
+$(eval $(call add_define,QTI_CPUCP_START_ENABLED))
+BL31_SOURCES += $(CPUCP_DRV_PATH)/$(CHIPSET)/cpucp_start.c
+endif

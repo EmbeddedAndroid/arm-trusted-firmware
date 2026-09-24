@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <drivers/qti/cpucp/cpucp.h>
+
 #include <qti_plat.h>
 #include <qtiseclib_interface.h>
 
@@ -15,6 +17,7 @@ uint32_t g_qti_bl31_cold_booted;
 
 void plat_qti_bl31_setup_post(void)
 {
+	qti_cpucp_init();
 	qtiseclib_bl31_platform_setup();
 
 	/* set boot state to cold boot complete. */
