@@ -26,6 +26,15 @@ struct clkdom_cpumask clkdom_cpumasks[CD_MAX] = {
 	{ CD_CL1_GOLD, LEMANS_CL1_GOLD_CORES_CPUMASK  },
 };
 
+#ifdef QTI_CPUCP_START_ENABLED
+/*
+ * The boot firmware brings up the boot core's domain and both L3 domains. The
+ * cluster 1 domain is enabled through CPUCP when its first core powers on.
+ */
+unsigned int clkdom_init_status[CD_MAX] = {
+	1U, 1U, 1U, 0U
+};
+#else
 /*
  * On lemans the CPU cluster clock domains (OSM) are managed outside EL3: the
  * boot firmware brings up the boot cluster and the kernel EPSS/OSM driver
@@ -38,3 +47,4 @@ struct clkdom_cpumask clkdom_cpumasks[CD_MAX] = {
 unsigned int clkdom_init_status[CD_MAX] = {
 	1U, 1U, 1U, 1U
 };
+#endif
