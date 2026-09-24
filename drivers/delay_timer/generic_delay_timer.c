@@ -18,9 +18,13 @@
 
 static timer_ops_t ops;
 
+/*
+ * Not CNTFRQ_EL0: on a CPU powered on by CPU_ON, PSCI programs it only
+ * after the platform's pwr_domain_on_finish() hook has run.
+ */
 static uint64_t timeout_cnt_us2cnt(uint32_t us)
 {
-	return ((uint64_t)us * (uint64_t)read_cntfrq_el0()) / 1000000ULL;
+	return div_round_up((uint64_t)us * ops.clk_div, ops.clk_mult);
 }
 
 static uint64_t generic_delay_timeout_init_us(uint32_t us)
