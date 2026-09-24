@@ -105,6 +105,7 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 
 include drivers/qti/smem/smem.mk
 include drivers/qti/chipinfo/chipinfo.mk
+include drivers/qti/eud/eud.mk
 include drivers/qti/sail_comm/sail_comm.mk
 include drivers/qti/cmd_db/cmd_db.mk
 include drivers/qti/cpucp/cpucp.mk
