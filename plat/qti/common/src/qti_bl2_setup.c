@@ -12,6 +12,7 @@
 #include <common/desc_image_load.h>
 #include <common/image_decompress.h>
 #include <drivers/io/io_storage.h>
+#include <drivers/qti/eud/eud.h>
 #include <lib/xlat_tables/xlat_tables_v2.h>
 #include <plat/common/platform.h>
 
@@ -28,6 +29,8 @@ void bl2_early_platform_setup2(u_register_t x0, u_register_t x1,
 				  PLAT_QTI_UART_BASE);
 	console_set_scope(&g_qti_console_uart,
 			  CONSOLE_FLAG_BOOT | CONSOLE_FLAG_CRASH);
+
+	qti_eud_enable();
 }
 
 void bl2_plat_arch_setup(void)

@@ -32,6 +32,12 @@
 #define QTI_SEC_PRNG_BASE			0x10D0000
 
 /*----------------------------------------------------------------------------*/
+/* EUD registers and GCC_AHB2PHY0_CBCR, the clock of their AHB interface */
+/*----------------------------------------------------------------------------*/
+#define QTI_EUD_BASE				0x088E1000
+#define QTI_EUD_AHB_CBCR			0x00176004
+
+/*----------------------------------------------------------------------------*/
 /* Device address space for mapping. Excluding starting 4K */
 /*----------------------------------------------------------------------------*/
 #define QTI_DEVICE_BASE				0x1000
