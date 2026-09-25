@@ -107,3 +107,10 @@ include drivers/qti/cpucp/cpucp.mk
 include drivers/qti/smmu/smmu.mk
 
 include drivers/qti/pdc/pdc.mk
+
+# The Monaco apps RSC and AOP message RAM match Lemans.
+QTI_CLOCK_RAIL_VOTE			:=	1
+RPMH_CHIPSET				:=	lemans
+include drivers/qti/pwr_utils/pwr_utils.mk
+include drivers/qti/rpmh/rpmh.mk
+include drivers/qti/clock/clock.mk
