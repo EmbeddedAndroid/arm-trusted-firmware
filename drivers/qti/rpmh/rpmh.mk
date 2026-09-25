@@ -10,9 +10,12 @@ $(eval $(call add_define,QTI_RPMH_ENABLED))
 
 RPMH_DRV_PATH := drivers/qti/rpmh
 
+# SoCs whose apps RSC and AOP message RAM match another SoC's use its data.
+RPMH_CHIPSET ?= $(CHIPSET)
+
 PLAT_INCLUDES += \
 	-I$(RPMH_DRV_PATH) \
-	-I$(RPMH_DRV_PATH)/$(CHIPSET)
+	-I$(RPMH_DRV_PATH)/$(RPMH_CHIPSET)
 
 BL31_SOURCES += \
 	$(RPMH_DRV_PATH)/rpmh_client.c
