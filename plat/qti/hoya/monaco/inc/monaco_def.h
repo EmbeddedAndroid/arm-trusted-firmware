@@ -43,6 +43,8 @@
 /*----------------------------------------------------------------------------*/
 #define PON_PS_HOLD_RESET_CTL			0x852
 #define PON_PS_HOLD_RESET_CTL2			0x853
+/* After a PMIC warm reset the next boot fails in XBL or in its RPMh lookups. */
+#define QTI_PMIC_HARD_RESET
 
 /*----------------------------------------------------------------------------*/
 /* APSS HM, AOSS and CORE_TOP_CSR registers */
