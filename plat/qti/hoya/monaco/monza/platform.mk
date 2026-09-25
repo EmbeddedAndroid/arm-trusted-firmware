@@ -110,3 +110,10 @@ include drivers/qti/smmu/smmu.mk
 # same sequencer programs, so it is set up from the Lemans tables.
 PDC_CHIPSET				:=	lemans
 include drivers/qti/pdc/pdc.mk
+
+# The Monaco apps RSC and AOP message RAM match Lemans.
+QTI_CLOCK_RAIL_VOTE			:=	1
+RPMH_CHIPSET				:=	lemans
+include drivers/qti/pwr_utils/pwr_utils.mk
+include drivers/qti/rpmh/rpmh.mk
+include drivers/qti/clock/clock.mk
