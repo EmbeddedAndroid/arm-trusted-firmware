@@ -30,7 +30,7 @@
 #define QTI_MAIN2SAIL_STATUS7_REG		(QTI_SAIL_TCSR_REG_BASE + 0x3e038U)
 
 #define QTI_SAIL_IPC_INTERRUPT_REG		(QTI_APSS_HM_BASE + 0x00400008U)
-#define QTI_SAIL_IPC_SMSS_TZ_IPC		0x00100000U
+#define QTI_SAIL_IPC_SMSS_TZ_IPC		0x00200000U
 
 static uint32_t qti_sail_comm_read_status(uint32_t status4)
 {
