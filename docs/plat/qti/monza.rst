@@ -59,6 +59,25 @@ shipped with the board software::
 	    write tz_a bl2.mbn write tz_b bl2.mbn \
 	    write uefi_a fip.elf write uefi_b fip.elf
 
+Boot flow with U-Boot SPL
+-------------------------
+
+U-Boot SPL (``qcom_monaco_spl_defconfig``) can take the place of BL2 in the
+``tz`` partition. XBL still loads the ``uefi`` partition to ``0xaf000000``
+before it starts the TZ image; there it finds a FIT with BL31, BL32 and BL33
+instead of the FIP. SPL loads the FIT images and starts BL31 with version 2
+image parameters (``bl_params_t``) and no platform parameter in ``x1``, the
+same interface BL2 uses, so only BL31 is built::
+
+	$ make CROSS_COMPILE=aarch64-none-elf- PLAT=monza SPD=opteed bl31
+
+In the FIT, ``bl31.bin`` loads at ``BL31_BASE`` (``0x1c200000``), OP-TEE at
+``BL32_BASE`` (``0x1c300000``) and U-Boot at ``BL33_BASE`` (``0xaf400000``).
+The signed SPL ELF goes to the ``tz`` partitions and the FIT, wrapped in an
+ELF at ``0xaf000000`` with ``tools/qti/generate_fip_elf.sh``, to the ``uefi``
+partitions. The U-Boot documentation for the board describes the FIT and
+the SPL build.
+
 --------------
 
 *Copyright (c) 2026, Qualcomm Technologies, Inc. and/or its subsidiaries.*
