@@ -435,12 +435,8 @@ int psci_set_suspend_mode(unsigned int mode)
 	}
 
 	if (new_mode == OS_INIT) {
-		/*
-		 * Check if all CPUs in the system are ON or if the current
-		 * CPU is the last ON CPU in the system.
-		 */
-		if (!(psci_are_all_cpus_on_safe(this_core) ||
-		      psci_is_last_on_cpu_safe(this_core))) {
+		/* Other CPUs must not be ON_PENDING (PSCI DEN0022D.b 5.20). */
+		if (!psci_are_other_cpus_on_or_off_safe(this_core)) {
 			return PSCI_E_DENIED;
 		}
 	}

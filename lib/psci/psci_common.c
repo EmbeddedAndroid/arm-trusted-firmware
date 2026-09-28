@@ -1496,6 +1496,31 @@ bool psci_are_all_cpus_on_safe(unsigned int this_core)
 }
 
 /*******************************************************************************
+ * Returns true if no core other than this_core is being powered on.
+ ******************************************************************************/
+bool psci_are_other_cpus_on_or_off_safe(unsigned int this_core)
+{
+	unsigned int parent_nodes[PLAT_MAX_PWR_LVL] = {0};
+	bool ret = true;
+
+	psci_get_parent_pwr_domain_nodes(this_core, PLAT_MAX_PWR_LVL, parent_nodes);
+
+	psci_acquire_pwr_domain_locks(PLAT_MAX_PWR_LVL, parent_nodes);
+
+	for (unsigned int cpu_idx = 0U; cpu_idx < psci_plat_core_count; cpu_idx++) {
+		if ((cpu_idx != this_core) &&
+		    (psci_get_aff_info_state_by_idx(cpu_idx) == AFF_STATE_ON_PENDING)) {
+			ret = false;
+			break;
+		}
+	}
+
+	psci_release_pwr_domain_locks(PLAT_MAX_PWR_LVL, parent_nodes);
+
+	return ret;
+}
+
+/*******************************************************************************
  * Safely counts the number of CPUs in the system that are currently in the ON
  * or ON_PENDING state.
  *
