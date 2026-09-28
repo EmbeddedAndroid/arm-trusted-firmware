@@ -7,6 +7,7 @@
 #include <drivers/delay_timer.h>
 
 #include <qti_plat.h>
+#include <qti_reset.h>
 #include <spmi_arb.h>
 
 /*
@@ -35,4 +36,9 @@ void qti_pmic_prepare_reset(void)
 void qti_pmic_prepare_shutdown(void)
 {
 	configure_ps_hold(PON_RESET_TYPE_SHUTDOWN);
+}
+
+void qti_pmic_configure_reset(uint32_t reset_config)
+{
+	configure_ps_hold(reset_config);
 }

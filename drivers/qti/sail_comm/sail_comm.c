@@ -12,10 +12,12 @@
 #include <lib/mmio.h>
 #include <lib/mmio_poll.h>
 #include <platform_def.h>
+#include <qti_reset.h>
 
 #define QTI_SAIL_STATUS_TIMEOUT_US		1000000U
 
 #define QTI_SAIL_RESET_READY			0xAA030000U
+#define QTI_SAIL_MD_WARM_RESET			0xCD050000U
 #define QTI_SAIL_MD_GRACEFUL_SHUTDOWN		0xCD060000U
 #define QTI_SAIL_MD_SOC_HR			0xCD070000U
 
@@ -84,4 +86,23 @@ void qti_sail_notify_shutdown(void)
 void qti_sail_notify_reset(void)
 {
 	qti_sail_comm_notify(QTI_SAIL_MD_SOC_HR);
+}
+
+void qti_sail_notify_warm_reset(void)
+{
+	qti_sail_comm_notify(QTI_SAIL_MD_WARM_RESET);
+}
+
+void qti_sail_notify_reset2(uint32_t reset_config)
+{
+	switch (reset_config) {
+	case QTI_PON_CFG_WARM_RESET:
+		qti_sail_notify_warm_reset();
+		break;
+	case QTI_PON_CFG_HARD_RESET:
+		qti_sail_notify_reset();
+		break;
+	default:
+		break;
+	}
 }

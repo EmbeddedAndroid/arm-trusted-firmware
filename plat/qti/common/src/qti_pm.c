@@ -18,8 +18,12 @@
 #include <platform_def.h>
 #include <qti_cpu.h>
 #include <qti_plat.h>
+#include <qti_reset.h>
 
 #define QTI_LOCAL_PSTATE_MASK		((1 << QTI_LOCAL_PSTATE_WIDTH) - 1)
+
+#define QTI_RESET2_CONFIG_COOKIE	BIT(16)
+#define QTI_RESET2_VENDOR_VALUE_MASK	U(0x7ffeffff)
 
 #if PSCI_OS_INIT_MODE
 #define QTI_LAST_AT_PLVL_MASK		(QTI_LOCAL_PSTATE_MASK <<	\
@@ -225,6 +229,37 @@ __dead2 void qti_system_reset(void)
 	assert_ps_hold();
 }
 
+int qti_system_reset2(int is_vendor, int reset_type, u_register_t cookie)
+{
+	uint32_t reset_config;
+	uint32_t reset_type_u32 = (uint32_t)reset_type;
+
+	if (is_vendor == 0) {
+		return PSCI_E_NOT_SUPPORTED;
+	}
+
+	reset_config = reset_type_u32 & QTI_RESET2_VENDOR_VALUE_MASK;
+	if ((reset_config != QTI_PON_CFG_WARM_RESET) &&
+	    (reset_config != QTI_PON_CFG_HARD_RESET)) {
+		return PSCI_E_INVALID_PARAMS;
+	}
+
+	qti_sail_notify_reset2(reset_config);
+
+	if ((reset_type_u32 & QTI_RESET2_CONFIG_COOKIE) != 0U) {
+		qti_reset_write_sdam_cookie((uint8_t)(cookie << 1));
+		qti_reset_write_gpio_tcsr(0U);
+	} else if (cookie != 0U) {
+		qti_reset_write_gpio_tcsr((uint32_t)cookie);
+		qti_reset_write_sdam_cookie(0U);
+	}
+
+	qti_pmic_configure_reset(reset_config);
+	assert_ps_hold();
+
+	return PSCI_E_SUCCESS;
+}
+
 void qti_get_sys_suspend_power_state(psci_power_state_t *req_state)
 {
 	int i;
@@ -292,6 +327,7 @@ static plat_psci_ops_t plat_qti_psci_pm_ops = {
 	.pwr_domain_pwr_down = PLAT_QTI_PWR_DOMAIN_PWR_DOWN,
 	.system_off = qti_system_off,
 	.system_reset = qti_system_reset,
+	.system_reset2 = qti_system_reset2,
 	.get_node_hw_state = NULL,
 	.translate_power_state_by_mpidr = NULL,
 	.get_sys_suspend_power_state = qti_get_sys_suspend_power_state,
