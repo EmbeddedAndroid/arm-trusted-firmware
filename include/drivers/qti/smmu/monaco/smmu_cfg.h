@@ -362,4 +362,25 @@
 #define PCIE_TCU_SMMU_SPARE_REG_1_SEC_ADDR \
 	(PCIE_SMMU_BASE + 0x000f0030)
 
+
+/*
+ * GPU SMMU aperture for per-process page tables: the CP updates context
+ * banks 0, 1 and 2 of the GPU SMMU through it. It sits in the GPU CX
+ * domain and keeps its contents across CX collapse only with retention on.
+ */
+#define GPU_SMMU_APERTURE_BASE \
+	0x03d60000
+#define GPU_SMMU_APERTURE_CB(n) \
+	((GPU_SMMU_BASE + 0x00010000 + (n) * 0x1000) & 0x000fffff)
+#define GPU_SMMU_APERTURE_S1CB0_ADDR \
+	(GPU_SMMU_APERTURE_BASE + 0x0)
+#define GPU_SMMU_APERTURE_S1CB1_ADDR \
+	(GPU_SMMU_APERTURE_BASE + 0x4)
+#define GPU_SMMU_APERTURE_CTL \
+	0x00000002
+#define GPU_SMMU_APERTURE_CTL_ADDR \
+	(GPU_SMMU_APERTURE_BASE + 0x8)
+#define GPU_SMMU_APERTURE_S1CB6_ADDR \
+	(GPU_SMMU_APERTURE_BASE + 0xc)
+
 #endif
