@@ -19,6 +19,10 @@
 
 #include "psci_private.h"
 
+#if PSCI_OS_INIT_MODE
+static spinlock_t psci_suspend_mode_lock;
+#endif
+
 /*******************************************************************************
  * PSCI frontend api for servicing SMCs. Described in the PSCI spec.
  ******************************************************************************/
@@ -79,6 +83,15 @@ int psci_cpu_suspend(unsigned int power_state,
 	psci_power_state_t state_info = { {PSCI_LOCAL_STATE_RUN} };
 	plat_local_state_t cpu_pd_state;
 	unsigned int cpu_idx = plat_my_core_pos();
+
+#if PSCI_OS_INIT_MODE
+	if (!get_cpu_data(psci_svc_cpu_data.cpu_suspend_called)) {
+		spin_lock(&psci_suspend_mode_lock);
+		set_cpu_data(psci_svc_cpu_data.cpu_suspend_called, true);
+		psci_flush_cpu_data(psci_svc_cpu_data);
+		spin_unlock(&psci_suspend_mode_lock);
+	}
+#endif
 
 	/* Validate the power_state parameter */
 	rc = psci_validate_power_state(power_state, &state_info);
@@ -415,6 +428,7 @@ int psci_set_suspend_mode(unsigned int mode)
 {
 	suspend_mode_t new_mode;
 	unsigned int this_core = plat_my_core_pos();
+	int ret = PSCI_E_SUCCESS;
 
 	if ((mode != (unsigned int)PLAT_COORD) &&
 	    (mode != (unsigned int)OS_INIT)) {
@@ -423,33 +437,40 @@ int psci_set_suspend_mode(unsigned int mode)
 
 	new_mode = (suspend_mode_t)mode;
 
+	spin_lock(&psci_suspend_mode_lock);
+
 	if (psci_suspend_mode == new_mode) {
-		return PSCI_E_SUCCESS;
+		goto out;
 	}
 
 	if (new_mode == PLAT_COORD) {
 		/* Check if the current CPU is the last ON CPU in the system */
 		if (!psci_is_last_on_cpu_safe(this_core)) {
-			return PSCI_E_DENIED;
+			ret = PSCI_E_DENIED;
+			goto out;
 		}
 	}
 
 	if (new_mode == OS_INIT) {
-		/*
-		 * Check if all CPUs in the system are ON or if the current
-		 * CPU is the last ON CPU in the system.
-		 */
-		if (!(psci_are_all_cpus_on_safe(this_core) ||
-		      psci_is_last_on_cpu_safe(this_core))) {
-			return PSCI_E_DENIED;
+		if (!psci_is_osi_entry_allowed(this_core)) {
+			ret = PSCI_E_DENIED;
+			goto out;
 		}
 	}
 
 	psci_suspend_mode = new_mode;
 	psci_flush_dcache_range((uintptr_t)&psci_suspend_mode,
 				sizeof(psci_suspend_mode));
+	/*
+	 * Other cores are off or have no history. CPU_OFF clears their
+	 * flags, so only the caller's CPU data needs to be written.
+	 */
+	set_cpu_data(psci_svc_cpu_data.cpu_suspend_called, false);
+	psci_flush_cpu_data(psci_svc_cpu_data);
 
-	return PSCI_E_SUCCESS;
+out:
+	spin_unlock(&psci_suspend_mode_lock);
+	return ret;
 }
 #endif
 

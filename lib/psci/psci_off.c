@@ -161,6 +161,9 @@ off_exit:
 		 * invalidation.
 		 */
 		psci_flush_cpu_data(psci_svc_cpu_data);
+#if PSCI_OS_INIT_MODE
+		set_cpu_data(psci_svc_cpu_data.cpu_suspend_called, false);
+#endif
 		psci_set_aff_info_state(AFF_STATE_OFF);
 		psci_dsbish();
 		psci_inv_cpu_data(psci_svc_cpu_data);
