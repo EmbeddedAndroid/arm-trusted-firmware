@@ -80,6 +80,10 @@ int psci_cpu_suspend(unsigned int power_state,
 	plat_local_state_t cpu_pd_state;
 	unsigned int cpu_idx = plat_my_core_pos();
 
+#if PSCI_OS_INIT_MODE
+	set_cpu_data(psci_svc_cpu_data.cpu_suspend_called, true);
+#endif
+
 	/* Validate the power_state parameter */
 	rc = psci_validate_power_state(power_state, &state_info);
 	if (rc != PSCI_E_SUCCESS) {
@@ -435,12 +439,7 @@ int psci_set_suspend_mode(unsigned int mode)
 	}
 
 	if (new_mode == OS_INIT) {
-		/*
-		 * Check if all CPUs in the system are ON or if the current
-		 * CPU is the last ON CPU in the system.
-		 */
-		if (!(psci_are_all_cpus_on_safe(this_core) ||
-		      psci_is_last_on_cpu_safe(this_core))) {
+		if (!psci_is_osi_entry_allowed(this_core)) {
 			return PSCI_E_DENIED;
 		}
 	}
@@ -448,6 +447,8 @@ int psci_set_suspend_mode(unsigned int mode)
 	psci_suspend_mode = new_mode;
 	psci_flush_dcache_range((uintptr_t)&psci_suspend_mode,
 				sizeof(psci_suspend_mode));
+	/* The other running cores were checked to have no CPU_SUSPEND calls. */
+	set_cpu_data(psci_svc_cpu_data.cpu_suspend_called, false);
 
 	return PSCI_E_SUCCESS;
 }
