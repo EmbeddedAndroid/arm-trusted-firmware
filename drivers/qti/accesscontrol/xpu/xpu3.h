@@ -170,6 +170,7 @@ struct xpu_base_addr_info {
 };
 
 void xpu_lock_down_assets(struct xpu_instance *xpus, uint8_t xpu_count);
+void xpu_release_assets(const struct xpu_instance *xpus, uint8_t xpu_count);
 int xpu_lock_down_assets_dynamic(struct xpu_instance *xpus, uint8_t xpu_count,
 				 uint32_t xpu_id, uint32_t rg_num,
 				 uint32_t perm_r, uint32_t perm_w);

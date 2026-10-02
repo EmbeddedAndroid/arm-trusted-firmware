@@ -51,6 +51,30 @@ struct xpu_instance msm_xpu_cfg[] = {
 
 const uint32_t msm_xpu_cfg_count = ARRAY_SIZE(msm_xpu_cfg);
 
+/*
+ * XBL loads the FIP to PLAT_QTI_FIP_IOBASE in plain DDR. BL2 holds that
+ * window in another free resource group of the DDR MPU while it reads the
+ * FIP, and frees it again before BL33 can use the memory.
+ */
+#define BIMC_DDR0_FIP_RG	2
+
+static struct rg_domain_ownership bimc_ddr0_fip_rgs[] = {
+	{ BIMC_DDR0_FIP_RG, APPS_S_DOMAIN },
+};
+
+static struct rg_partition_range bimc_ddr0_fip_rg_addr[] = {
+	{ BIMC_DDR0_FIP_RG, PLAT_QTI_FIP_IOBASE,
+	  PLAT_QTI_FIP_IOBASE + PLAT_QTI_FIP_MAXSIZE },
+};
+
+struct xpu_instance msm_xpu_bl2_cfg[] = {
+	{ HWIO_BIMC_S_DDR0_XPU3_GCR0_ADDR, ARRAY_SIZE(bimc_ddr0_fip_rgs),
+	  bimc_ddr0_fip_rgs, ARRAY_SIZE(bimc_ddr0_fip_rg_addr),
+	  bimc_ddr0_fip_rg_addr, XPU_TYPE_BIMC_MPU0, XPU_PROTECTION_STATIC },
+};
+
+const uint32_t msm_xpu_bl2_cfg_count = ARRAY_SIZE(msm_xpu_bl2_cfg);
+
 /* The modem is not brought up, so there are no modem MPU ranges. */
 struct mpu_ranges msm_mpu_ranges[] = {
 };

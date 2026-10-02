@@ -77,6 +77,7 @@ BL31_SOURCES		+=	drivers/delay_timer/delay_timer.c			\
 				$(PLAT_PATH)/bruin/common/bruin_topology.c		\
 				$(PLAT_PATH)/bruin/${CHIPSET}/${CHIPSET}_pm.c
 
+QTI_BL2_ACCESS_CONTROL			?=	1
 include drivers/qti/accesscontrol/access_control.mk
 
 include drivers/qti/smem/smem.mk

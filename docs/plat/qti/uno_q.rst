@@ -16,9 +16,12 @@ Agatti specifics:
 - BL32 (OP-TEE) runs from ``0x45700000``, the 6 MiB carve-out the Linux DT
   reserves for the hypervisor; Linux runs at EL2.
 - Memory protection: XBL_SEC leaves the DDR and pIMEM MPUs open to the
-  normal world outside its own regions. BL31 takes one resource group on
-  each so that BL31 and BL32 are reachable from the secure world only, and
-  reports xPU and VMIDMT violations at EL3.
+  normal world outside its own regions. Before it reads the FIP, BL2 takes
+  one resource group on each so that BL31 and BL32 are reachable from the
+  secure world only, and another one on the DDR MPU for the FIP that XBL
+  loads to ``0x5f800000``, which it frees when it exits. BL31 applies the
+  BL31 and BL32 configuration again and reports xPU and VMIDMT violations at
+  EL3.
 - The PMIC (PM4125) is set up for a shutdown or a warm reset before PS_HOLD
   is dropped.
 - Storage is eMMC with 512-byte blocks.
@@ -46,6 +49,13 @@ boot is disabled, so ``bl2.elf`` must be signed as a TZ image with QTI
 signing. An OEM test signature from `qtestsign
 <https://github.com/msm8916-mainline/qtestsign>`__ is not accepted for BL2.
 The ``fip.elf`` is signed with qtestsign.
+
+Build options
+-------------
+
+- ``QTI_BL2_ACCESS_CONTROL``: BL2 locks the BL31 and BL32 carve-outs and the
+  FIP staging area before it reads the FIP, as described above. ``1`` by
+  default on this platform; ``0`` builds BL2 without it.
 
 How to flash
 ------------
