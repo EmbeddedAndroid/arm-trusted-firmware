@@ -19,6 +19,10 @@ Agatti specifics:
   nested TA session fail with ``TEEC_ERROR_OUT_OF_MEMORY``; this must stay in
   sync with OP-TEE's ``CFG_TZDRAM_START`` and the ``optee_mem``
   reserved-memory node in the Linux DT.
+- Memory protection: XBL_SEC leaves the DDR and pIMEM MPUs open to the
+  normal world outside its own regions. BL31 takes one resource group on
+  each so that BL31 and BL32 are reachable from the secure world only, and
+  reports xPU and VMIDMT violations at EL3.
 - The PMIC (PM4125) is set up for a shutdown or a warm reset before PS_HOLD
   is dropped.
 - Storage is eMMC with 512-byte blocks.
