@@ -35,6 +35,11 @@ void bl2_plat_arch_setup(void)
 {
 	int ret;
 
+#if SEPARATE_BL2_NOLOAD_REGION
+	mmap_add_region(BL2_NOLOAD_START, BL2_NOLOAD_START,
+			BL2_NOLOAD_LIMIT - BL2_NOLOAD_START,
+			MT_MEMORY | MT_RW | MT_SECURE);
+#endif
 	qti_setup_page_tables(BL2_BASE,
 			      BL2_SIZE,
 			      BL_CODE_BASE,
