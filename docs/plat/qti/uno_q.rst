@@ -12,8 +12,7 @@ Agatti specifics:
 - Interrupt controller: GIC-500 (GICv3).
 - Debug UART: QUPv3 wrap 0, serial engine 4 at ``0x4a90000``.
 - XBL enters the TZ image in the 100 KiB IMEM TZ window, so BL2 runs from
-  ``0x0c100000`` (from pIMEM with ``TRUSTED_BOARD_BOOT``, see below). BL31
-  runs from the pIMEM aperture at ``0x10100000``.
+  ``0x0c100000``. BL31 runs from the pIMEM aperture at ``0x10100000``.
 - BL32 (OP-TEE) runs from ``0x45700000``, the 6 MiB carve-out the Linux DT
   reserves for the hypervisor; Linux runs at EL2.
 - Memory protection: XBL_SEC leaves the DDR and pIMEM MPUs open to the
@@ -58,16 +57,26 @@ With ``TRUSTED_BOARD_BOOT=1``, BL2 authenticates BL31, BL32 and BL33 with
 the TBBR chain of trust (:ref:`Trusted Board Boot`) once it has copied each
 of them to its destination. BL2 holds the SHA-256 hash of the public part of
 ``ROT_KEY``, so the QTI signature that XBL checks on BL2 anchors the chain,
-and the FIP carries the certificates. mbed TLS does not fit in the IMEM TZ
-window, so this BL2 runs from pIMEM at ``0x1000c000``, below BL31, and the
-pIMEM resource group it takes for BL31 also covers BL2. Until BL2 takes that
-group, pIMEM is open to the normal world, as XBL leaves it. There are no
-non-volatile counters: the certificates must carry counter 0. ::
+and the FIP carries the certificates. There are no non-volatile counters:
+the certificates must carry counter 0.
+
+With mbed TLS, only the code and data of BL2 fit in the IMEM TZ window. Its
+stacks, bss and translation tables go to ``0x60000000`` instead
+(``SEPARATE_BL2_NOLOAD_REGION``), the first MiB of the DDR that XBL_SEC
+keeps secure-only; BL2 zeroes and maps them itself. XBL refuses a TZ image
+with a segment outside IMEM and pIMEM, even one without data, so the build
+also writes ``bl2_tz.elf``, which is ``bl2.elf`` without that segment. Sign
+``bl2_tz.elf`` instead of ``bl2.elf``. ::
 
 	$ make CROSS_COMPILE=aarch64-none-elf- PLAT=uno_q SPD=opteed \
 	    TRUSTED_BOARD_BOOT=1 GENERATE_COT=1 KEY_ALG=ecdsa \
 	    MBEDTLS_DIR=<path-to-mbedtls> ROT_KEY=<rot-key.pem> \
 	    BL32=<path-to-optee-bin> BL33=<path-to-u-boot-bin> fip all
+
+.. warning::
+   ``bl2_tz.elf`` works around XBL. XBL should accept BL2's NOLOAD segment
+   in secure DDR in the future, so that ``bl2.elf`` can be signed as is and
+   this step can go away.
 
 Build options
 -------------

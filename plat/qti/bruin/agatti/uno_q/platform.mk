@@ -62,7 +62,22 @@ BL2_SOURCES		+=	drivers/io/io_fip.c					\
 				$(PLAT_PATH)/common/src/qti_io_storage.c
 
 ifneq (${TRUSTED_BOARD_BOOT},0)
+# With mbed TLS, the IMEM TZ window only holds BL2's code and data.
+SEPARATE_BL2_NOLOAD_REGION		:=	1
 include $(PLAT_PATH)/common/qti_tbbr.mk
+endif
+
+ifeq (${SEPARATE_BL2_NOLOAD_REGION},1)
+# XBL refuses a TZ image with a segment outside IMEM and pIMEM, so the image
+# to sign leaves out the NOLOAD sections, which BL2 zeroes itself.
+BL2_TZ_ELF		:=	$(BUILD_PLAT)/bl2_tz.elf
+
+bl2: $(BL2_TZ_ELF)
+
+$(BL2_TZ_ELF): $(BUILD_PLAT)/bl2/bl2.elf
+	$(s)echo "  OC      $@"
+	$(q)$($(ARCH)-oc) --remove-section=.stacks --remove-section=.bss \
+		--remove-section=.xlat_table $< $@
 endif
 
 include drivers/arm/gic/v3/gicv3.mk
