@@ -23,4 +23,20 @@ static const uintptr_t qti_secure_io_allowed_regs[] = {
 	AHB2PHY_USBEUD_EUD_EN2,
 };
 
+/*
+ * The GPU registers that give the CP an aperture to an Adreno SMMU context
+ * bank, for the pagetable switches it does from the ringbuffer, and the
+ * context banks they may point at.
+ */
+#define QTI_GPU_SMMU_CB_BASE			0x059a8000
+#define QTI_GPU_SMMU_CB_SIZE			0x1000
+#define QTI_GPU_SMMU_NUM_CB			8
+
+static const uintptr_t qti_gpu_smmu_aperture_regs[] = {
+	0x05960000,
+	0x05960004,
+	0x0596000c,
+	0x05960010,
+};
+
 #endif /* QTI_SECURE_IO_CFG_H */

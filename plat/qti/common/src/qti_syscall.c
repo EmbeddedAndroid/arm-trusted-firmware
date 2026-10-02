@@ -14,6 +14,7 @@
 #include <common/runtime_svc.h>
 #include <context.h>
 #include <lib/coreboot.h>
+#include <lib/mmio.h>
 #include <lib/utils_def.h>
 #include <lib/xlat_tables/xlat_tables_v2.h>
 #include <smccc_helpers.h>
@@ -46,9 +47,13 @@
  */
 #define	QTI_SIP_SVC_MEM_ASSIGN_ID		U(0x02000C16)
 
+/* Points the GPU's apertures at Adreno SMMU context banks. */
+#define	QTI_SIP_SVC_CP_SMMU_APERTURE_ID		U(0x02000C1B)
+
 #define	QTI_SIP_SVC_SECURE_IO_READ_PARAM_ID	U(0x1)
 #define	QTI_SIP_SVC_SECURE_IO_WRITE_PARAM_ID	U(0x2)
 #define	QTI_SIP_SVC_MEM_ASSIGN_PARAM_ID		U(0x1117)
+#define	QTI_SIP_SVC_CP_SMMU_APERTURE_PARAM_ID	U(0x4)
 
 #define	QTI_SIP_SVC_CALL_COUNT			U(0x3)
 #define QTI_SIP_SVC_VERSION_MAJOR		U(0x0)
@@ -111,10 +116,42 @@ static bool qti_check_syscall_availability(u_register_t smc_fid,
 			return false;
 		}
 		return true;
+#ifdef QTI_GPU_SMMU_CB_BASE
+	case QTI_SIP_SVC_CP_SMMU_APERTURE_ID:
+		return !is_caller_secure(flags);
+#endif
 	default:
 		return false;
 	}
 }
+
+#ifdef QTI_GPU_SMMU_CB_BASE
+/*
+ * Each argument holds two requests, from the low byte up: context bank,
+ * aperture, context bank, aperture. Requests out of range are skipped,
+ * which is how the caller leaves a slot unused (0xff).
+ */
+static void qti_set_gpu_smmu_aperture(const u_register_t args[4])
+{
+	unsigned int i, shift, cb, reg;
+	uintptr_t cb_addr;
+
+	for (i = 0; i < 4; i++) {
+		for (shift = 0; shift < 32; shift += 16) {
+			cb = (args[i] >> shift) & 0xff;
+			reg = (args[i] >> (shift + 8)) & 0xff;
+			if ((cb >= QTI_GPU_SMMU_NUM_CB) ||
+			    (reg >= ARRAY_SIZE(qti_gpu_smmu_aperture_regs))) {
+				continue;
+			}
+			/* The aperture takes the offset in the GPU's 1 MiB window. */
+			cb_addr = QTI_GPU_SMMU_CB_BASE + cb * QTI_GPU_SMMU_CB_SIZE;
+			mmio_write_32(qti_gpu_smmu_aperture_regs[reg],
+				      cb_addr & 0xfffff);
+		}
+	}
+}
+#endif
 
 static bool qti_mem_assign_validate_param(qti_accesscontrol_mem_t *mem_info,
 					  u_register_t u_num_mappings,
@@ -452,6 +489,26 @@ static uintptr_t qti_sip_handler(uint32_t smc_fid,
 						  x1, x2, x3, x4);
 			break;
 		}
+#ifdef QTI_GPU_SMMU_CB_BASE
+	case QTI_SIP_SVC_CP_SMMU_APERTURE_ID:
+		{
+			u_register_t args[4] = { x2, x3, x4,
+				SMC_GET_GP(handle, CTX_GPREG_X5) };
+
+			if (is_caller_secure(flags)) {
+				SMC_RET1(handle, QTI_SIP_NOT_SUPPORTED);
+			}
+			if (x1 != QTI_SIP_SVC_CP_SMMU_APERTURE_PARAM_ID) {
+				SMC_RET1(handle, QTI_SIP_INVALID_PARAM);
+			}
+			if (GET_SMC_CC(smc_fid) == SMC_32) {
+				args[3] = (uint32_t)args[3];
+			}
+			qti_set_gpu_smmu_aperture(args);
+			SMC_RET1(handle, QTI_SIP_SUCCESS);
+			break;
+		}
+#endif
 	default:
 		{
 			SMC_RET1(handle, QTI_SIP_NOT_SUPPORTED);
