@@ -58,7 +58,6 @@ include drivers/arm/gic/v3/gicv3.mk
 
 BL31_SOURCES		+=	drivers/delay_timer/delay_timer.c			\
 				drivers/delay_timer/generic_delay_timer.c		\
-				drivers/qti/accesscontrol/access_control_stub.c		\
 				drivers/qti/qtimer/qtimer.c				\
 				drivers/qti/sec_core/sec_core.c				\
 				drivers/qti/sec_core/${CHIPSET}/sec_core_cfg.c		\
@@ -78,6 +77,8 @@ BL31_SOURCES		+=	drivers/delay_timer/delay_timer.c			\
 				$(PLAT_PATH)/bruin/common/bruin_bl31_setup.c		\
 				$(PLAT_PATH)/bruin/common/bruin_topology.c		\
 				$(PLAT_PATH)/bruin/${CHIPSET}/${CHIPSET}_pm.c
+
+include drivers/qti/accesscontrol/access_control.mk
 
 include drivers/qti/smem/smem.mk
 include drivers/qti/chipinfo/chipinfo.mk
