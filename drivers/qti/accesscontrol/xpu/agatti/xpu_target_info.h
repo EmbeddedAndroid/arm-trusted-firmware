@@ -105,6 +105,9 @@ extern const struct xpu_intr_reg_dtls
 extern struct xpu_instance msm_xpu_cfg[];
 extern const uint32_t msm_xpu_cfg_count;
 
+extern struct xpu_instance msm_xpu_bl2_cfg[];
+extern const uint32_t msm_xpu_bl2_cfg_count;
+
 extern struct mpu_ranges msm_mpu_ranges[];
 extern const uint32_t msm_mpu_ranges_count;
 
