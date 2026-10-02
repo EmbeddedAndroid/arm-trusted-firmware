@@ -24,13 +24,6 @@
 /* The pIMEM MPU matches offsets into the pIMEM aperture. */
 #define PIMEM_OFFSET(addr)	((addr) - QTI_PIMEM_BASE)
 
-/* BL2 in pIMEM sits right below BL31 and takes the same resource group. */
-#if defined(IMAGE_BL2) && (BL2_BASE >= QTI_PIMEM_BASE)
-#define PIMEM_SECURE_BASE	BL2_BASE
-#else
-#define PIMEM_SECURE_BASE	BL31_BASE
-#endif
-
 static struct rg_domain_ownership bimc_ddr0_rgs[] = {
 	{ BIMC_DDR0_BL32_RG, APPS_S_DOMAIN },
 };
@@ -44,8 +37,7 @@ static struct rg_domain_ownership pimem_mpu_rgs[] = {
 };
 
 static struct rg_partition_range pimem_mpu_rg_addr[] = {
-	{ PIMEM_MPU_BL31_RG, PIMEM_OFFSET(PIMEM_SECURE_BASE),
-	  PIMEM_OFFSET(BL31_LIMIT) },
+	{ PIMEM_MPU_BL31_RG, PIMEM_OFFSET(BL31_BASE), PIMEM_OFFSET(BL31_LIMIT) },
 };
 
 struct xpu_instance msm_xpu_cfg[] = {

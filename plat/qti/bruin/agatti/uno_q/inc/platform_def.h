@@ -12,19 +12,17 @@
 #define MAX_IO_DEVICES			U(2)
 #define MAX_IO_BLOCK_DEVICES		U(1)
 
-/*
- * XBL loads the TZ image into the IMEM TZ window and enters it at EL3. BL2
- * with TRUSTED_BOARD_BOOT does not fit in the 100 KiB window and runs from
- * pIMEM below BL31 instead, where XBL also loads the stock QSEE.
- */
-#if TRUSTED_BOARD_BOOT
-#define BL2_BASE			0x1000c000
-#define BL2_SIZE			0x000f4000
-#else
+/* XBL loads the TZ image into the IMEM TZ window and enters it at EL3. */
 #define BL2_BASE			0x0c100000
 #define BL2_SIZE			0x00019000
-#endif
 #define BL2_LIMIT			(BL2_BASE + BL2_SIZE)
+
+/*
+ * TZ_STAT, the first MiB of the DDR that XBL_SEC keeps secure-only. The
+ * rest of that range up to the pIMEM backing is used by the pIMEM hardware.
+ */
+#define BL2_NOLOAD_START		0x60000000
+#define BL2_NOLOAD_LIMIT		0x60100000
 
 #define BL31_BASE			0x10100000
 #define BL31_SIZE			0x00100000
