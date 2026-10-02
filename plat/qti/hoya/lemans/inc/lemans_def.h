@@ -21,6 +21,9 @@
 #define QTI_PIMEM_BASE			0x1c000000
 #define QTI_PIMEM_LIMIT			0x20000000
 
+/* First core of the second (DSU1) cluster, brought up by hoya_pm.c. */
+#define QTI_FIRST_GOLD_CORE			4
+
 /*----------------------------------------------------------------------------*/
 /* UART related constants. */
 /*----------------------------------------------------------------------------*/

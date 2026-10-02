@@ -31,6 +31,10 @@ static inline void qti_cpucp_init(void)
 {
 }
 
+static inline void cpucp_clkdom_init(void)
+{
+}
+
 #endif /* QTI_CPUCP_ENABLED */
 
 #endif /* QTI_CPUCP_H */
