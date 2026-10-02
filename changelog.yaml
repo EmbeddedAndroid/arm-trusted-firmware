@@ -584,6 +584,12 @@ subsections:
           - title: Arduino VENTUNO Q
             scope: monza
 
+          - title: QCS615
+            scope: qcs615
+
+          - title: QCS615 Ride
+            scope: qcs615_ride
+
       - title: Raspberry Pi
         scope: rpi
 
