@@ -23,6 +23,7 @@
 #define XPU_INVALID_ADDR 0xffffffffUL
 
 #define XPU3_IDR0_NRG_BMSK GENMASK(25, 16)
+#define XPU3_IDR1_MSB_MPU_BMSK GENMASK(13, 8)
 #define XPU3_GCR0_DOMAIN_ENABLE BIT(0)
 #define XPU3_GCR0_LOG_MODE_DISABLE BIT(1)
 #define XPU3_GCR0_BASE_CFG XPU3_GCR0_DOMAIN_ENABLE
@@ -36,6 +37,7 @@
 #define XPU3_QAD1_CR0_OFFSET 0x110
 #define XPU3_UMR_GCR0_OFFSET 0x300
 #define XPU3_IDR0_OFFSET 0x3F8
+#define XPU3_IDR1_OFFSET 0x3F4
 #define XPU3_IDR2_OFFSET 0x3F0
 #define XPU3_REV_OFFSET 0x3FC
 #define XPU3_LOG_MODE_DIS_OFFSET 0x400
@@ -410,9 +412,14 @@ static void program_mpu_partitions(struct xpu_instance *xpu, uint32_t rg_num)
 	struct rg_partition_range *range = xpu->partition_range;
 	uint32_t start_lo, start_hi, end_lo, end_hi;
 	uintptr_t start_0, start_1, end_0, end_1;
+	bool wide;
 
 	if (get_xpu_type(xpu) != XPU_TYPE_MPU)
 		return;
+
+	/* START1 and END1 exist only on MPUs that match addresses above 4 GiB. */
+	wide = FIELD_GET(XPU3_IDR1_MSB_MPU_BMSK,
+			 mmio_read_32(xpu->xpu_base_addr + XPU3_IDR1_OFFSET)) > 31U;
 
 	for (size_t i = 0; i < xpu->part_range_arr_size; i++, range++) {
 		if (rg_num != XPU_RG_ALL && range->rg_num != rg_num)
@@ -435,9 +442,11 @@ static void program_mpu_partitions(struct xpu_instance *xpu, uint32_t rg_num)
 
 		/* Set the specified address range in the partition */
 		mmio_write_32(start_0, start_lo);
-		mmio_write_32(start_1, start_hi);
+		if (wide)
+			mmio_write_32(start_1, start_hi);
 		mmio_write_32(end_0, end_lo);
-		mmio_write_32(end_1, end_hi);
+		if (wide)
+			mmio_write_32(end_1, end_hi);
 	}
 
 	dmbsy();
