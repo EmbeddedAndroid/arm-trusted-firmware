@@ -12,9 +12,18 @@
 #define MAX_IO_DEVICES			U(2)
 #define MAX_IO_BLOCK_DEVICES		U(1)
 
-/* XBL loads the TZ image into the IMEM TZ window and enters it at EL3. */
+/*
+ * XBL loads the TZ image into the IMEM TZ window and enters it at EL3. BL2
+ * with TRUSTED_BOARD_BOOT does not fit in the 100 KiB window and runs from
+ * pIMEM below BL31 instead, where XBL also loads the stock QSEE.
+ */
+#if TRUSTED_BOARD_BOOT
+#define BL2_BASE			0x1000c000
+#define BL2_SIZE			0x000f4000
+#else
 #define BL2_BASE			0x0c100000
 #define BL2_SIZE			0x00019000
+#endif
 #define BL2_LIMIT			(BL2_BASE + BL2_SIZE)
 
 #define BL31_BASE			0x10100000
