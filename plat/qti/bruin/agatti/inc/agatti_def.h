@@ -40,6 +40,10 @@
 #define QTI_GICR_BASE				0x0f300000
 #define QTI_GICC_BASE				0x0
 
+/* Memory-mapped timer (QTimer) CNTCTLBase and its number of frames */
+#define QTI_QTMR_AC_BASE			0x0f120000
+#define QTI_QTMR_FRAMES				7
+
 /* GENI serial engine register offsets used by qti_uart_console.S. */
 #define GENI4_CFG				0x0
 #define GENI4_IMAGE_REGS			0x100

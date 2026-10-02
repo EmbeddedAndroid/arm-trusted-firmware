@@ -15,6 +15,8 @@
 #include <drivers/qti/accesscontrol/accesscontrol.h>
 #include <drivers/qti/chipinfo/chipinfo.h>
 #include <drivers/qti/smem/smem.h>
+#include <lib/mmio.h>
+#include <lib/utils_def.h>
 #include <plat/common/platform.h>
 
 #include <platform_def.h>
@@ -45,6 +47,25 @@ void bl31_plat_arch_setup(void)
 	enable_mmu_el3(0);
 }
 
+/*
+ * The memory-mapped timer frames reset to secure access only, and nothing
+ * in the secure world uses them: give them all to the normal world.
+ */
+static void bruin_qtimer_init(void)
+{
+	uint32_t cntacr = BIT_32(CNTACR_RPCT_SHIFT) | BIT_32(CNTACR_RVCT_SHIFT) |
+			  BIT_32(CNTACR_RFRQ_SHIFT) | BIT_32(CNTACR_RVOFF_SHIFT) |
+			  BIT_32(CNTACR_RWVT_SHIFT) | BIT_32(CNTACR_RWPT_SHIFT);
+	unsigned int frame;
+
+	for (frame = 0U; frame < QTI_QTMR_FRAMES; frame++) {
+		mmio_write_32(QTI_QTMR_AC_BASE + CNTACR_BASE(frame), cntacr);
+	}
+
+	mmio_write_32(QTI_QTMR_AC_BASE + CNTNSAR,
+		      GENMASK_32(QTI_QTMR_FRAMES - 1U, 0U));
+}
+
 void bl31_platform_setup(void)
 {
 	generic_delay_timer_init();
@@ -58,6 +79,7 @@ void bl31_platform_setup(void)
 
 	qti_interrupt_svc_init(bl32_image_ep_info.pc != 0U);
 	qti_accesscontrol_init();
+	bruin_qtimer_init();
 }
 
 /* Every EL3 interrupt has a registered handler; drop anything else. */
