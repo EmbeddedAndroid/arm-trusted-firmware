@@ -69,13 +69,16 @@ BL31_SOURCES		+=	drivers/delay_timer/delay_timer.c			\
 				plat/common/plat_psci_common.c				\
 				$(PLAT_PATH)/common/src/pm_ps_hold.c			\
 				$(PLAT_PATH)/common/src/qti_gic_v3.c			\
+				$(PLAT_PATH)/common/src/qti_interrupt_svc.c		\
 				$(PLAT_PATH)/common/src/qti_syscall.c			\
 				$(PLAT_PATH)/common/src/spmi_arb.c			\
 				$(PLAT_PATH)/bruin/common/bruin_bl31_setup.c		\
 				$(PLAT_PATH)/bruin/common/bruin_gicv3.c			\
 				$(PLAT_PATH)/bruin/common/bruin_topology.c		\
-				$(PLAT_PATH)/bruin/${CHIPSET}/${CHIPSET}_pm.c		\
-				drivers/qti/accesscontrol/access_control_stub.c
+				$(PLAT_PATH)/bruin/${CHIPSET}/${CHIPSET}_pm.c
+
+include drivers/qti/accesscontrol/access_control.mk
 
 include drivers/qti/smem/smem.mk
 include drivers/qti/chipinfo/chipinfo.mk
+

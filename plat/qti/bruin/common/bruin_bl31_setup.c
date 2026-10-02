@@ -12,11 +12,13 @@
 #include <common/desc_image_load.h>
 #include <drivers/console.h>
 #include <drivers/generic_delay_timer.h>
+#include <drivers/qti/accesscontrol/accesscontrol.h>
 #include <drivers/qti/chipinfo/chipinfo.h>
 #include <drivers/qti/smem/smem.h>
 #include <plat/common/platform.h>
 
 #include <platform_def.h>
+#include <qti_interrupt_svc.h>
 #include <qti_plat.h>
 #include <qti_uart_console.h>
 
@@ -53,6 +55,16 @@ void bl31_platform_setup(void)
 	if (qti_chipinfo_init() != CHIPINFO_SUCCESS) {
 		WARN("ChipInfo initialization error\n");
 	}
+
+	qti_interrupt_svc_init(bl32_image_ep_info.pc != 0U);
+	qti_accesscontrol_init();
+}
+
+/* Every EL3 interrupt has a registered handler; drop anything else. */
+void plat_qti_invoke_unhandled_isr(uint32_t id, void *handle)
+{
+	(void)id;
+	(void)handle;
 }
 
 entry_point_info_t *bl31_plat_get_next_image_ep_info(uint32_t type)
