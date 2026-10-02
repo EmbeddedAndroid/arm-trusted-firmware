@@ -493,6 +493,44 @@ void xpu_lock_down_assets(struct xpu_instance *xpus, uint8_t xpu_count)
 	}
 }
 
+/*
+ * Frees the resource groups of the given instances. Only the xPU registers
+ * are written, so this also works with the MMU and data cache off.
+ */
+void xpu_release_assets(const struct xpu_instance *xpus, uint8_t xpu_count)
+{
+	for (size_t i = 0; i < xpu_count; i++, xpus++) {
+		uintptr_t base = xpus->xpu_base_addr;
+		bool wide = FIELD_GET(XPU3_IDR1_MSB_MPU_BMSK,
+				      mmio_read_32(base + XPU3_IDR1_OFFSET)) > 31U;
+
+		for (size_t j = 0; j < xpus->part_range_arr_size; j++) {
+			uintptr_t rg = base + XPU3_RGn_REG_SPACE_SIZE *
+				       xpus->partition_range[j].rg_num;
+
+			mmio_write_32(rg + XPU3_RGn_START0_OFFSET,
+				      XPU_INVALID_ADDR);
+			mmio_write_32(rg + XPU3_RGn_END0_OFFSET,
+				      XPU_INVALID_ADDR);
+			if (wide) {
+				mmio_write_32(rg + XPU3_RGn_START1_OFFSET, 0);
+				mmio_write_32(rg + XPU3_RGn_END1_OFFSET, 0);
+			}
+		}
+
+		for (size_t j = 0; j < xpus->owner_arr_size; j++) {
+			uint32_t rg_num = xpus->rg_owner[j].rg_num;
+
+			if (rg_num == XPU_UMR_RG)
+				continue;
+
+			mmio_write_32(base + XPU3_RGn_GCR0_OFFSET +
+				      XPU3_RGn_REG_SPACE_SIZE * rg_num,
+				      NO_DOMAIN);
+		}
+	}
+}
+
 int xpu_lock_down_assets_dynamic(struct xpu_instance *xpus, uint8_t xpu_count,
 				 uint32_t xpu_id, uint32_t rg_num,
 				 uint32_t perm_r, uint32_t perm_w)
