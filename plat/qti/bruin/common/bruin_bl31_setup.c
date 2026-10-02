@@ -58,6 +58,8 @@ void bl31_platform_setup(void)
 
 	qti_interrupt_svc_init(bl32_image_ep_info.pc != 0U);
 	qti_accesscontrol_init();
+
+	plat_qti_bl31_setup_post();
 }
 
 /* Every EL3 interrupt has a registered handler; drop anything else. */

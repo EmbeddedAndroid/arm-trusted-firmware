@@ -79,6 +79,7 @@ BL31_SOURCES		+=	drivers/delay_timer/delay_timer.c			\
 				$(PLAT_PATH)/bruin/common/bruin_bl31_setup.c		\
 				$(PLAT_PATH)/bruin/common/bruin_gicv3.c			\
 				$(PLAT_PATH)/bruin/common/bruin_topology.c		\
+				$(PLAT_PATH)/bruin/${CHIPSET}/${CHIPSET}_bl31_setup.c	\
 				$(PLAT_PATH)/bruin/${CHIPSET}/${CHIPSET}_pm.c
 
 QTI_BL2_ACCESS_CONTROL			?=	1
