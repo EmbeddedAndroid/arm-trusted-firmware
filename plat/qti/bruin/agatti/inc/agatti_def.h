@@ -95,4 +95,15 @@
 #define QTI_SOC_REVISION_REG			0x003C8000
 #define QTI_SOC_REVISION_MASK			0xFFFF
 
+/* xPU and VMIDMT error summary interrupts, handled at EL3. */
+#define PLAT_INT_ID_XPU_SEC			(0x194)
+#define PLAT_INT_ID_XPU_NON_SEC			(0x195)
+#define PLAT_INT_ID_VMIDMT_ERR_CLT_SEC		(0x197)
+#define PLAT_INT_ID_VMIDMT_ERR_CLT_NONSEC	(0x198)
+#define PLAT_INT_ID_VMIDMT_ERR_CFG_SEC		(0x199)
+#define PLAT_INT_ID_VMIDMT_ERR_CFG_NONSEC	(0x19a)
+
+/* TCSR, which holds the xPU and VMIDMT error status and enable registers. */
+#define AGATTI_TCSR_REGS_BASE			0x003c0000
+
 #endif /* AGATTI_DEF_H */
