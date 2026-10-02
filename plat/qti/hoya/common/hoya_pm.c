@@ -38,6 +38,7 @@
 #define CPU_SEQ_FORCE_PWR_CTL_VAL(core)		(APSS_CPU_IPM_REG(core) + 0x20U)
 #define CPU_PCHANNEL_FSM_CTL(core)		(APSS_CPU_IPM_REG(core) + 0x44U)
 
+#ifdef QTI_FIRST_GOLD_CORE
 /*
  * APSS cluster (L3/DSU) IPM alias register block (APSS_ALIAS_1). Used for the
  * gold-cluster L3 turn-on and memory-repair sequences.
@@ -86,9 +87,6 @@
 #define SAW4_VCTL_SET_VOLTAGE			(0x100000U | GOLD_SAW4_BOOT_VOLTAGE)
 
 #define SAW4_PMIC_WRITE_RETRY			200U
-
-/* The first gold-cluster (DSU1) core in the lemans CPU topology. */
-#define QTI_FIRST_GOLD_CORE			4
 
 /*
  * Time to let the gold PLL/cluster clock settle after the one-time cold boot
@@ -275,6 +273,7 @@ static void gold_cluster_cold_boot(void)
 	gold_cluster_booted = true;
 	spin_unlock(&gold_cluster_lock);
 }
+#endif /* QTI_FIRST_GOLD_CORE */
 
 /*
  * plat_qti_pwr_psci_init - PSCI backend init hook.
@@ -298,10 +297,12 @@ int plat_qti_pwr_domain_on(u_register_t mpidr, int core_pos)
 {
 	(void)mpidr;
 
+#ifdef QTI_FIRST_GOLD_CORE
 	/* Bring up the gold cluster before powering on its first core. */
 	if (core_pos >= QTI_FIRST_GOLD_CORE) {
 		gold_cluster_cold_boot();
 	}
+#endif
 
 	/* Program skew between en_few and en_rest. */
 	mmio_write_32(CPU_HEAD_SWITCH_CTL(core_pos), 0x28U);
