@@ -12,7 +12,8 @@ Agatti specifics:
 - Interrupt controller: GIC-500 (GICv3).
 - Debug UART: QUPv3 wrap 0, serial engine 4 at ``0x4a90000``.
 - XBL enters the TZ image in the 100 KiB IMEM TZ window, so BL2 runs from
-  ``0x0c100000``. BL31 runs from the pIMEM aperture at ``0x10100000``.
+  ``0x0c100000`` (from pIMEM with ``TRUSTED_BOARD_BOOT``, see below). BL31
+  runs from the pIMEM aperture at ``0x10100000``.
 - BL32 (OP-TEE) runs from ``0x46200000``, a 37 MiB carve-out (4 MiB TEE RAM +
   33 MiB TA RAM) in the free DDR window between the ``smem`` and modem PIL
   reserved-memory regions. A smaller TA RAM pool makes any test that opens a
@@ -71,6 +72,24 @@ boot is disabled, so ``bl2.elf`` must be signed as a TZ image with QTI
 signing. An OEM test signature from `qtestsign
 <https://github.com/msm8916-mainline/qtestsign>`__ is not accepted for BL2.
 The ``fip.elf`` is signed with qtestsign.
+
+Trusted board boot
+------------------
+
+With ``TRUSTED_BOARD_BOOT=1``, BL2 authenticates BL31, BL32 and BL33 with
+the TBBR chain of trust (:ref:`Trusted Board Boot`) once it has copied each
+of them to its destination. BL2 holds the SHA-256 hash of the public part of
+``ROT_KEY``, so the QTI signature that XBL checks on BL2 anchors the chain,
+and the FIP carries the certificates. mbed TLS does not fit in the IMEM TZ
+window, so this BL2 runs from pIMEM at ``0x1000c000``, below BL31, and the
+pIMEM resource group it takes for BL31 also covers BL2. Until BL2 takes that
+group, pIMEM is open to the normal world, as XBL leaves it. There are no
+non-volatile counters: the certificates must carry counter 0. ::
+
+	$ make CROSS_COMPILE=aarch64-none-elf- PLAT=uno_q SPD=opteed \
+	    TRUSTED_BOARD_BOOT=1 GENERATE_COT=1 KEY_ALG=ecdsa \
+	    MBEDTLS_DIR=<path-to-mbedtls> ROT_KEY=<rot-key.pem> \
+	    BL32=<path-to-optee-bin> BL33=<path-to-u-boot-bin> fip all
 
 Build options
 -------------

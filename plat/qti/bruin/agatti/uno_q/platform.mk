@@ -54,6 +54,10 @@ BL2_SOURCES		+=	drivers/io/io_fip.c					\
 				$(PLAT_PATH)/common/src/qti_image_desc.c		\
 				$(PLAT_PATH)/common/src/qti_io_storage.c
 
+ifneq (${TRUSTED_BOARD_BOOT},0)
+include $(PLAT_PATH)/common/qti_tbbr.mk
+endif
+
 include drivers/arm/gic/v3/gicv3.mk
 
 BL31_SOURCES		+=	drivers/delay_timer/delay_timer.c			\
