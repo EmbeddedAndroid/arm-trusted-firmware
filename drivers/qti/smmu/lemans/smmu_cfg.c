@@ -9,6 +9,7 @@
 #include <stdint.h>
 
 #include <drivers/qti/smmu/lemans/smmu_cfg.h>
+#include <lib/mmio.h>
 #include "lib/utils_def.h"
 
 struct smmu_cfg_s qti_smmu_cfg[] = {
@@ -179,3 +180,15 @@ struct smmu_cfg_s qti_smmu_cfg[] = {
 };
 
 const size_t qti_smmu_cfg_count = ARRAY_SIZE(qti_smmu_cfg);
+
+/*
+ * Called with the GPU CX domain powered and its retention enabled, so the
+ * aperture survives the CX collapse after clocked_boot_init().
+ */
+void qti_smmu_clocked_init(void)
+{
+	mmio_write_32(GPU_SMMU_APERTURE_S1CB0_ADDR, GPU_SMMU_APERTURE_CB(0));
+	mmio_write_32(GPU_SMMU_APERTURE_S1CB1_ADDR, GPU_SMMU_APERTURE_CB(1));
+	mmio_write_32(GPU_SMMU_APERTURE_S1CB6_ADDR, GPU_SMMU_APERTURE_CB(2));
+	mmio_write_32(GPU_SMMU_APERTURE_CTL_ADDR, GPU_SMMU_APERTURE_CTL);
+}
