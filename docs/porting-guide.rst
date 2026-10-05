@@ -3487,6 +3487,10 @@ immediately before the CPU was turned on. It indicates which power domains
 above the CPU might require initialization due to having previously been in
 low power states. The generic code expects the handler to succeed.
 
+``CNTFRQ_EL0`` and the cpu_ops are set up before this handler is called when
+``HW_ASSISTED_COHERENCY`` or ``WARMBOOT_ENABLE_DCACHE_EARLY`` is enabled, and
+after it returns otherwise.
+
 plat_psci_ops.pwr_domain_on_finish_late() [optional]
 ...........................................................
 
@@ -3512,7 +3516,8 @@ in the normal world and also provide secure runtime firmware services.
 
 The ``target_state`` (first argument) has a similar meaning as described in
 the ``pwr_domain_on_finish()`` operation. The generic code expects the platform
-to succeed.
+to succeed. ``CNTFRQ_EL0`` is programmed after this handler returns, so the
+handler can restore the system counter first.
 
 If the Distributor, Redistributors or ITS have been powered off as part of a
 suspend, their context must be restored in this function in the reverse order

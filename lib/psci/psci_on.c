@@ -162,6 +162,14 @@ on_exit:
  ******************************************************************************/
 void psci_cpu_on_finish(unsigned int cpu_idx, const psci_power_state_t *state_info)
 {
+#if HW_ASSISTED_COHERENCY || WARMBOOT_ENABLE_DCACHE_EARLY
+	/*
+	 * Arch. management: Set up CNTFRQ_EL0 and the cpu_ops before the
+	 * platform hooks use them.
+	 */
+	psci_arch_setup();
+#endif
+
 	/*
 	 * Plat. management: Perform the platform specific actions
 	 * for this cpu e.g. enabling the gic or zeroing the mailbox
@@ -175,6 +183,9 @@ void psci_cpu_on_finish(unsigned int cpu_idx, const psci_power_state_t *state_in
 	 * Arch. management: Enable data cache and manage stack memory
 	 */
 	psci_do_pwrup_cache_maintenance();
+
+	/* Arch. management: psci_arch_setup() needs the data cache */
+	psci_arch_setup();
 #endif
 
 #if USE_GIC_DRIVER
@@ -195,13 +206,6 @@ void psci_cpu_on_finish(unsigned int cpu_idx, const psci_power_state_t *state_in
 	if (psci_plat_pm_ops->pwr_domain_on_finish_late != NULL) {
 		psci_plat_pm_ops->pwr_domain_on_finish_late(state_info);
 	}
-
-	/*
-	 * All the platform specific actions for turning this cpu
-	 * on have completed. Perform enough arch.initialization
-	 * to run in the non-secure address space.
-	 */
-	psci_arch_setup();
 
 	/*
 	 * Lock the CPU spin lock to make sure that the context initialization
