@@ -31,12 +31,25 @@
 /*
  * The MSM8916 ACS power-up sequence, plus CORE_MEM_RET_N: without it the
  * core memories stay in retention and the core hangs when it enables its
- * caches. A core left in WFI by CPU_OFF still has power; asserting the
- * resets first restarts it from the reset vector.
+ * caches. CPU_OFF leaves the core powered in WFI, so a subsequent CPU_ON
+ * must preserve its power and retention controls while asserting reset.
  */
 static void agatti_cpu_boot(uintptr_t acs)
 {
 	uint32_t pwr_ctl;
+
+	pwr_ctl = mmio_read_32(acs + CPU_PWR_CTL);
+	if ((pwr_ctl & CPU_PWR_CTL_CORE_PWRD_UP) != 0U) {
+		/* Keep the reset hold time of the cold power-up sequence. */
+		pwr_ctl |= CPU_PWR_CTL_CORE_RST | CPU_PWR_CTL_COREPOR_RST;
+		mmio_write_32(acs + CPU_PWR_CTL, pwr_ctl);
+		dsb();
+		udelay(6);
+		pwr_ctl &= ~(CPU_PWR_CTL_CORE_RST | CPU_PWR_CTL_COREPOR_RST);
+		mmio_write_32(acs + CPU_PWR_CTL, pwr_ctl);
+		dsb();
+		return;
+	}
 
 	pwr_ctl = CPU_PWR_CTL_CLAMP | CPU_PWR_CTL_CORE_MEM_CLAMP |
 		  CPU_PWR_CTL_CORE_RST | CPU_PWR_CTL_COREPOR_RST;
