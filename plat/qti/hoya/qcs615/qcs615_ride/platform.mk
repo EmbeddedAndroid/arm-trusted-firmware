@@ -121,3 +121,5 @@ PLAT_INCLUDES		+=	-Iinclude/drivers/qti/cpucp				\
 
 include drivers/qti/smem/smem.mk
 include drivers/qti/chipinfo/chipinfo.mk
+include drivers/qti/cmd_db/cmd_db.mk
+include drivers/qti/pdc/pdc.mk
