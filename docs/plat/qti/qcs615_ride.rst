@@ -16,7 +16,9 @@ QCS615 specifics:
   (``0x14680000``, 100 KiB); XBL resets the SoC when the TZ entry point is in
   pIMEM. BL31 runs from pIMEM and BL32 from DDR at ``0x87a00000``.
 - BL31 brings the secondary cores up through the APSS power sequencer and
-  offers CPU standby only. Access control is not configured.
+  offers CPU standby only. XBL leaves the gold (APC1) rail collapsed, so BL31
+  raises it to its boot voltage through the gold SAW4 before the first gold
+  core powers on. Access control is not configured.
 - Storage is UFS.
 
 Boot flow

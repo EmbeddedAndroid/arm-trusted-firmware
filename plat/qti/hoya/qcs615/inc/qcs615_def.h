@@ -21,6 +21,14 @@
 #define QTI_SEC_PRNG_BASE			0x790000
 
 /*----------------------------------------------------------------------------*/
+/*
+ * The two Kryo 4xx Gold cores (6 and 7) share the DSU and L3 with the silver
+ * cores but sit on the APC1 rail, which XBL leaves collapsed.
+ */
+#define QTI_FIRST_GOLD_CORE			6
+/* Gold (APC1) rail boot voltage, in mV. */
+#define QTI_GOLD_RAIL_BOOT_MV			872U
+
 /* APSS register space */
 /*----------------------------------------------------------------------------*/
 #define QTI_APSS_HM_BASE			0x17800000
