@@ -29,6 +29,9 @@
 /* Gold (APC1) rail boot voltage, in mV. */
 #define QTI_GOLD_RAIL_BOOT_MV			872U
 
+/* Without CPUCP, a core turned off is parked rather than powered down. */
+#define QTI_CPU_OFF_HOLD
+
 /* APSS register space */
 /*----------------------------------------------------------------------------*/
 #define QTI_APSS_HM_BASE			0x17800000

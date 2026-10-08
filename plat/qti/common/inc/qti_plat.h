@@ -14,6 +14,7 @@
 #include <drivers/arm/gicv3.h>
 #include <lib/cassert.h>
 #include <lib/el3_runtime/cpu_data.h>
+#include <lib/psci/psci.h>
 #include <lib/xlat_tables/xlat_tables_v2.h>
 
 int qti_mmap_add_dynamic_region(uintptr_t base_pa, size_t size,
@@ -48,6 +49,9 @@ void qti_pmic_prepare_shutdown(void);
 int plat_qti_pwr_domain_on(u_register_t mpidr, int core_pos);
 void plat_qti_pwr_domain_on_finish(int core_pos, const uint8_t *states);
 void plat_qti_pwr_domain_off(const uint8_t *states);
+#ifdef QTI_CPU_OFF_HOLD
+void __dead2 plat_qti_pwr_domain_pwr_down(const psci_power_state_t *target_state);
+#endif
 void plat_qti_pwr_domain_suspend(const uint8_t *states);
 void plat_qti_pwr_domain_suspend_finish(const uint8_t *states);
 int  plat_qti_pwr_psci_init(uintptr_t warmboot_entry);
