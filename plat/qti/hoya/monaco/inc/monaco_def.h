@@ -23,6 +23,10 @@
 
 /* First core of the second (DSU1) cluster, brought up by hoya_pm.c. */
 #define QTI_FIRST_GOLD_CORE			4
+/* The gold cores sit in a second DSU cluster with its own L3. */
+#define QTI_GOLD_DSU_CLUSTER
+/* Gold (APC1) rail boot voltage, in mV. */
+#define QTI_GOLD_RAIL_BOOT_MV			828U
 
 /*----------------------------------------------------------------------------*/
 /* Peripherals base addresses */
