@@ -16,6 +16,16 @@
 #define QTI_PIMEM_BASE			0x1c000000
 #define QTI_PIMEM_LIMIT			0x20000000
 
+/*
+ * The gold cores, from core 4, share the one DSU cluster; the gold+ rail
+ * memories are repaired before the first of them powers on.
+ */
+#define QTI_FIRST_GOLD_CORE			4
+#define QTI_GOLD_HAS_SEPARATE_DSU		0
+#define QTI_GOLDPLUS_RAIL_MEM_REPAIR		1
+/* Gold (APC1) rail boot voltage, in mV. */
+#define QTI_GOLD_RAIL_BOOT_MV			852U
+
 /*----------------------------------------------------------------------------*/
 /* UART related constants. */
 /*----------------------------------------------------------------------------*/
