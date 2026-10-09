@@ -21,6 +21,12 @@
 #define QTI_PIMEM_BASE			0x1c000000
 #define QTI_PIMEM_LIMIT			0x20000000
 
+/* The gold cores, from core 4, form a second DSU cluster with its own L3. */
+#define QTI_FIRST_GOLD_CORE			4
+#define QTI_GOLD_DSU_CLUSTER			1
+/* Gold (APC1) rail boot voltage, in mV. */
+#define QTI_GOLD_RAIL_BOOT_MV			828U
+
 /*----------------------------------------------------------------------------*/
 /* Peripherals base addresses */
 /*----------------------------------------------------------------------------*/
