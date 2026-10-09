@@ -8,6 +8,15 @@
 
 #include <hoya_def.h>
 
+/*
+ * The two gold cores (6 and 7) share the DSU and L3 with the silver cores
+ * but sit on the APC1 rail, which XBL leaves collapsed.
+ */
+#define QTI_FIRST_GOLD_CORE			6
+#define QTI_GOLD_DSU_CLUSTER			0
+/* Gold (APC1) rail boot voltage, in mV. */
+#define QTI_GOLD_RAIL_BOOT_MV			872U
+
 /*----------------------------------------------------------------------------*/
 /* UART related constants. */
 /*----------------------------------------------------------------------------*/
