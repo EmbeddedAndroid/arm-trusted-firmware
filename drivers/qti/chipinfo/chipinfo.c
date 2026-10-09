@@ -188,3 +188,34 @@ enum chipinfo_result qti_chipinfo_init(void)
 
 	return CHIPINFO_SUCCESS;
 }
+
+uint32_t chipinfo_get_disabled_cpus(uint32_t cluster)
+{
+	struct platforminfo_smem *smem;
+	const uint32_t *masks;
+	uint32_t offset, num;
+	size_t size;
+
+	if ((qti_smem_lookup(QTI_SMEM_HOST_COMMON, SMEM_HW_SW_BUILD_ID,
+			     QTI_SMEM_FLAG_NONE, (void **)&smem, &size) != 0) ||
+	    (smem == NULL) || (size < PLATFORMINFO_SMEM_SIZE_V14) ||
+	    (smem->format < PLATFORMINFO_FORMAT_VER_14)) {
+		return 0U;
+	}
+
+	/*
+	 * One uint32_t per cluster from cluster_array_offset, inside the item.
+	 * SMEM is shared with the normal world: read each field once.
+	 */
+	offset = smem->cluster_array_offset;
+	num = smem->num_clusters;
+	if ((cluster >= num) || (offset == 0U) || (offset > size) ||
+	    ((offset % sizeof(uint32_t)) != 0U) ||
+	    (num > ((size - offset) / sizeof(uint32_t)))) {
+		return 0U;
+	}
+
+	masks = (const uint32_t *)((uintptr_t)smem + offset);
+
+	return masks[cluster];
+}
