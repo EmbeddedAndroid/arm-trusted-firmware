@@ -32,14 +32,18 @@ How to build
 Steps to build TF-A BL2 and FIP payload::
 
 	$ make CROSS_COMPILE=aarch64-none-elf- PLAT=rb3gen2 SPD=opteed \
-            QTISECLIB_PATH=<qtiseclib-path> BL32=<path-to-optee-bin> \
-            BL33=<path-to-os-bootloader-bin> fip all
+            BL32=<path-to-optee-bin> BL33=<path-to-os-bootloader-bin> fip all
 
         $ ./tools/qti/generate_fip_elf.sh build/rb3gen2/release/fip.bin \
             0x9fc00000
 
-QTISELIB for Kodiak/SC7280 is available at
-`link <https://github.com/coreboot/qc_blobs/blob/master/sc7280/qtiseclib/libqtisec.a?raw=true>`__
+BL31 runs the native PSCI, CPUCP, command DB, PDC, GPU SMMU, access
+control, SMMU, sec_core, QTimer and watchdog drivers. Only CPU standby (WFI)
+is offered as an idle state, and cores turned off wait in BL31 until they are
+turned on again. Alternatively, ``QTISECLIB_PATH=<qtiseclib-path>`` links the
+QTISECLIB for Kodiak/SC7280, available at
+`link <https://github.com/coreboot/qc_blobs/blob/master/sc7280/qtiseclib/libqtisec.a?raw=true>`__,
+in place of these drivers.
 
 Note that the bl2.elf generated here is required to be signed as TZ image with
 QTI signing involved. Also, the fip.elf generated above is signed using
