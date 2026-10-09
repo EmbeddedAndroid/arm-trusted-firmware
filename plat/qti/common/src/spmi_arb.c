@@ -23,6 +23,16 @@
 #define QTI_SPMI_ARB_CHNL_STRIDE	0x10000U
 #endif
 
+/*
+ * With an ownership table (QTI_SPMI_ARB_OWNER_BASE, one word per APID), a
+ * PPID can have one APID per execution environment, and only the APID the
+ * table assigns to this EE (QTI_SPMI_ARB_EE) may use its channel.
+ */
+#ifdef QTI_SPMI_ARB_OWNER_BASE
+#define REG_APID_OWNER(apid)	(QTI_SPMI_ARB_OWNER_BASE + sizeof(uint32_t) * (apid))
+#define APID_OWNER_MASK		0x7U
+#endif
+
 #define REG_APID_MAP(apid)	(QTI_SPMI_ARB_APID_MAP_BASE + sizeof(uint32_t) * apid)
 #define NUM_APID		QTI_SPMI_ARB_NUM_APID
 
@@ -52,9 +62,16 @@ static int addr_to_apid(uint32_t addr)
 
 	for (i = 0U; i < NUM_APID; i++) {
 		uint32_t reg = mmio_read_32(REG_APID_MAP(i));
-		if ((reg != 0U) && ((addr & PPID_MASK) == (reg & PPID_MASK))) {
-			return i;
+		if ((reg == 0U) || ((addr & PPID_MASK) != (reg & PPID_MASK))) {
+			continue;
 		}
+#ifdef QTI_SPMI_ARB_OWNER_BASE
+		if ((mmio_read_32(REG_APID_OWNER(i)) & APID_OWNER_MASK) !=
+		    QTI_SPMI_ARB_EE) {
+			continue;
+		}
+#endif
+		return i;
 	}
 
 	return -1;
@@ -92,6 +109,7 @@ int spmi_arb_read8(uint32_t addr)
 	int apid = addr_to_apid(addr);
 
 	if (apid < 0) {
+		ERROR("SPMI_ARB no APID for 0x%x\n", addr);
 		return apid;
 	}
 
@@ -111,6 +129,7 @@ int spmi_arb_write8(uint32_t addr, uint8_t data)
 	int apid = addr_to_apid(addr);
 
 	if (apid < 0) {
+		ERROR("SPMI_ARB no APID for 0x%x\n", addr);
 		return apid;
 	}
 
