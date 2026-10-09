@@ -16,6 +16,12 @@
 
 #define RESET_TYPE_WARM_RESET		1
 #define RESET_TYPE_SHUTDOWN		4
+#define RESET_TYPE_HARD_RESET		7
+
+/* PS_HOLD reset type for PSCI SYSTEM_RESET; platforms may override it. */
+#ifndef QTI_PON_SYSTEM_RESET_TYPE
+#define QTI_PON_SYSTEM_RESET_TYPE	RESET_TYPE_WARM_RESET
+#endif
 
 #define S2_RESET_EN			BIT(7)
 
@@ -32,7 +38,7 @@ static void configure_ps_hold(uint32_t reset_type)
 
 void qti_pmic_prepare_reset(void)
 {
-	configure_ps_hold(RESET_TYPE_WARM_RESET);
+	configure_ps_hold(QTI_PON_SYSTEM_RESET_TYPE);
 }
 
 void qti_pmic_prepare_shutdown(void)
