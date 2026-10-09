@@ -24,6 +24,7 @@
 /* The gold cores, from core 4, form a second DSU cluster with its own L3. */
 #define QTI_FIRST_GOLD_CORE			4
 #define QTI_GOLD_DSU_CLUSTER			1
+#define QTI_GOLDPLUS_RAIL_MEM_REPAIR		0
 /* Gold (APC1) rail boot voltage, in mV. */
 #define QTI_GOLD_RAIL_BOOT_MV			828U
 

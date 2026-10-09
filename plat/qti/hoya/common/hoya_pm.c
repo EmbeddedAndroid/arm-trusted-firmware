@@ -57,6 +57,17 @@
 #define GOLD_PLL_SEQ_STS1_MEM_REPAIR_DONE	0x40U
 #define GOLD_PLL_SEQ_FORCE_PWR_CTL_MEM_REPAIR	0x4000U
 
+/*
+ * Gold+ rail sequencer of the single-cluster parts (Kodiak), in the cluster
+ * IPM block at 0x18080000.
+ */
+#define GOLDPLUS_RAIL_SEQ_FORCE_PWR_CTL_EN	0x18080180U
+#define GOLDPLUS_RAIL_SEQ_FORCE_PWR_CTL_VAL	0x18080184U
+#define GOLDPLUS_RAIL_SEQ_STS1			0x18080190U
+
+#define GOLDPLUS_RAIL_SEQ_STS1_MEM_REPAIR_DONE	0x10U
+#define GOLDPLUS_RAIL_SEQ_FORCE_PWR_CTL_MEM_REPAIR	0x100U
+
 /* Upper bound for the memory-repair "done" handshake. */
 #define MEM_REPAIR_TIMEOUT_US			10000U
 
@@ -186,6 +197,34 @@ static void cpu_memory_repair(void)
 }
 
 /*
+ * Repair the gold+ rail memories. Performed once, before the first gold core
+ * is powered on.
+ */
+static void goldplus_rail_memory_repair(void)
+{
+	uint64_t timeout;
+
+	mmio_setbits_32(GOLDPLUS_RAIL_SEQ_FORCE_PWR_CTL_EN,
+			GOLDPLUS_RAIL_SEQ_FORCE_PWR_CTL_MEM_REPAIR);
+	mmio_setbits_32(GOLDPLUS_RAIL_SEQ_FORCE_PWR_CTL_VAL,
+			GOLDPLUS_RAIL_SEQ_FORCE_PWR_CTL_MEM_REPAIR);
+
+	timeout = timeout_init_us(MEM_REPAIR_TIMEOUT_US);
+	while ((mmio_read_32(GOLDPLUS_RAIL_SEQ_STS1) &
+		GOLDPLUS_RAIL_SEQ_STS1_MEM_REPAIR_DONE) == 0U) {
+		if (timeout_elapsed(timeout)) {
+			ERROR("Gold+ rail memory repair timed out\n");
+			panic();
+		}
+	}
+
+	mmio_clrbits_32(GOLDPLUS_RAIL_SEQ_FORCE_PWR_CTL_EN,
+			GOLDPLUS_RAIL_SEQ_FORCE_PWR_CTL_MEM_REPAIR);
+	mmio_clrbits_32(GOLDPLUS_RAIL_SEQ_FORCE_PWR_CTL_VAL,
+			GOLDPLUS_RAIL_SEQ_FORCE_PWR_CTL_MEM_REPAIR);
+}
+
+/*
  * Wait for the gold-cluster SAW4 PMIC write to complete. Returns true when the
  * PMIC is idle (and, if requested, matches @expect_data), false on timeout.
  */
@@ -267,6 +306,10 @@ static void gold_cluster_cold_boot(void)
 		 * runs once, on the cold-boot path only.
 		 */
 		udelay(GOLD_CLUSTER_SETTLE_US);
+	}
+
+	if (QTI_GOLDPLUS_RAIL_MEM_REPAIR != 0) {
+		goldplus_rail_memory_repair();
 	}
 
 	gold_cluster_booted = true;
