@@ -8,12 +8,14 @@
 #ifndef QTI_PLAT_H
 #define QTI_PLAT_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <common/bl_common.h>
 #include <drivers/arm/gicv3.h>
 #include <lib/cassert.h>
 #include <lib/el3_runtime/cpu_data.h>
+#include <lib/psci/psci.h>
 #include <lib/xlat_tables/xlat_tables_v2.h>
 
 int qti_mmap_add_dynamic_region(uintptr_t base_pa, size_t size,
@@ -51,6 +53,23 @@ void plat_qti_pwr_domain_off(const uint8_t *states);
 void plat_qti_pwr_domain_suspend(const uint8_t *states);
 void plat_qti_pwr_domain_suspend_finish(const uint8_t *states);
 int  plat_qti_pwr_psci_init(uintptr_t warmboot_entry);
+
+/*
+ * Without CPUCP, nothing completes the P-channel power-down request of a core
+ * turned off; QTI_CPU_OFF_HOLD parks such cores in BL31 instead.
+ */
+#ifdef QTI_CPU_OFF_HOLD
+void __dead2 plat_qti_pwr_domain_pwr_down(const psci_power_state_t *target_state);
+bool plat_qti_cpu_hold_release(int core_pos);
+#define PLAT_QTI_PWR_DOMAIN_PWR_DOWN	plat_qti_pwr_domain_pwr_down
+#else
+#define PLAT_QTI_PWR_DOMAIN_PWR_DOWN	NULL
+static inline bool plat_qti_cpu_hold_release(int core_pos)
+{
+	(void)core_pos;
+	return false;
+}
+#endif
 
 void plat_qti_bl31_setup_post(void);
 void plat_qti_invoke_unhandled_isr(uint32_t id, void *handle);

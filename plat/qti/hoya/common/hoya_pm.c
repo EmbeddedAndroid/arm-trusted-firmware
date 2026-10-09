@@ -295,6 +295,10 @@ int plat_qti_pwr_domain_on(u_register_t mpidr, int core_pos)
 {
 	(void)mpidr;
 
+	if (plat_qti_cpu_hold_release(core_pos)) {
+		return PSCI_E_SUCCESS;
+	}
+
 	/* Bring up the gold cluster before powering on its first core. */
 	if (core_pos >= QTI_FIRST_GOLD_CORE) {
 		gold_cluster_cold_boot();

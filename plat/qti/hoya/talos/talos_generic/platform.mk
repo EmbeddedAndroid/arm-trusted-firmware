@@ -43,6 +43,10 @@ PSCI_OS_INIT_MODE			:=	1
 # GIC-600 configuration
 GICV3_SUPPORT_GIC600			:=	1
 
+# No CPUCP: cores turned off are parked in BL31.
+QTI_CPU_OFF_HOLD			:=	1
+$(eval $(call add_define,QTI_CPU_OFF_HOLD))
+
 COLD_BOOT_SINGLE_CPU			:=	1
 PROGRAMMABLE_RESET_ADDRESS		:=	1
 
@@ -104,6 +108,7 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 				$(PLAT_PATH)/hoya/common/$(ARCH)/hoya_helpers.S		\
 				$(PLAT_PATH)/hoya/common/hoya_bl31_setup.c		\
 				$(PLAT_PATH)/hoya/common/hoya_gicv3.c			\
+				$(PLAT_PATH)/hoya/common/hoya_cpu_hold.c		\
 				$(PLAT_PATH)/hoya/common/hoya_pm.c			\
 				$(PLAT_PATH)/hoya/qtiseclib/src/qtiseclib_cb_interface.c \
 				drivers/qti/accesscontrol/access_control_stub.c	\

@@ -261,6 +261,7 @@ const plat_psci_ops_t plat_qti_psci_pm_ops = {
 	.pwr_domain_off = qti_node_power_off,
 	.pwr_domain_suspend = qti_node_suspend,
 	.pwr_domain_suspend_finish = qti_node_suspend_finish,
+	.pwr_domain_pwr_down = PLAT_QTI_PWR_DOMAIN_PWR_DOWN,
 	.system_off = qti_system_off,
 	.system_reset = qti_system_reset,
 	.get_node_hw_state = NULL,
