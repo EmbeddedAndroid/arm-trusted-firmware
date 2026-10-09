@@ -17,8 +17,10 @@ else
 PDC_TABLES := $(PDC_DRV_PATH)/$(CHIPSET)
 endif
 
+# Every supported PDC shares the hoya register map.
 PLAT_INCLUDES += \
-	-I$(PDC_TABLES)
+	-I$(PDC_TABLES) \
+	-I$(PDC_DRV_PATH)/hoya
 
 BL31_SOURCES += \
 	$(PDC_DRV_PATH)/pdc.c					\
