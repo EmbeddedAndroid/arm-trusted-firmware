@@ -1150,4 +1150,10 @@ enum chipinfo_result qti_chipinfo_init(void);
  */
 bool chipinfo_is_part_disabled(enum chipinfo_part part, uint32_t part_idx);
 
+/*
+ * Mask of fused-off cores in CPU cluster @cluster (bit n = core n), from the
+ * SMEM cluster array (format >= 14). Returns 0 (all present) when unknown.
+ */
+uint32_t chipinfo_get_disabled_cpus(uint32_t cluster);
+
 #endif /* CHIPINFO_H */
