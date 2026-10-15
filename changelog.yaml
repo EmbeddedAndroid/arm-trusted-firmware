@@ -584,6 +584,12 @@ subsections:
           - title: Arduino VENTUNO Q
             scope: monza
 
+          - title: Talos
+            scope: talos
+
+          - title: Talos Generic
+            scope: talos_generic
+
       - title: Raspberry Pi
         scope: rpi
 
