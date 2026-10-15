@@ -57,6 +57,11 @@ unsigned int plat_qti_my_cluster_pos(void);
 
 void gic_set_spi_routing(unsigned int id, unsigned int irm, u_register_t mpidr);
 
+/* PMIC PON_PS_HOLD_RESET_CTL reset types */
+#define PON_RESET_TYPE_WARM_RESET		1U
+#define PON_RESET_TYPE_SHUTDOWN			4U
+#define PON_RESET_TYPE_HARD_RESET		7U
+
 void qti_pmic_prepare_reset(void);
 void qti_pmic_prepare_shutdown(void);
 
