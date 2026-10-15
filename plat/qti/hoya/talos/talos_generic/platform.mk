@@ -127,6 +127,7 @@ include drivers/qti/smem/smem.mk
 include drivers/qti/chipinfo/chipinfo.mk
 include drivers/qti/cmd_db/cmd_db.mk
 include drivers/qti/pdc/pdc.mk
+include drivers/qti/gpu_smmu/gpu_smmu.mk
 
 # No CPUCP: nothing completes the power-down request of a core turned off.
 include plat/qti/hoya/common/cpu_hold.mk
