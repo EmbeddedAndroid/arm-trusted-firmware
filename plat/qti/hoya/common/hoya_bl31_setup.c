@@ -5,6 +5,7 @@
  */
 
 #include <drivers/qti/cpucp/cpucp.h>
+#include <drivers/qti/gpu_smmu/gpu_smmu.h>
 #include <qti_plat.h>
 #include <qtiseclib_interface.h>
 
@@ -19,6 +20,7 @@ void plat_qti_bl31_setup_post(void)
 	qtiseclib_bl31_platform_setup();
 
 	qti_cpucp_init();
+	qti_gpu_smmu_init();
 
 	/* set boot state to cold boot complete. */
 	g_qti_bl31_cold_booted = 0x1;
