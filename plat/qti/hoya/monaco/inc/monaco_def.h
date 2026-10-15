@@ -43,8 +43,8 @@
 /*----------------------------------------------------------------------------*/
 #define PON_PS_HOLD_RESET_CTL			0x852
 #define PON_PS_HOLD_RESET_CTL2			0x853
-/* PMIC reset type for PSCI SYSTEM_RESET */
-#define PON_PS_HOLD_SYSTEM_RESET_TYPE		PON_RESET_TYPE_WARM_RESET
+/* PMIC reset type for PSCI SYSTEM_RESET; XBL fails after a warm reset. */
+#define PON_PS_HOLD_SYSTEM_RESET_TYPE		PON_RESET_TYPE_HARD_RESET
 
 /*----------------------------------------------------------------------------*/
 /* APSS HM, AOSS and CORE_TOP_CSR registers */
