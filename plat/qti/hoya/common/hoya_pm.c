@@ -320,6 +320,10 @@ int plat_qti_pwr_domain_on(u_register_t mpidr, int core_pos)
 {
 	(void)mpidr;
 
+	if (plat_qti_cpu_hold_release((unsigned int)core_pos)) {
+		return PSCI_E_SUCCESS;
+	}
+
 	/* Bring up the gold domain before powering on its first core. */
 	if ((core_pos >= QTI_FIRST_GOLD_CORE) &&
 	    (gold_domain_cold_boot() != 0)) {
