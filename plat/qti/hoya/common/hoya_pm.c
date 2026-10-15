@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <errno.h>
 #include <stdint.h>
 
 #include <arch_helpers.h>
@@ -213,9 +214,15 @@ static bool saw4_pmic_wait(uint32_t expect_data, bool check_data)
  * voltage. This mirrors qtiseclib's HAL_avs_SecondaryRailInit(); without it the
  * gold cluster has no supply and its cores never come out of reset.
  */
-static void set_gold_cluster_voltage(void)
+static int set_gold_cluster_voltage(void)
 {
 	uint32_t val;
+
+	/* A PMIC request left pending by an earlier attempt must finish first. */
+	if (!saw4_pmic_wait(0U, false)) {
+		ERROR("gold SAW4 PMIC busy\n");
+		return -EBUSY;
+	}
 
 	/* Let the SAW hardware adjust the rail voltage. */
 	val = mmio_read_32(GOLD_SAW4_AVS_CTL);
@@ -227,33 +234,46 @@ static void set_gold_cluster_voltage(void)
 	/* Enable the PMIC rail and wait for warm-up. */
 	mmio_write_32(GOLD_SAW4_VCTL, SAW4_VCTL_ENABLE);
 	if (!saw4_pmic_wait(0U, false)) {
-		WARN("gold SAW4 PMIC enable timed out\n");
+		ERROR("gold SAW4 PMIC enable timed out\n");
+		return -ETIMEDOUT;
 	}
 	udelay(90);
 
 	/* Restore the rail to its boot voltage. */
 	mmio_write_32(GOLD_SAW4_VCTL, SAW4_VCTL_SET_VOLTAGE);
 	if (!saw4_pmic_wait(QTI_GOLD_RAIL_BOOT_MV, true)) {
-		WARN("gold SAW4 PMIC voltage set timed out\n");
+		ERROR("gold SAW4 PMIC voltage set timed out\n");
+		return -ETIMEDOUT;
 	}
+
+	return 0;
 }
 
 /*
  * One-time gold domain bring-up, run before its first core powers on: the
  * gold rail, then the L3 and PLL of the gold DSU where it is a separate one.
  */
-static void gold_domain_cold_boot(void)
+static int gold_domain_cold_boot(void)
 {
 	static spinlock_t gold_cluster_lock;
 	static bool gold_cluster_booted;
+	int ret;
 
 	spin_lock(&gold_cluster_lock);
 	if (gold_cluster_booted) {
 		spin_unlock(&gold_cluster_lock);
-		return;
+		return 0;
 	}
 
-	set_gold_cluster_voltage();
+	/*
+	 * Nothing has been changed beyond the rail request yet, so a failed
+	 * rail is reported and the next CPU_ON of a gold core starts over.
+	 */
+	ret = set_gold_cluster_voltage();
+	if (ret != 0) {
+		spin_unlock(&gold_cluster_lock);
+		return ret;
+	}
 
 	if (QTI_GOLD_HAS_SEPARATE_DSU != 0) {
 		l3_memory_repair();
@@ -274,6 +294,8 @@ static void gold_domain_cold_boot(void)
 
 	gold_cluster_booted = true;
 	spin_unlock(&gold_cluster_lock);
+
+	return 0;
 }
 
 /*
@@ -299,8 +321,9 @@ int plat_qti_pwr_domain_on(u_register_t mpidr, int core_pos)
 	(void)mpidr;
 
 	/* Bring up the gold domain before powering on its first core. */
-	if (core_pos >= QTI_FIRST_GOLD_CORE) {
-		gold_domain_cold_boot();
+	if ((core_pos >= QTI_FIRST_GOLD_CORE) &&
+	    (gold_domain_cold_boot() != 0)) {
+		return PSCI_E_INTERN_FAIL;
 	}
 
 	/* Program skew between en_few and en_rest. */
