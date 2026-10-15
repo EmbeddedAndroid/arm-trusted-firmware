@@ -32,14 +32,55 @@ How to build
 Steps to build TF-A BL2 and FIP payload::
 
 	$ make CROSS_COMPILE=aarch64-none-elf- PLAT=rb3gen2 SPD=opteed \
-            QTISECLIB_PATH=<qtiseclib-path> BL32=<path-to-optee-bin> \
-            BL33=<path-to-os-bootloader-bin> fip all
+            BL32=<path-to-optee-bin> BL33=<path-to-os-bootloader-bin> fip all
 
         $ ./tools/qti/generate_fip_elf.sh build/rb3gen2/release/fip.bin \
             0x9fc00000
 
-QTISELIB for Kodiak/SC7280 is available at
-`link <https://github.com/coreboot/qc_blobs/blob/master/sc7280/qtiseclib/libqtisec.a?raw=true>`__
+BL31 runs the native PSCI, CPUCP, command DB, PDC, GPU SMMU, access
+control, SMMU, sec_core, QTimer and watchdog drivers. Alternatively,
+``QTISECLIB_PATH=<qtiseclib-path>`` links the QTISECLIB for Kodiak/SC7280,
+available at
+`link <https://github.com/coreboot/qc_blobs/blob/master/sc7280/qtiseclib/libqtisec.a?raw=true>`__,
+in place of these drivers.
+
+The access control driver applies the static XPU configuration. Of the QTI
+SiP MEM_ASSIGN transitions it implements only those of the modem VMIDs: it
+returns success for the others, for instance the LPASS and ADSP heap VMIDs
+that FastRPC assigns, without changing their access.
+
+U-Boot as BL33 is built from ``qcom_defconfig`` with ``tfa-optee.config``,
+which has to enable ``CONFIG_OPTEE_LIB`` so that U-Boot copies the OP-TEE
+node into the device tree it passes to Linux.
+
+Boot firmware contract
+----------------------
+
+The native drivers replace the secure setup library, not the other boot
+firmware. They were tested with the XBL, XBL_SEC, AOP and CPUCP images of the
+QCM6490 boot binaries 00142, and rely on this handover:
+
+- XBL loads the CPUCP firmware and leaves it stopped, with EPSS open to
+  non-secure writes for that load. BL31 fills the version 3 CPUCP shared data
+  (chip identification, CPR fuses, MX levels from the command DB, per-domain
+  core masks), closes that access and starts CPUCP. BL31 does not load or
+  replace the CPUCP firmware. A firmware with another interface version, or a
+  command DB without MX levels, stops the boot with an error.
+- The GPU CX domain is collapsed with its clocks off. BL31 votes it on to
+  program the GPU SMMU and its aperture, gives back the votes it took, and
+  leaves CX register retention enabled. A failed GPU SMMU setup stops the boot
+  with an error.
+
+Limitations
+-----------
+
+- Only CPU standby (WFI) is offered as an idle state: the power-collapse
+  sequences of the CPUs, the clusters and the system are not implemented. PSCI
+  SYSTEM_SUSPEND is listed by the common QTI PSCI operations but is denied, as
+  there is no system power-down state.
+- CPUCP does not complete the power-down request of a core turned off, so
+  PSCI CPU_OFF does not power the core down: it waits in BL31, powered, until
+  CPU_ON releases it.
 
 Note that the bl2.elf generated here is required to be signed as TZ image with
 QTI signing involved. Also, the fip.elf generated above is signed using
@@ -65,7 +106,7 @@ Then flash the board following the meta-qcom instructions
 Boot Trace
 -------------
 
-Boot logs on RB3Gen2::
+Boot logs on RB3Gen2 with QTISECLIB::
 
         Format: Log Type - Time(microsec) - Message - Optional Info
         Log Type: B - Since Boot(Power On Reset),  D - Delta,  S - Statistic
