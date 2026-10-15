@@ -2982,9 +2982,10 @@ frequency for the CPU's generic timer. This value will be programmed into the
 of the system counter, which is retrieved from the first entry in the frequency
 modes table.
 
-The PSCI library programs ``CNTFRQ_EL0`` with this value at cold boot, on
-``CPU_ON`` and on resume from a power down state, after the platform setup and
-the platform power management hooks. Platforms do not need to program it in
+The PSCI library programs ``CNTFRQ_EL0`` with this value at cold boot, after
+the platform setup, on ``CPU_ON``, before or after ``pwr_domain_on_finish()``
+(see that hook), and on resume from a power down state, after the platform
+power management hooks. Platforms do not need to program it in
 BL31 or SP_MIN, unless they change the counter frequency at runtime or read
 ``CNTFRQ_EL0`` before the PSCI library programs it: before ``psci_setup()``,
 or in their power management finish hooks.
@@ -3493,6 +3494,10 @@ The ``target_state`` (first argument) is the prior state of the power domains
 immediately before the CPU was turned on. It indicates which power domains
 above the CPU might require initialization due to having previously been in
 low power states. The generic code expects the handler to succeed.
+
+``CNTFRQ_EL0`` and the cpu_ops are set up before this handler is called when
+``HW_ASSISTED_COHERENCY`` or ``WARMBOOT_ENABLE_DCACHE_EARLY`` is enabled, and
+after it returns otherwise.
 
 plat_psci_ops.pwr_domain_on_finish_late() [optional]
 ...........................................................
