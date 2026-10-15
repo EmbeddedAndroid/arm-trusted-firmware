@@ -14,9 +14,6 @@
  * include other part numbers like PM6150.
  */
 
-#define RESET_TYPE_WARM_RESET		1
-#define RESET_TYPE_SHUTDOWN		4
-
 #define S2_RESET_EN			BIT(7)
 
 static void configure_ps_hold(uint32_t reset_type)
@@ -32,10 +29,10 @@ static void configure_ps_hold(uint32_t reset_type)
 
 void qti_pmic_prepare_reset(void)
 {
-	configure_ps_hold(RESET_TYPE_WARM_RESET);
+	configure_ps_hold(PON_PS_HOLD_SYSTEM_RESET_TYPE);
 }
 
 void qti_pmic_prepare_shutdown(void)
 {
-	configure_ps_hold(RESET_TYPE_SHUTDOWN);
+	configure_ps_hold(PON_RESET_TYPE_SHUTDOWN);
 }
