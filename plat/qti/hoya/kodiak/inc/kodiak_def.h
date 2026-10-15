@@ -47,6 +47,8 @@
 /*----------------------------------------------------------------------------*/
 #define PON_PS_HOLD_RESET_CTL			0x852
 #define PON_PS_HOLD_RESET_CTL2			0x853
+/* PMIC reset type for PSCI SYSTEM_RESET */
+#define PON_PS_HOLD_SYSTEM_RESET_TYPE		PON_RESET_TYPE_WARM_RESET
 /*----------------------------------------------------------------------------*/
 /* APSS HM registers */
 /*----------------------------------------------------------------------------*/
