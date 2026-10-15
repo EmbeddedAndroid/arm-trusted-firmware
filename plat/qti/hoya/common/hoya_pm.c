@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <errno.h>
 #include <stdint.h>
 
 #include <arch_helpers.h>
@@ -90,7 +91,7 @@
  * Repair the L3 memories of the gold cluster. Performed once, before the first
  * gold core is powered on.
  */
-static void l3_memory_repair(void)
+static int l3_memory_repair(void)
 {
 	uint32_t val;
 	uint64_t timeout;
@@ -107,7 +108,7 @@ static void l3_memory_repair(void)
 	while ((mmio_read_32(L3_SEQ_STS1) & L3_SEQ_STS1_MEM_REPAIR_DONE) == 0U) {
 		if (timeout_elapsed(timeout)) {
 			ERROR("L3 memory repair timed out\n");
-			panic();
+			return -ETIMEDOUT;
 		}
 	}
 
@@ -118,6 +119,8 @@ static void l3_memory_repair(void)
 	val = mmio_read_32(L3_SEQ_FORCE_PWR_CTL_EN);
 	mmio_write_32(L3_SEQ_FORCE_PWR_CTL_EN,
 		      val & ~L3_SEQ_FORCE_PWR_CTL_MEM_REPAIR);
+
+	return 0;
 }
 
 /* Execute the gold-cluster L3 turn-on sequence. Performed once. */
@@ -148,7 +151,7 @@ static void l3_cold_boot(void)
  * Repair the gold-cluster PLL memories. Performed once, before the first gold
  * core is powered on.
  */
-static void cpu_memory_repair(void)
+static int cpu_memory_repair(void)
 {
 	uint32_t val;
 	uint64_t timeout;
@@ -166,7 +169,7 @@ static void cpu_memory_repair(void)
 		GOLD_PLL_SEQ_STS1_MEM_REPAIR_DONE) == 0U) {
 		if (timeout_elapsed(timeout)) {
 			ERROR("Gold PLL memory repair timed out\n");
-			panic();
+			return -ETIMEDOUT;
 		}
 	}
 
@@ -177,6 +180,8 @@ static void cpu_memory_repair(void)
 	val = mmio_read_32(GOLD_PLL_SEQ_FORCE_PWR_CTL_EN);
 	mmio_write_32(GOLD_PLL_SEQ_FORCE_PWR_CTL_EN,
 		      val & ~GOLD_PLL_SEQ_FORCE_PWR_CTL_MEM_REPAIR);
+
+	return 0;
 }
 
 /*
@@ -207,7 +212,7 @@ static bool saw4_pmic_wait(uint32_t expect_data, bool check_data)
  * voltage. This mirrors qtiseclib's HAL_avs_SecondaryRailInit(); without it the
  * gold cluster has no supply and its cores never come out of reset.
  */
-static void set_gold_cluster_voltage(void)
+static int set_gold_cluster_voltage(void)
 {
 	uint32_t val;
 
@@ -221,42 +226,63 @@ static void set_gold_cluster_voltage(void)
 	/* Enable the PMIC rail and wait for warm-up. */
 	mmio_write_32(GOLD_SAW4_VCTL, SAW4_VCTL_ENABLE);
 	if (!saw4_pmic_wait(0U, false)) {
-		WARN("gold SAW4 PMIC enable timed out\n");
+		ERROR("gold SAW4 PMIC enable timed out\n");
+		return -ETIMEDOUT;
 	}
 	udelay(90);
 
 	/* Restore the rail to its boot voltage. */
 	mmio_write_32(GOLD_SAW4_VCTL, SAW4_VCTL_SET_VOLTAGE);
 	if (!saw4_pmic_wait(QTI_GOLD_RAIL_BOOT_MV, true)) {
-		WARN("gold SAW4 PMIC voltage set timed out\n");
+		ERROR("gold SAW4 PMIC voltage set timed out\n");
+		return -ETIMEDOUT;
 	}
+
+	return 0;
 }
 
 /*
- * One-time gold domain bring-up, run before its first core powers on: the
- * gold rail, then the L3 and PLL of the gold DSU where it is a separate one.
+ * Gold domain bring-up: the gold rail, then the L3 and PLL memories of the
+ * gold DSU where it is a separate one.
  */
-static void gold_domain_cold_boot(void)
+static int gold_domain_bring_up(void)
 {
-	static spinlock_t gold_cluster_lock;
-	static bool gold_cluster_booted;
+	int ret = set_gold_cluster_voltage();
 
-	spin_lock(&gold_cluster_lock);
-	if (gold_cluster_booted) {
-		spin_unlock(&gold_cluster_lock);
-		return;
+	if ((ret == 0) && (QTI_GOLD_HAS_SEPARATE_DSU != 0)) {
+		ret = l3_memory_repair();
+		if (ret == 0) {
+			l3_cold_boot();
+			ret = cpu_memory_repair();
+		}
 	}
 
-	set_gold_cluster_voltage();
+	return ret;
+}
 
-	if (QTI_GOLD_HAS_SEPARATE_DSU != 0) {
-		l3_memory_repair();
-		l3_cold_boot();
-		cpu_memory_repair();
+/* The gold domain is brought up once; one that failed is not retried. */
+enum gold_rail_state {
+	GOLD_RAIL_OFF,
+	GOLD_RAIL_ON,
+	GOLD_RAIL_FAIL,
+};
+
+/* One-time gold domain bring-up, run before its first core powers on. */
+static int gold_domain_cold_boot(void)
+{
+	static spinlock_t gold_domain_lock;
+	static enum gold_rail_state gold_rail;
+	int ret;
+
+	spin_lock(&gold_domain_lock);
+	if (gold_rail == GOLD_RAIL_OFF) {
+		gold_rail = (gold_domain_bring_up() == 0) ?
+			    GOLD_RAIL_ON : GOLD_RAIL_FAIL;
 	}
+	ret = (gold_rail == GOLD_RAIL_ON) ? 0 : -EIO;
+	spin_unlock(&gold_domain_lock);
 
-	gold_cluster_booted = true;
-	spin_unlock(&gold_cluster_lock);
+	return ret;
 }
 
 /*
@@ -282,8 +308,9 @@ int plat_qti_pwr_domain_on(u_register_t mpidr, int core_pos)
 	(void)mpidr;
 
 	/* Bring up the gold domain before powering on its first core. */
-	if (core_pos >= QTI_FIRST_GOLD_CORE) {
-		gold_domain_cold_boot();
+	if ((core_pos >= QTI_FIRST_GOLD_CORE) &&
+	    (gold_domain_cold_boot() != 0)) {
+		return PSCI_E_INTERN_FAIL;
 	}
 
 	/* Program skew between en_few and en_rest. */
