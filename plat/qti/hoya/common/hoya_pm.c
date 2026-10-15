@@ -61,8 +61,8 @@
 #define MEM_REPAIR_TIMEOUT_US			10000U
 
 /*
- * Gold-cluster (APC1) SAW4 AVS rail. The lemans SAW4 instance for the gold
- * rail is at 0x18101000, with the AVS register region at +0x800 and the status
+ * Gold-cluster (APC1) SAW4 AVS rail. The SAW4 instance for the gold rail is
+ * at 0x18101000, with the AVS register region at +0x800 and the status
  * region at +0xc00 (see qtiseclib HAL_avs_SecondaryRailInit / saw_v4.c).
  */
 #define GOLD_SAW4_BASE				0x18101000U
@@ -82,17 +82,13 @@
  * uses the 16-bit VCTL address index (0) with the boot voltage as data.
  */
 #define SAW4_VCTL_ENABLE			0x30080U
-#define GOLD_SAW4_BOOT_VOLTAGE			828U
-#define SAW4_VCTL_SET_VOLTAGE			(0x100000U | GOLD_SAW4_BOOT_VOLTAGE)
+#define SAW4_VCTL_SET_VOLTAGE			(0x100000U | QTI_GOLD_RAIL_BOOT_MV)
 
 #define SAW4_PMIC_WRITE_RETRY			200U
 
-/* The first gold-cluster (DSU1) core in the lemans CPU topology. */
-#define QTI_FIRST_GOLD_CORE			4
-
 /*
  * Time to let the gold PLL/cluster clock settle after the one-time cold boot
- * before the first gold core is released from reset (see gold_cluster_cold_boot).
+ * before the first gold core is released from reset (see gold_domain_cold_boot).
  */
 #define GOLD_CLUSTER_SETTLE_US			500U
 
@@ -237,13 +233,16 @@ static void set_gold_cluster_voltage(void)
 
 	/* Restore the rail to its boot voltage. */
 	mmio_write_32(GOLD_SAW4_VCTL, SAW4_VCTL_SET_VOLTAGE);
-	if (!saw4_pmic_wait(GOLD_SAW4_BOOT_VOLTAGE, true)) {
+	if (!saw4_pmic_wait(QTI_GOLD_RAIL_BOOT_MV, true)) {
 		WARN("gold SAW4 PMIC voltage set timed out\n");
 	}
 }
 
-/* One-time gold-cluster (DSU1) bringup, run before its first core powers on. */
-static void gold_cluster_cold_boot(void)
+/*
+ * One-time gold domain bring-up, run before its first core powers on: the
+ * gold rail, then the L3 and PLL of the gold DSU where it is a separate one.
+ */
+static void gold_domain_cold_boot(void)
 {
 	static spinlock_t gold_cluster_lock;
 	static bool gold_cluster_booted;
@@ -255,22 +254,23 @@ static void gold_cluster_cold_boot(void)
 	}
 
 	set_gold_cluster_voltage();
-	l3_memory_repair();
-	l3_cold_boot();
-	cpu_memory_repair();
 
-	/*
-	 * The cold-boot sequence above only polls for the L3 and gold-PLL
-	 * "sequence done" / "memory repair done" status, not for the gold PLL
-	 * to actually lock and drive the cluster clock. Releasing the first
-	 * gold core (the only one that runs this cold boot) before its clock is
-	 * running leaves it stuck: PSCI CPU_ON reports success but the core
-	 * never starts executing, so the kernel times it out and only 7 of the
-	 * 8 CPUs come online. Let the PLL/clock settle before the reset
-	 * sequence releases the core. This runs only on the one-time cold-boot
-	 * path, so it does not affect the later gold cores or steady state.
-	 */
-	udelay(GOLD_CLUSTER_SETTLE_US);
+	if (QTI_GOLD_HAS_SEPARATE_DSU != 0) {
+		l3_memory_repair();
+		l3_cold_boot();
+		cpu_memory_repair();
+
+		/*
+		 * The sequence above only polls for the L3 and gold-PLL
+		 * "sequence done" / "memory repair done" status, not for the
+		 * gold PLL to lock and drive the cluster clock. Releasing the
+		 * first gold core before its clock runs leaves it stuck: PSCI
+		 * CPU_ON reports success but the core never starts, and only 7
+		 * of the 8 CPUs come online. Let the PLL settle first; this
+		 * runs once, on the cold-boot path only.
+		 */
+		udelay(GOLD_CLUSTER_SETTLE_US);
+	}
 
 	gold_cluster_booted = true;
 	spin_unlock(&gold_cluster_lock);
@@ -298,9 +298,9 @@ int plat_qti_pwr_domain_on(u_register_t mpidr, int core_pos)
 {
 	(void)mpidr;
 
-	/* Bring up the gold cluster before powering on its first core. */
+	/* Bring up the gold domain before powering on its first core. */
 	if (core_pos >= QTI_FIRST_GOLD_CORE) {
-		gold_cluster_cold_boot();
+		gold_domain_cold_boot();
 	}
 
 	/* Program skew between en_few and en_rest. */
