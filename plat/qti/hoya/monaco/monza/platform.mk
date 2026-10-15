@@ -113,3 +113,4 @@ QTI_CLOCK_RAIL_VOTE			:=	1
 include drivers/qti/pwr_utils/pwr_utils.mk
 include drivers/qti/rpmh/rpmh.mk
 include drivers/qti/clock/clock.mk
+include drivers/qti/sail_comm/sail_comm.mk
