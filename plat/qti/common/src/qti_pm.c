@@ -86,12 +86,16 @@ int qti_validate_power_state(unsigned int power_state,
  * PLATFORM FUNCTIONS
  ******************************************************************************/
 
-static void qti_set_cpupwrctlr_val(void)
+static void qti_set_cpupwrctlr_val(bool pwrdn_en)
 {
 	unsigned long val;
 
 	val = read_cpu_pwrctrl_val();
-	val |= QTI_CORE_PWRDN_EN_MASK;
+	if (pwrdn_en) {
+		val |= QTI_CORE_PWRDN_EN_MASK;
+	} else {
+		val &= ~QTI_CORE_PWRDN_EN_MASK;
+	}
 	write_cpu_pwrctrl_val(val);
 
 	isb();
@@ -165,16 +169,22 @@ static void qti_node_power_off(const psci_power_state_t *target_state)
 	plat_qti_pwr_domain_off((const uint8_t *)target_state->pwr_domain_state);
 	if (is_cpu_off(target_state)) {
 		plat_qti_gic_cpuif_disable();
-		qti_set_cpupwrctlr_val();
+		/*
+		 * A core parked in BL31 must not raise the power-down request
+		 * the CPU power-down sequence armed.
+		 */
+		qti_set_cpupwrctlr_val(
+			!plat_qti_cpu_hold_retire(plat_my_core_pos()));
 	}
 }
 
 static void qti_node_suspend(const psci_power_state_t *target_state)
 {
+	plat_qti_cpu_hold_suspend(plat_my_core_pos());
 	plat_qti_pwr_domain_suspend((const uint8_t *)target_state->pwr_domain_state);
 	if (is_cpu_off(target_state)) {
 		plat_qti_gic_cpuif_disable();
-		qti_set_cpupwrctlr_val();
+		qti_set_cpupwrctlr_val(true);
 	}
 }
 
@@ -261,6 +271,7 @@ const plat_psci_ops_t plat_qti_psci_pm_ops = {
 	.pwr_domain_off = qti_node_power_off,
 	.pwr_domain_suspend = qti_node_suspend,
 	.pwr_domain_suspend_finish = qti_node_suspend_finish,
+	.pwr_domain_pwr_down = PLAT_QTI_PWR_DOMAIN_PWR_DOWN,
 	.system_off = qti_system_off,
 	.system_reset = qti_system_reset,
 	.get_node_hw_state = NULL,
