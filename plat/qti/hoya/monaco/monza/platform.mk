@@ -37,6 +37,10 @@ PROGRAMMABLE_RESET_ADDRESS		:=	1
 PLAT_XLAT_TABLES_DYNAMIC		:=	1
 $(eval $(call add_define,PLAT_XLAT_TABLES_DYNAMIC))
 
+# No access control backend: keep accepting MEM_ASSIGN as a no-op.
+QTI_MEM_ASSIGN_NOOP := 1
+$(eval $(call add_define,QTI_MEM_ASSIGN_NOOP))
+
 # Neither the Cortex-A78C nor the Cortex-A55 supports AArch32 at EL1+.
 override CTX_INCLUDE_AARCH32_REGS	:=	0
 WORKAROUND_CVE_2017_5715		:=	0
