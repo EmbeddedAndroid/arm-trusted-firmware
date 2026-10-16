@@ -1,6 +1,7 @@
 #
 # Copyright (c) 2024-2026, Arm Limited and Contributors. All rights reserved.
 # Copyright (c) 2024, The Linux Foundation. All rights reserved.
+# Copyright (c) 2026, Qualcomm Technologies, Inc. and/or its subsidiaries.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -8,7 +9,7 @@
 # Makefile for QCS615 QTI platform.
 
 QTI_PLAT_PATH	:=	plat/qti
-CHIPSET			:=	${PLAT}
+CHIPSET			:=	talos
 
 # Turn On Separate code & data.
 SEPARATE_CODE_AND_RODATA		:=	1
@@ -65,6 +66,7 @@ ENABLE_STACK_PROTECTOR				:=	strong
 
 QTI_EXTERNAL_INCLUDES	:=	-I${QTI_PLAT_PATH}/hoya/inc				\
 				-I${QTI_PLAT_PATH}/hoya/${CHIPSET}/inc			\
+				-I${QTI_PLAT_PATH}/hoya/${CHIPSET}/${PLAT}/inc		\
 				-I${QTI_PLAT_PATH}/common/inc				\
 				-I${QTI_PLAT_PATH}/common/inc/$(ARCH)			\
 				-I${QTI_PLAT_PATH}/hoya/qtiseclib/inc
