@@ -11,6 +11,7 @@ Qualcomm Platforms
    lemans_evk
    monza
    uno_q
+   qcs615_ride
 
 --------------
 
