@@ -41,4 +41,11 @@
 #define PLAT_QTI_FIP_IOBASE		0x9fc00000
 #define PLAT_QTI_FIP_MAXSIZE		0x00400000
 
+/*
+ * XBL sends the PON interrupts to another SPMI master; BL31 returns them to
+ * the apps PMIC arbiter.
+ */
+#define PON_INT_MID_SEL			0x81a
+#define PON_INT_MID_APPS		0x0
+
 #endif /* PLATFORM_DEF_H */
