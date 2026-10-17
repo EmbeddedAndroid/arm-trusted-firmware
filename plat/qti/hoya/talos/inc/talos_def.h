@@ -47,6 +47,8 @@
 /*----------------------------------------------------------------------------*/
 #define PON_PS_HOLD_RESET_CTL			0x85a
 #define PON_PS_HOLD_RESET_CTL2			0x85b
+#define PON_INT_MID_SEL				0x81a
+#define PON_INT_MID_APPS			0x0
 
 /*----------------------------------------------------------------------------*/
 /* Chipset specific NOC error interrupt IDs. */
