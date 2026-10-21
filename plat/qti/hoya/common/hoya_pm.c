@@ -41,7 +41,7 @@
 
 /*
  * APSS cluster (L3/DSU) IPM alias register block (APSS_ALIAS_1). Used for the
- * gold-cluster L3 turn-on and memory-repair sequences.
+ * L3 and PLL sequences of a separate gold DSU.
  */
 #define APSS_CL_IPM_REG_BASE			0x18090000U
 
@@ -49,14 +49,29 @@
 #define L3_SEQ_FORCE_PWR_CTL_VAL		(APSS_CL_IPM_REG_BASE + 0x20U)
 #define L3_SEQ_STS1				(APSS_CL_IPM_REG_BASE + 0x38U)
 #define CL_PCHANNEL_FSM_CTL			(APSS_CL_IPM_REG_BASE + 0x44U)
-#define GOLD_PLL_SEQ_FORCE_PWR_CTL_EN		(APSS_CL_IPM_REG_BASE + 0xecU)
-#define GOLD_PLL_SEQ_FORCE_PWR_CTL_VAL		(APSS_CL_IPM_REG_BASE + 0xf0U)
-#define GOLD_PLL_SEQ_STS1			(APSS_CL_IPM_REG_BASE + 0xfcU)
 
 #define L3_SEQ_STS1_MEM_REPAIR_DONE		0x40000U
 #define L3_SEQ_FORCE_PWR_CTL_MEM_REPAIR		0x2000000U
+
+/*
+ * IPM sequencers that repair memories on request: force power control enable
+ * and value registers, and a status register.
+ */
+#define SEQ_FORCE_PWR_CTL_EN(seq)		(seq)
+#define SEQ_FORCE_PWR_CTL_VAL(seq)		((seq) + 0x4U)
+#define SEQ_STS1(seq)				((seq) + 0x10U)
+
+#define GOLD_PLL_SEQ				(APSS_CL_IPM_REG_BASE + 0xecU)
 #define GOLD_PLL_SEQ_STS1_MEM_REPAIR_DONE	0x40U
 #define GOLD_PLL_SEQ_FORCE_PWR_CTL_MEM_REPAIR	0x4000U
+
+/*
+ * APC1 rail sequencer of the single-cluster parts, which repairs the memories
+ * of all gold cores (its registers are named after the gold+ cores).
+ */
+#define APC1_RAIL_SEQ				0x18080180U
+#define APC1_RAIL_SEQ_STS1_MEM_REPAIR_DONE	0x10U
+#define APC1_RAIL_SEQ_FORCE_PWR_CTL_MEM_REPAIR	0x100U
 
 /* Upper bound for the memory-repair "done" handshake. */
 #define MEM_REPAIR_TIMEOUT_US			10000U
@@ -148,38 +163,27 @@ static void l3_cold_boot(void)
 }
 
 /*
- * Repair the gold-cluster PLL memories. Performed once, before the first gold
- * core is powered on.
+ * Repair the memories behind IPM sequencer @seq. Performed once, before the
+ * first gold core is powered on.
  */
-static int cpu_memory_repair(void)
+static int seq_memory_repair(uintptr_t seq, uint32_t repair, uint32_t done)
 {
-	uint32_t val;
 	uint64_t timeout;
 
-	val = mmio_read_32(GOLD_PLL_SEQ_FORCE_PWR_CTL_EN);
-	mmio_write_32(GOLD_PLL_SEQ_FORCE_PWR_CTL_EN,
-		      val | GOLD_PLL_SEQ_FORCE_PWR_CTL_MEM_REPAIR);
-
-	val = mmio_read_32(GOLD_PLL_SEQ_FORCE_PWR_CTL_VAL);
-	mmio_write_32(GOLD_PLL_SEQ_FORCE_PWR_CTL_VAL,
-		      val | GOLD_PLL_SEQ_FORCE_PWR_CTL_MEM_REPAIR);
+	mmio_setbits_32(SEQ_FORCE_PWR_CTL_EN(seq), repair);
+	mmio_setbits_32(SEQ_FORCE_PWR_CTL_VAL(seq), repair);
 
 	timeout = timeout_init_us(MEM_REPAIR_TIMEOUT_US);
-	while ((mmio_read_32(GOLD_PLL_SEQ_STS1) &
-		GOLD_PLL_SEQ_STS1_MEM_REPAIR_DONE) == 0U) {
+	while ((mmio_read_32(SEQ_STS1(seq)) & done) == 0U) {
 		if (timeout_elapsed(timeout)) {
-			ERROR("Gold PLL memory repair timed out\n");
+			ERROR("Memory repair of sequencer 0x%lx timed out\n",
+			      seq);
 			return -ETIMEDOUT;
 		}
 	}
 
-	val = mmio_read_32(GOLD_PLL_SEQ_FORCE_PWR_CTL_VAL);
-	mmio_write_32(GOLD_PLL_SEQ_FORCE_PWR_CTL_VAL,
-		      val & ~GOLD_PLL_SEQ_FORCE_PWR_CTL_MEM_REPAIR);
-
-	val = mmio_read_32(GOLD_PLL_SEQ_FORCE_PWR_CTL_EN);
-	mmio_write_32(GOLD_PLL_SEQ_FORCE_PWR_CTL_EN,
-		      val & ~GOLD_PLL_SEQ_FORCE_PWR_CTL_MEM_REPAIR);
+	mmio_clrbits_32(SEQ_FORCE_PWR_CTL_VAL(seq), repair);
+	mmio_clrbits_32(SEQ_FORCE_PWR_CTL_EN(seq), repair);
 
 	return 0;
 }
@@ -242,8 +246,9 @@ static int set_gold_cluster_voltage(void)
 }
 
 /*
- * Gold domain bring-up: the gold rail, then the L3 and PLL memories of the
- * gold DSU where it is a separate one.
+ * Gold domain bring-up: the gold rail, the L3 and PLL memories of the gold
+ * DSU where it is a separate one, and the gold memories behind the APC1 rail
+ * sequencer where it repairs them.
  */
 static int gold_domain_bring_up(void)
 {
@@ -253,8 +258,16 @@ static int gold_domain_bring_up(void)
 		ret = l3_memory_repair();
 		if (ret == 0) {
 			l3_cold_boot();
-			ret = cpu_memory_repair();
+			ret = seq_memory_repair(GOLD_PLL_SEQ,
+					GOLD_PLL_SEQ_FORCE_PWR_CTL_MEM_REPAIR,
+					GOLD_PLL_SEQ_STS1_MEM_REPAIR_DONE);
 		}
+	}
+
+	if ((ret == 0) && (QTI_APC1_MEM_REPAIR != 0)) {
+		ret = seq_memory_repair(APC1_RAIL_SEQ,
+					APC1_RAIL_SEQ_FORCE_PWR_CTL_MEM_REPAIR,
+					APC1_RAIL_SEQ_STS1_MEM_REPAIR_DONE);
 	}
 
 	return ret;
