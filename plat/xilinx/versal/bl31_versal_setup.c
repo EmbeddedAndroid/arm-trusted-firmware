@@ -20,7 +20,6 @@
 #include <plat_console.h>
 
 #include <custom_svc.h>
-#include <plat_clkfunc.h>
 #include <plat_fdt.h>
 #include <plat_private.h>
 #include <plat_startup.h>
@@ -113,7 +112,6 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 	default:
 		panic();
 	}
-	set_cnt_freq();
 
 	generic_delay_timer_init();
 

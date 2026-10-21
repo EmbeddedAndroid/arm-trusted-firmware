@@ -13,7 +13,6 @@
 #include <lib/mmio.h>
 #include <lib/xlat_tables/xlat_tables_v2.h>
 #include <plat/common/platform.h>
-#include <plat_clkfunc.h>
 #include <plat_common.h>
 #include <plat_ipi.h>
 #include <plat_private.h>
@@ -148,9 +147,6 @@ void config_setup(void)
 
 	/* Program freq register in System counter and enable system counter. */
 	sys_counter_config();
-
-	/* set cntfrq_el0 value so that software can discover the frequency of the system counter */
-	set_cnt_freq();
 
 	generic_delay_timer_init();
 
