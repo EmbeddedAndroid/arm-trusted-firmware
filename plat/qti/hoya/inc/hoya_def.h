@@ -129,18 +129,8 @@
 #define QTI_APC1_MEM_REPAIR		0
 #endif
 
-/*----------------------------------------------------------------------------*/
-/* GIC-600 constants */
-/*----------------------------------------------------------------------------*/
-#define BASE_GICD_BASE			0x17A00000
-#define BASE_GICR_BASE			0x17A60000
-#define BASE_GICC_BASE			0x0
-#define BASE_GICH_BASE			0x0
-#define BASE_GICV_BASE			0x0
-
-#define QTI_GICD_BASE			BASE_GICD_BASE
-#define QTI_GICR_BASE			BASE_GICR_BASE
-#define QTI_GICC_BASE			BASE_GICC_BASE
+/* GICv3: no memory-mapped CPU interface. The GIC bases are per chipset. */
+#define QTI_GICC_BASE			0x0
 
 /*----------------------------------------------------------------------------*/
 /* UART GENI register spaces and offsets (base address is chipset specific).  */
