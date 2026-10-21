@@ -32,6 +32,19 @@ void qti_setup_page_tables(
 int qti_io_setup(void);
 struct image_info *qti_get_image_info(unsigned int image_id);
 
+/*
+ * SiP CP_SMMU_APERTURE: each 16-bit half of the four @pairs words names a
+ * GPU SMMU context bank in its low byte and the aperture slot to point at
+ * it in its high byte; a half with a 0xff byte is unused. Returns 0 on
+ * success, -EINVAL for a bank or slot that does not exist, without
+ * programming any slot, and another negative errno if the slots cannot be
+ * programmed. It runs while the OS owns the GPU power and clocks: it must
+ * not change them, and fails without programming any slot if what the
+ * write needs is off.
+ */
+bool plat_qti_gpu_smmu_aperture_supported(void);
+int plat_qti_gpu_smmu_aperture(const uint32_t pairs[4]);
+
 void plat_qti_gic_driver_init(void);
 void plat_qti_gic_init(void);
 void plat_qti_gic_cpuif_enable(void);
