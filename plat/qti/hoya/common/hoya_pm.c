@@ -61,8 +61,8 @@
 #define MEM_REPAIR_TIMEOUT_US			10000U
 
 /*
- * Gold-cluster (APC1) SAW4 AVS rail. The lemans SAW4 instance for the gold
- * rail is at 0x18101000, with the AVS register region at +0x800 and the status
+ * Gold-cluster (APC1) SAW4 AVS rail. The SAW4 instance for the gold rail is
+ * at 0x18101000, with the AVS register region at +0x800 and the status
  * region at +0xc00 (see qtiseclib HAL_avs_SecondaryRailInit / saw_v4.c).
  */
 #define GOLD_SAW4_BASE				0x18101000U
@@ -82,13 +82,9 @@
  * uses the 16-bit VCTL address index (0) with the boot voltage as data.
  */
 #define SAW4_VCTL_ENABLE			0x30080U
-#define GOLD_SAW4_BOOT_VOLTAGE			828U
-#define SAW4_VCTL_SET_VOLTAGE			(0x100000U | GOLD_SAW4_BOOT_VOLTAGE)
+#define SAW4_VCTL_SET_VOLTAGE			(0x100000U | QTI_GOLD_RAIL_BOOT_MV)
 
 #define SAW4_PMIC_WRITE_RETRY			200U
-
-/* The first gold-cluster (DSU1) core in the lemans CPU topology. */
-#define QTI_FIRST_GOLD_CORE			4
 
 /*
  * Repair the L3 memories of the gold cluster. Performed once, before the first
@@ -231,13 +227,16 @@ static void set_gold_cluster_voltage(void)
 
 	/* Restore the rail to its boot voltage. */
 	mmio_write_32(GOLD_SAW4_VCTL, SAW4_VCTL_SET_VOLTAGE);
-	if (!saw4_pmic_wait(GOLD_SAW4_BOOT_VOLTAGE, true)) {
+	if (!saw4_pmic_wait(QTI_GOLD_RAIL_BOOT_MV, true)) {
 		WARN("gold SAW4 PMIC voltage set timed out\n");
 	}
 }
 
-/* One-time gold-cluster (DSU1) bringup, run before its first core powers on. */
-static void gold_cluster_cold_boot(void)
+/*
+ * One-time gold domain bring-up, run before its first core powers on: the
+ * gold rail, then the L3 and PLL of the gold DSU where it is a separate one.
+ */
+static void gold_domain_cold_boot(void)
 {
 	static spinlock_t gold_cluster_lock;
 	static bool gold_cluster_booted;
@@ -249,9 +248,12 @@ static void gold_cluster_cold_boot(void)
 	}
 
 	set_gold_cluster_voltage();
-	l3_memory_repair();
-	l3_cold_boot();
-	cpu_memory_repair();
+
+	if (QTI_GOLD_HAS_SEPARATE_DSU != 0) {
+		l3_memory_repair();
+		l3_cold_boot();
+		cpu_memory_repair();
+	}
 
 	gold_cluster_booted = true;
 	spin_unlock(&gold_cluster_lock);
@@ -279,9 +281,9 @@ int plat_qti_pwr_domain_on(u_register_t mpidr, int core_pos)
 {
 	(void)mpidr;
 
-	/* Bring up the gold cluster before powering on its first core. */
+	/* Bring up the gold domain before powering on its first core. */
 	if (core_pos >= QTI_FIRST_GOLD_CORE) {
-		gold_cluster_cold_boot();
+		gold_domain_cold_boot();
 	}
 
 	/* Program skew between en_few and en_rest. */
