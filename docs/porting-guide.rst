@@ -2982,6 +2982,13 @@ frequency for the CPU's generic timer. This value will be programmed into the
 of the system counter, which is retrieved from the first entry in the frequency
 modes table.
 
+The PSCI library programs ``CNTFRQ_EL0`` with this value at cold boot, on
+``CPU_ON`` and on resume from a power down state, after the platform setup and
+the platform power management hooks. Platforms do not need to program it in
+BL31 or SP_MIN, unless they change the counter frequency at runtime or read
+``CNTFRQ_EL0`` before the PSCI library programs it: before ``psci_setup()``,
+or in their power management finish hooks.
+
 Function : plat_is_valid_ns_address_range() [mandatory]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

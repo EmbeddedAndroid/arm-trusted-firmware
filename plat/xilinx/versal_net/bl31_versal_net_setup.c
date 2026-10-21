@@ -17,7 +17,6 @@
 #include <plat/common/platform.h>
 #include <plat_arm.h>
 #include <plat_console.h>
-#include <plat_clkfunc.h>
 
 #include <plat_fdt.h>
 #include <plat_private.h>
@@ -123,8 +122,6 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 	}
 
 	syscnt_freq_config_setup();
-
-	set_cnt_freq();
 
 	/* Initialize the platform config for future decision making */
 	versal_net_config_setup();
