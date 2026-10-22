@@ -26,10 +26,13 @@
 					  (PLAT_MAX_PWR_LVL + 1)))
 #endif
 
-/* QTI_CORE_PWRDN_EN_MASK happens to be same across all CPUs */
+/*
+ * CPUPWRCTLR_EL1 and its CORE_PWRDN_EN bit are at the same encoding on every
+ * DynamIQ core (Cortex-A55 and later). Cortex-A53 class cores do not have the
+ * register, so it is only touched through plat_qti_cpu_pwrdn_request().
+ */
 #define QTI_CORE_PWRDN_EN_MASK		1
 
-/* cpu power control happens to be same across all CPUs */
 DEFINE_RENAME_SYSREG_RW_FUNCS(cpu_pwrctrl_val, S3_0_C15_C2_7)
 
 
@@ -86,7 +89,7 @@ int qti_validate_power_state(unsigned int power_state,
  * PLATFORM FUNCTIONS
  ******************************************************************************/
 
-static void qti_set_cpupwrctlr_val(void)
+void qti_cpu_pwrdn_en(void)
 {
 	unsigned long val;
 
@@ -165,7 +168,7 @@ static void qti_node_power_off(const psci_power_state_t *target_state)
 	plat_qti_pwr_domain_off((const uint8_t *)target_state->pwr_domain_state);
 	if (is_cpu_off(target_state)) {
 		plat_qti_gic_cpuif_disable();
-		qti_set_cpupwrctlr_val();
+		plat_qti_cpu_pwrdn_request();
 	}
 }
 
@@ -174,7 +177,7 @@ static void qti_node_suspend(const psci_power_state_t *target_state)
 	plat_qti_pwr_domain_suspend((const uint8_t *)target_state->pwr_domain_state);
 	if (is_cpu_off(target_state)) {
 		plat_qti_gic_cpuif_disable();
-		qti_set_cpupwrctlr_val();
+		plat_qti_cpu_pwrdn_request();
 	}
 }
 
