@@ -29,6 +29,7 @@ Status
 - SYSTEM_RESET and SYSTEM_OFF go through PS_HOLD and the PMK8550 PON over
   the PMIC arbiter v7. On the QRD, de-asserting PS_HOLD does not yet reset or
   power off the SoC.
+- BL31 enables the apps PDC.
 - The secure watchdog is not serviced.
 - TF-A programs no XPU: whether the boot chain protects the TZ carve-out
   that holds BL32 is not yet verified.
