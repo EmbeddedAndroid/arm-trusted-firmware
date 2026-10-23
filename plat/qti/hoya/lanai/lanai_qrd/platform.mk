@@ -164,10 +164,9 @@ include drivers/qti/pdc/pdc.mk
 # power-collapse sequence is ported.
 include plat/qti/hoya/common/cpu_hold.mk
 
-PLAT_INCLUDES		+=	-Iinclude/drivers/qti/sec_core/${CHIPSET}
+PLAT_INCLUDES		+=	-Iinclude/drivers/qti/sec_core/${CHIPSET}		\
+				-Iinclude/drivers/qti/watchdog/${CHIPSET}
 
 BL31_SOURCES		+=	drivers/qti/sec_core/sec_core.c				\
-				drivers/qti/sec_core/${CHIPSET}/sec_core_cfg.c
-
-# Not ported yet: the secure watchdog.
-BL31_SOURCES		+=	drivers/qti/watchdog/watchdog_stub.c
+				drivers/qti/sec_core/${CHIPSET}/sec_core_cfg.c		\
+				drivers/qti/watchdog/watchdog.c
