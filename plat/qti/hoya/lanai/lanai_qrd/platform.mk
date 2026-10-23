@@ -160,7 +160,14 @@ QTI_PDC_TCS		:=	0
 QTI_PDC_IRQ_OWNER_BANKED :=	1
 include drivers/qti/pdc/pdc.mk
 
-# Not ported yet: the warm boot vector (secondary cores) and the secure
-# watchdog, whose SM8650 bark interrupt is not established.
-BL31_SOURCES		+=	drivers/qti/sec_core/sec_core_stub.c		\
-				drivers/qti/watchdog/watchdog_stub.c
+# Nothing completes the power-down request of a core turned off: no PCU
+# power-collapse sequence is ported.
+include plat/qti/hoya/common/cpu_hold.mk
+
+PLAT_INCLUDES		+=	-Iinclude/drivers/qti/sec_core/${CHIPSET}
+
+BL31_SOURCES		+=	drivers/qti/sec_core/sec_core.c				\
+				drivers/qti/sec_core/${CHIPSET}/sec_core_cfg.c
+
+# Not ported yet: the secure watchdog.
+BL31_SOURCES		+=	drivers/qti/watchdog/watchdog_stub.c

@@ -24,8 +24,9 @@ TF-A BL2 replaces the TZ image and the FIP payload replaces the UEFI image::
 Status
 ------
 
-- BL31 runs the native PSCI on the boot core only: CPU_ON is not supported
-  yet, and CPU standby (WFI) is the only idle state.
+- BL31 runs the native PSCI: it powers the secondary cores on directly and
+  parks cores turned off in BL31, and CPU standby (WFI) is the only idle
+  state.
 - SYSTEM_RESET and SYSTEM_OFF go through PS_HOLD and the PMK8550 PON over
   the PMIC arbiter v7. On the QRD, de-asserting PS_HOLD does not yet reset or
   power off the SoC.
