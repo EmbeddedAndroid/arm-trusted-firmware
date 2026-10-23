@@ -25,14 +25,31 @@ else
 PDC_TABLES := $(PDC_COMMON)
 endif
 
+# A chipset whose PDC departs from the defaults below says so in the
+# pdc_config.mk of its tables.
+-include $(PDC_TABLES)/pdc_config.mk
+
+# Set to 0 where the AOP programs the apps PDC sleep and wake TCSes.
+PDC_ENABLE_TCS ?= 1
+# Set to 1 where the interrupt owners are banked bitmasks with a single
+# non-zero owner DRV.
+QTI_PDC_IRQ_OWNER_BANKED ?= 0
+
+$(eval $(call assert_booleans,PDC_ENABLE_TCS QTI_PDC_IRQ_OWNER_BANKED))
+$(eval $(call add_defines,PDC_ENABLE_TCS QTI_PDC_IRQ_OWNER_BANKED))
+
 PLAT_INCLUDES += \
 	-I$(PDC_COMMON)
 
 BL31_SOURCES += \
 	$(PDC_DRV_PATH)/pdc.c					\
 	$(PDC_DRV_PATH)/pdc_seq.c				\
-	$(PDC_DRV_PATH)/pdc_tcs.c				\
 	$(PDC_SEQ_CFG)						\
 	$(PDC_TABLES)/interrupt_table.c				\
-	$(PDC_TABLES)/gpio_table.c				\
+	$(PDC_TABLES)/gpio_table.c
+
+ifeq ($(PDC_ENABLE_TCS),1)
+BL31_SOURCES += \
+	$(PDC_DRV_PATH)/pdc_tcs.c				\
 	$(PDC_TABLES)/tcs_resource.c
+endif
