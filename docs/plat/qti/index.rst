@@ -11,6 +11,7 @@ Qualcomm Platforms
    lemans_evk
    monza
    qcs615_ride
+   lanai_qrd
 
 --------------
 

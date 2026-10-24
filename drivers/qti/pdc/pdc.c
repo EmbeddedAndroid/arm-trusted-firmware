@@ -7,6 +7,9 @@
 #include <assert.h>
 #include <stdint.h>
 
+#include <lib/mmio.h>
+#include <lib/utils_def.h>
+
 #include <drivers/qti/pdc/pdc.h>
 #include <drivers/qti/pdc/pdc_internal.h>
 #include <drivers/qti/pdc/pdc_seq.h>
@@ -30,7 +33,20 @@ static void pdc_set_owner(uint32_t pdc_bit_num, uint32_t num_int,
 		bit_num += num_int;
 	}
 
+#if QTI_PDC_IRQ_OWNER_BANKED
+	uintptr_t bank = PDC_REG(PDC_BASE, PDC_IRQ_OWNER_BANK_OFF(bit_num / 32U));
+	uint32_t mask = BIT_32(bit_num % 32U);
+
+	if (owner == PDC_DRV0) {
+		mmio_clrbits_32(bank, mask);
+	} else {
+		mmio_setbits_32(bank, mask);
+		mmio_write_32(PDC_REG(PDC_BASE, PDC_IRQ_NONZERO_DRV_CFG_OFF),
+			      (uint32_t)owner);
+	}
+#else
 	PDC_IRQ_OWNER_WRITE(bit_num, (uint32_t)owner);
+#endif
 }
 
 static void pdc_target_init(void)
@@ -51,6 +67,8 @@ static void pdc_target_init(void)
 void qti_pdc_init(void)
 {
 	pdc_seq_sys_init();
+#if QTI_PDC_TCS
 	pdc_tcs_initialize();
+#endif
 	pdc_target_init();
 }

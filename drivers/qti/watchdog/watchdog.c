@@ -32,6 +32,15 @@ static u_register_t mpidr[PLATFORM_CORE_COUNT] = {
 	[0 ... PLATFORM_CORE_COUNT - 1] = MPIDR_INVALID
 };
 
+/* WDOG_CTL is write-only on some watchdogs: track what was written. */
+static uint32_t wdog_ctl;
+
+static void wdog_ctl_update(uint32_t clr, uint32_t set)
+{
+	wdog_ctl = (wdog_ctl & ~clr) | set;
+	mmio_write_32(WDOG_CTL_ADDR, wdog_ctl);
+}
+
 static uint32_t ms_to_wdt_ticks(uint32_t ms)
 {
 	return (uint32_t)((WDOG_FREQ_IN_HZ * (uint64_t)ms) / 1000ULL);
@@ -46,17 +55,19 @@ void qti_watchdog_start(uint32_t bark_ms, uint32_t bite_ms)
 	bark = MIN(bark, 0xFFFFFU);
 	bite = MIN(bite, 0xFFFFFU);
 
-	mmio_clrbits_32(WDOG_CTL_ADDR, ENABLE_BIT);
+	wdog_ctl_update(ENABLE_BIT, 0U);
 	mmio_clrsetbits_32(WDOG_BARK_ADDR, WDOG_BARK_MASK, bark);
-	while ((mmio_read_32(WDOG_BARK_ADDR) & BARK_SYNC_BIT) == 0) {
+	while ((BARK_SYNC_BIT != 0U) &&
+	       ((mmio_read_32(WDOG_BARK_ADDR) & BARK_SYNC_BIT) == 0U)) {
 	}
 
 	mmio_clrsetbits_32(WDOG_BITE_ADDR, WDOG_BITE_MASK, bite);
-	while ((mmio_read_32(WDOG_BITE_ADDR) & BITE_SYNC_BIT) == 0) {
+	while ((BITE_SYNC_BIT != 0U) &&
+	       ((mmio_read_32(WDOG_BITE_ADDR) & BITE_SYNC_BIT) == 0U)) {
 	}
 
-	mmio_setbits_32(WDOG_CTL_ADDR, ENABLE_BIT);
-	mmio_setbits_32(WDOG_CTL_ADDR, CLK_ENABLE_BIT);
+	wdog_ctl_update(0U, ENABLE_BIT);
+	wdog_ctl_update(0U, CLK_ENABLE_BIT);
 	mmio_write_32(WDOG_RESET_ADDR, RESET);
 	dsb();
 }
@@ -64,7 +75,7 @@ void qti_watchdog_start(uint32_t bark_ms, uint32_t bite_ms)
 void qti_watchdog_stop(void)
 {
 	mmio_write_32(WDOG_RESET_ADDR, RESET);
-	mmio_clrbits_32(WDOG_CTL_ADDR, ENABLE_BIT);
+	wdog_ctl_update(ENABLE_BIT, 0U);
 	dsb();
 }
 
@@ -162,7 +173,7 @@ int qti_watchdog_init(void)
 {
 	int ret;
 
-	mmio_write_32(WDOG_CTL_ADDR, CHIP_AUTOPET_EN | HW_SLEEP_WAKEUP_EN);
+	wdog_ctl_update(UINT32_MAX, CHIP_AUTOPET_EN | HW_SLEEP_WAKEUP_EN);
 	ret = qti_interrupt_svc_register(WDOG_BARK_INT_ID, bark_handler, NULL);
 	if (ret) {
 		ERROR("Failure registering watchdog\n");
