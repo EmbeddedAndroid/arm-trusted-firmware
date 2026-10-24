@@ -10,6 +10,7 @@
 #include <bl31/bl31.h>
 #include <common/debug.h>
 #include <drivers/delay_timer.h>
+#include <drivers/qti/sail_comm/sail_comm.h>
 #include <drivers/qti/sec_core/sec_core.h>
 #include <lib/mmio.h>
 #include <lib/psci/psci.h>
@@ -86,12 +87,16 @@ int qti_validate_power_state(unsigned int power_state,
  * PLATFORM FUNCTIONS
  ******************************************************************************/
 
-static void qti_set_cpupwrctlr_val(void)
+static void qti_set_cpupwrctlr_val(bool pwrdn_en)
 {
 	unsigned long val;
 
 	val = read_cpu_pwrctrl_val();
-	val |= QTI_CORE_PWRDN_EN_MASK;
+	if (pwrdn_en) {
+		val |= QTI_CORE_PWRDN_EN_MASK;
+	} else {
+		val &= ~QTI_CORE_PWRDN_EN_MASK;
+	}
 	write_cpu_pwrctrl_val(val);
 
 	isb();
@@ -165,16 +170,23 @@ static void qti_node_power_off(const psci_power_state_t *target_state)
 	plat_qti_pwr_domain_off((const uint8_t *)target_state->pwr_domain_state);
 	if (is_cpu_off(target_state)) {
 		plat_qti_gic_cpuif_disable();
-		qti_set_cpupwrctlr_val();
+		/*
+		 * CORE_PWRDN_EN survives the pen and the warm boot: a core
+		 * parked in BL31 must not raise the power-down request on its
+		 * next WFI after release.
+		 */
+		qti_set_cpupwrctlr_val(
+			!plat_qti_cpu_hold_retire(plat_my_core_pos()));
 	}
 }
 
 static void qti_node_suspend(const psci_power_state_t *target_state)
 {
+	plat_qti_cpu_hold_suspend(plat_my_core_pos());
 	plat_qti_pwr_domain_suspend((const uint8_t *)target_state->pwr_domain_state);
 	if (is_cpu_off(target_state)) {
 		plat_qti_gic_cpuif_disable();
-		qti_set_cpupwrctlr_val();
+		qti_set_cpupwrctlr_val(true);
 	}
 }
 
@@ -202,12 +214,14 @@ static __dead2 void assert_ps_hold(void)
 __dead2 void qti_system_off(void)
 {
 	qti_pmic_prepare_shutdown();
+	qti_sail_notify_shutdown();
 	assert_ps_hold();
 }
 
 __dead2 void qti_system_reset(void)
 {
 	qti_pmic_prepare_reset();
+	qti_sail_notify_reset();
 	assert_ps_hold();
 }
 
@@ -251,16 +265,31 @@ void qti_get_sys_suspend_power_state(psci_power_state_t *req_state)
 }
 
 /*
+ * psci_system_suspend() denies a request whose state does not power down the
+ * system level, so SYSTEM_SUSPEND is only worth advertising when the deepest
+ * idle state of the backend reaches it.
+ */
+static bool qti_sys_suspend_supported(void)
+{
+	psci_power_state_t state;
+
+	qti_get_sys_suspend_power_state(&state);
+
+	return state.pwr_domain_state[PLAT_MAX_PWR_LVL] != PSCI_LOCAL_STATE_RUN;
+}
+
+/*
  * Structure containing platform specific PSCI operations. Common
  * PSCI layer will use this.
  */
-const plat_psci_ops_t plat_qti_psci_pm_ops = {
+static plat_psci_ops_t plat_qti_psci_pm_ops = {
 	.pwr_domain_on = qti_cpu_power_on,
 	.pwr_domain_on_finish = qti_cpu_power_on_finish,
 	.cpu_standby = qti_cpu_standby,
 	.pwr_domain_off = qti_node_power_off,
 	.pwr_domain_suspend = qti_node_suspend,
 	.pwr_domain_suspend_finish = qti_node_suspend_finish,
+	.pwr_domain_pwr_down = PLAT_QTI_PWR_DOMAIN_PWR_DOWN,
 	.system_off = qti_system_off,
 	.system_reset = qti_system_reset,
 	.get_node_hw_state = NULL,
@@ -281,9 +310,15 @@ int plat_setup_psci_ops(uintptr_t sec_entrypoint,
 	qti_sec_core_remap((uintptr_t)bl31_warm_entrypoint);
 
 	err = plat_qti_pwr_psci_init((uintptr_t)bl31_warm_entrypoint);
-	if (err == PSCI_E_SUCCESS) {
-		*psci_ops = &plat_qti_psci_pm_ops;
+	if (err != PSCI_E_SUCCESS) {
+		return err;
 	}
+
+	if (!qti_sys_suspend_supported()) {
+		plat_qti_psci_pm_ops.get_sys_suspend_power_state = NULL;
+	}
+
+	*psci_ops = &plat_qti_psci_pm_ops;
 
 	return err;
 }

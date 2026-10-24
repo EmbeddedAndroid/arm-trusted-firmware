@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include <drivers/qti/smmu/kodiak/smmu_cfg.h>
+#include <lib/utils_def.h>
 
 struct smmu_cfg_s qti_smmu_cfg[] = {
 	{SMMU_CUSTOM_CFG_ADDR,
@@ -81,16 +82,37 @@ struct smmu_cfg_s qti_smmu_cfg[] = {
 		SMMU_CLIENT_DBG_WUSER_ANOC_PCIE_SEC},
 	{SMMU_CLIENT_DBG_WUSER_MNOC_SF_0_SEC_ADDR,
 		SMMU_CLIENT_DBG_WUSER_MNOC_SF_0_SEC},
+};
+
+const size_t qti_smmu_cfg_count = sizeof(qti_smmu_cfg) / sizeof(*qti_smmu_cfg);
+
+#define GCC_GPU_CFG_AHB_CBCR		0x00171004U
+
+#define GPU_CC_BASE			0x03d90000U
+#define GPU_CC_CX_GDSCR			(GPU_CC_BASE + 0x106cU)
+#define GPU_CC_CX_GMU_CBCR		(GPU_CC_BASE + 0x1098U)
+#define GPU_CC_HUB_CX_INT_CBCR		(GPU_CC_BASE + 0x1204U)
+#define GPU_CC_TZ_VOTE_GPU_SMMU_CLK	(GPU_CC_BASE + 0x3000U)
+#define GPU_CC_TZ_VOTE_GPU_SMMU_GDS	(GPU_CC_BASE + 0x3004U)
+#define GPU_CC_TZ_GDSC_CTRL_GPU_CX	(GPU_CC_BASE + 0x4004U)
+
+/* The GPU SMMU registers also need the CX GMU and hub interface clocks. */
+static const uintptr_t gpu_cx_cbcrs[] = {
+	GPU_CC_CX_GMU_CBCR,
+	GPU_CC_HUB_CX_INT_CBCR,
+};
+
+/*
+ * Secure registers whose value differs from reset. The OS programs the
+ * non-secure ACR itself.
+ */
+static const struct smmu_cfg_s gpu_regs[] = {
 	{GPU_GFX_SMMU_CUSTOM_CFG_ADDR,
 		GPU_GFX_SMMU_CUSTOM_CFG},
 	{GPU_GFX_SMMU_CUSTOM_CFG_SEC_ADDR,
 		GPU_GFX_SMMU_CUSTOM_CFG_SEC},
 	{GPU_GFX_SMMU_ACR_ADDR,
 		GPU_GFX_SMMU_ACR},
-	{GPU_GFX_SMMU_NSACR_ADDR,
-		GPU_GFX_SMMU_NSACR},
-	{GPU_GFX_SMMU_SPARE_REG_1_SEC_ADDR,
-		GPU_GFX_SMMU_SPARE_REG_1_SEC},
 	{GPU_GFX_SMMU_CLOCK_GATING_SEC_ADDR,
 		GPU_GFX_SMMU_CLOCK_GATING_SEC},
 	{GPU_GFX_SMMU_CLIENT_DBG_SSD_IDX_HYP_HLOS_EN_GFX_0_SEC_ADDR,
@@ -101,21 +123,29 @@ struct smmu_cfg_s qti_smmu_cfg[] = {
 		GPU_GFX_SMMU_CLIENT_DBG_SID_HALT_GFX_0_SEC},
 	{GPU_GFX_SMMU_CLIENT_DBG_SID_HALT_GFX_1_SEC_ADDR,
 		GPU_GFX_SMMU_CLIENT_DBG_SID_HALT_GFX_1_SEC},
-	{GPU_GFX_SMMU_TLBIS_CTRL_ADDR,
-		GPU_GFX_SMMU_TLBIS_CTRL},
-	{GPU_GFX_SMMU_CLIENT_DBG_WUSER_GFX_0_SEC_ADDR,
-		GPU_GFX_SMMU_CLIENT_DBG_WUSER_GFX_0_SEC},
-	{GPU_GFX_SMMU_CLIENT_DBG_WUSER_GFX_1_SEC_ADDR,
-		GPU_GFX_SMMU_CLIENT_DBG_WUSER_GFX_1_SEC},
-	{SMMU_GPU_AHB_4K_APERTURE_S1CB0_HWIO_ADDR,
-		(SMMU_GPU_AHB_4K_APERTURE_S1CB0_REG_ADDR & GPU_REG_OFFSET_MASK)},
-	{SMMU_GPU_AHB_4K_APERTURE_S1CB1_HWIO_ADDR,
-		(SMMU_GPU_AHB_4K_APERTURE_S1CB1_REG_ADDR & GPU_REG_OFFSET_MASK)},
-	{SMMU_GPU_AHB_4K_APERTURE_S1CB6_HWIO_ADDR,
-		(SMMU_GPU_AHB_4K_APERTURE_S1CB2_REG_ADDR & GPU_REG_OFFSET_MASK)},
-	{SMMU_GPU_AHB_4K_APERTURE_CTL_HWIO_ADDR,
-		SMMU_GPU_AHB_4K_APERTURE_CTL_REG_ADDR}
 };
 
-const size_t qti_smmu_cfg_count = sizeof(qti_smmu_cfg) / sizeof(*qti_smmu_cfg);
+static const uintptr_t gpu_aperture[] = {
+	SMMU_GPU_AHB_4K_APERTURE_S1CB0_HWIO_ADDR,
+	SMMU_GPU_AHB_4K_APERTURE_S1CB1_HWIO_ADDR,
+	SMMU_GPU_AHB_4K_APERTURE_S1CB6_HWIO_ADDR,
+	SMMU_GPU_AHB_4K_APERTURE_S1CB7_HWIO_ADDR,
+};
 
+const struct qti_smmu_gpu_cx qti_smmu_gpu_cx = {
+	.cfg_ahb_cbcr = GCC_GPU_CFG_AHB_CBCR,
+	.tz_vote_gds = GPU_CC_TZ_VOTE_GPU_SMMU_GDS,
+	.tz_vote_clk = GPU_CC_TZ_VOTE_GPU_SMMU_CLK,
+	.tz_gdsc_ctrl = GPU_CC_TZ_GDSC_CTRL_GPU_CX,
+	.cx_gdscr = GPU_CC_CX_GDSCR,
+	.cx_cbcrs = gpu_cx_cbcrs,
+	.num_cx_cbcrs = ARRAY_SIZE(gpu_cx_cbcrs),
+	.regs = gpu_regs,
+	.num_regs = ARRAY_SIZE(gpu_regs),
+	.aperture = gpu_aperture,
+	.num_aperture = ARRAY_SIZE(gpu_aperture),
+	.cb0_offset = SMMU_GPU_AHB_4K_APERTURE_S1CB0_REG_ADDR &
+		      GPU_REG_OFFSET_MASK,
+	/* GPU SMMU IDR1.NUMCB */
+	.num_cbs = 10U,
+};

@@ -112,6 +112,23 @@
 
 #define PLAT_MAX_PWR_LVL		3
 
+/*
+ * Gold domain: the gold cores start at core 4. By default they form a second
+ * DSU cluster with its own L3, on a gold (APC1) rail booted at 828 mV, and the
+ * APC1 rail sequencer does not repair their memories; a chipset with another
+ * layout defines these before including this file.
+ */
+#define QTI_FIRST_GOLD_CORE		4
+#ifndef QTI_GOLD_HAS_SEPARATE_DSU
+#define QTI_GOLD_HAS_SEPARATE_DSU	1
+#endif
+#ifndef QTI_GOLD_RAIL_BOOT_MV
+#define QTI_GOLD_RAIL_BOOT_MV		828U
+#endif
+#ifndef QTI_APC1_MEM_REPAIR
+#define QTI_APC1_MEM_REPAIR		0
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* GIC-600 constants */
 /*----------------------------------------------------------------------------*/

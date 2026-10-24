@@ -16,6 +16,8 @@ Monaco specifics:
   every CPU once its boot CPU has it; BL33 has to hand the boot over to a
   Cortex-A55 core with PSCI ``CPU_ON`` before starting Linux.
 - Storage is eMMC (``sdhc_1``) with 512-byte blocks.
+- PSCI ``SYSTEM_RESET`` is a PMIC hard reset: the boot that follows a PMIC
+  warm reset fails in XBL.
 
 Boot flow
 ---------

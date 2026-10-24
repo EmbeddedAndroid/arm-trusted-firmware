@@ -8,12 +8,14 @@
 #ifndef QTI_PLAT_H
 #define QTI_PLAT_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <common/bl_common.h>
 #include <drivers/arm/gicv3.h>
 #include <lib/cassert.h>
 #include <lib/el3_runtime/cpu_data.h>
+#include <lib/psci/psci.h>
 #include <lib/xlat_tables/xlat_tables_v2.h>
 
 int qti_mmap_add_dynamic_region(uintptr_t base_pa, size_t size,
@@ -30,6 +32,19 @@ void qti_setup_page_tables(
 int qti_io_setup(void);
 struct image_info *qti_get_image_info(unsigned int image_id);
 
+/*
+ * SiP CP_SMMU_APERTURE: each 16-bit half of the four @pairs words names a
+ * GPU SMMU context bank in its low byte and the aperture slot to point at
+ * it in its high byte; a half with a 0xff byte is unused. Returns 0 on
+ * success, -EINVAL for a bank or slot that does not exist, without
+ * programming any slot, and another negative errno if the slots cannot be
+ * programmed. It runs while the OS owns the GPU power and clocks: it must
+ * not change them, and fails without programming any slot if what the
+ * write needs is off.
+ */
+bool plat_qti_gpu_smmu_aperture_supported(void);
+int plat_qti_gpu_smmu_aperture(const uint32_t pairs[4]);
+
 void plat_qti_gic_driver_init(void);
 void plat_qti_gic_init(void);
 void plat_qti_gic_cpuif_enable(void);
@@ -42,6 +57,11 @@ unsigned int plat_qti_my_cluster_pos(void);
 
 void gic_set_spi_routing(unsigned int id, unsigned int irm, u_register_t mpidr);
 
+/* PMIC PON_PS_HOLD_RESET_CTL reset types */
+#define PON_RESET_TYPE_WARM_RESET		1U
+#define PON_RESET_TYPE_SHUTDOWN			4U
+#define PON_RESET_TYPE_HARD_RESET		7U
+
 void qti_pmic_prepare_reset(void);
 void qti_pmic_prepare_shutdown(void);
 
@@ -51,6 +71,36 @@ void plat_qti_pwr_domain_off(const uint8_t *states);
 void plat_qti_pwr_domain_suspend(const uint8_t *states);
 void plat_qti_pwr_domain_suspend_finish(const uint8_t *states);
 int  plat_qti_pwr_psci_init(uintptr_t warmboot_entry);
+
+/*
+ * Where nothing completes the power-down request of a core turned off,
+ * QTI_CPU_OFF_HOLD parks such cores in BL31 instead (hoya_cpu_hold.c).
+ */
+#ifdef QTI_CPU_OFF_HOLD
+bool plat_qti_cpu_hold_retire(unsigned int core_pos);
+void plat_qti_cpu_hold_suspend(unsigned int core_pos);
+bool plat_qti_cpu_hold_release(unsigned int core_pos);
+void plat_qti_pwr_domain_pwr_down(const psci_power_state_t *target_state);
+#define PLAT_QTI_PWR_DOMAIN_PWR_DOWN	plat_qti_pwr_domain_pwr_down
+#else
+static inline bool plat_qti_cpu_hold_retire(unsigned int core_pos)
+{
+	(void)core_pos;
+	return false;
+}
+
+static inline void plat_qti_cpu_hold_suspend(unsigned int core_pos)
+{
+	(void)core_pos;
+}
+
+static inline bool plat_qti_cpu_hold_release(unsigned int core_pos)
+{
+	(void)core_pos;
+	return false;
+}
+#define PLAT_QTI_PWR_DOMAIN_PWR_DOWN	NULL
+#endif
 
 void plat_qti_bl31_setup_post(void);
 void plat_qti_invoke_unhandled_isr(uint32_t id, void *handle);

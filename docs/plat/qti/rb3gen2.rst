@@ -32,14 +32,26 @@ How to build
 Steps to build TF-A BL2 and FIP payload::
 
 	$ make CROSS_COMPILE=aarch64-none-elf- PLAT=rb3gen2 SPD=opteed \
-            QTISECLIB_PATH=<qtiseclib-path> BL32=<path-to-optee-bin> \
-            BL33=<path-to-os-bootloader-bin> fip all
+            BL32=<path-to-optee-bin> BL33=<path-to-os-bootloader-bin> fip all
 
         $ ./tools/qti/generate_fip_elf.sh build/rb3gen2/release/fip.bin \
             0x9fc00000
 
-QTISELIB for Kodiak/SC7280 is available at
-`link <https://github.com/coreboot/qc_blobs/blob/master/sc7280/qtiseclib/libqtisec.a?raw=true>`__
+BL31 runs the native PSCI, CPUCP, command DB, PDC, clock, GPU SMMU, access
+control, SMMU, sec_core, QTimer and watchdog drivers. Alternatively,
+``QTISECLIB_PATH=<qtiseclib-path>`` links the QTISECLIB for Kodiak/SC7280,
+available at
+`link <https://github.com/coreboot/qc_blobs/blob/master/sc7280/qtiseclib/libqtisec.a?raw=true>`__,
+in place of these drivers.
+
+The access control driver applies the static XPU configuration. Of the QTI
+SiP MEM_ASSIGN transitions it implements only those of the modem VMIDs: it
+returns success for the others, for instance the LPASS and ADSP heap VMIDs
+that FastRPC assigns, without changing their access.
+
+U-Boot as BL33 is built from ``qcom_defconfig`` with ``tfa-optee.config``,
+adding ``CONFIG_OPTEE_LIB=y`` so that U-Boot copies the OP-TEE node into the
+device tree it passes to Linux.
 
 Note that the bl2.elf generated here is required to be signed as TZ image with
 QTI signing involved. Also, the fip.elf generated above is signed using
@@ -47,6 +59,42 @@ QTI signing involved. Also, the fip.elf generated above is signed using
 the OEM test signature to allow it to work on devices in non-secure mode. In
 secure mode, it is required to be signed using
 `sectools v2 <https://docs.qualcomm.com/bundle/publicresource/topics/80-70020-11/tools.html>`__
+
+Boot firmware contract
+----------------------
+
+The native drivers replace the secure setup library, not the other boot
+firmware. They were tested with the XBL, XBL_SEC, AOP and CPUCP images of the
+QCM6490 boot binaries, and rely on this handover:
+
+- XBL loads the CPUCP firmware and leaves it stopped, with EPSS open to
+  non-secure writes for that load. BL31 fills the version 3 CPUCP shared data
+  (chip identification, CPR fuses, MX levels from the command DB, per-domain
+  core masks), closes that access and starts CPUCP. BL31 does not load or
+  replace the CPUCP firmware. A firmware with another interface version, or a
+  command DB without MX levels, stops the boot with an error.
+- XBL leaves the GPU CX domain collapsed with its clocks off. BL31 votes it on
+  to program the secure GPU SMMU registers, gives back the votes and clocks it
+  found off, and leaves CX register retention enabled. A failed GPU SMMU setup
+  stops the boot with an error. The GPU SMMU aperture is not programmed at
+  boot: BL31 implements the QTI SiP call through which the OS requests it
+  (service 0x0c, command 0x1b) and programs the requested slots. It does not
+  vote at runtime: a request made while GPU CX or one of its clocks is off
+  fails and programs nothing.
+- XBL leaves the TZ register retention vote of the UFS GDSC clear. BL31 sets
+  it: the OS collapses that GDSC in suspend-to-idle and resumes the UFS link
+  from hibern8, from the state the GDSC retained.
+
+Native driver limitations
+-------------------------
+
+- Only CPU standby (WFI) is offered as an idle state: the power-collapse
+  sequences of the CPUs, the clusters and the system are not implemented. PSCI
+  SYSTEM_SUSPEND is listed by the common QTI PSCI operations but is denied, as
+  there is no system power-down state.
+- CPUCP does not complete the power-down request of a core turned off, so
+  PSCI CPU_OFF does not power the core down: it waits in BL31, powered, until
+  CPU_ON releases it.
 
 How to flash
 ------------
@@ -65,7 +113,7 @@ Then flash the board following the meta-qcom instructions
 Boot Trace
 -------------
 
-Boot logs on RB3Gen2::
+Boot logs on RB3Gen2 with QTISECLIB::
 
         Format: Log Type - Time(microsec) - Message - Optional Info
         Log Type: B - Since Boot(Power On Reset),  D - Delta,  S - Statistic

@@ -46,10 +46,15 @@
  */
 #define	QTI_SIP_SVC_MEM_ASSIGN_ID		U(0x02000C16)
 
+/* Point GPU SMMU aperture slots at GPU SMMU context banks. */
+#define	QTI_SIP_SVC_CP_SMMU_APERTURE_ID		U(0x02000C1B)
+
 #define	QTI_SIP_SVC_SECURE_IO_READ_PARAM_ID	U(0x1)
 #define	QTI_SIP_SVC_SECURE_IO_WRITE_PARAM_ID	U(0x2)
 #define	QTI_SIP_SVC_MEM_ASSIGN_PARAM_ID		U(0x1117)
+#define	QTI_SIP_SVC_CP_SMMU_APERTURE_PARAM_ID	U(0x4)
 
+/* Plus CP_SMMU_APERTURE where the platform supports it. */
 #define	QTI_SIP_SVC_CALL_COUNT			U(0x3)
 #define QTI_SIP_SVC_VERSION_MAJOR		U(0x0)
 #define	QTI_SIP_SVC_VERSION_MINOR		U(0x0)
@@ -111,9 +116,24 @@ static bool qti_check_syscall_availability(u_register_t smc_fid,
 			return false;
 		}
 		return true;
+	case QTI_SIP_SVC_CP_SMMU_APERTURE_ID:
+		return !is_caller_secure(flags) &&
+		       plat_qti_gpu_smmu_aperture_supported();
 	default:
 		return false;
 	}
+}
+
+#pragma weak plat_qti_gpu_smmu_aperture_supported
+bool plat_qti_gpu_smmu_aperture_supported(void)
+{
+	return false;
+}
+
+#pragma weak plat_qti_gpu_smmu_aperture
+int plat_qti_gpu_smmu_aperture(const uint32_t pairs[4])
+{
+	return -ENOTSUP;
 }
 
 static bool qti_mem_assign_validate_param(qti_accesscontrol_mem_t *mem_info,
@@ -387,7 +407,9 @@ static uintptr_t qti_sip_handler(uint32_t smc_fid,
 	switch (l_smc_fid) {
 	case QTI_SIP_SVC_CALL_COUNT_ID:
 		{
-			SMC_RET1(handle, QTI_SIP_SVC_CALL_COUNT);
+			SMC_RET1(handle, QTI_SIP_SVC_CALL_COUNT +
+				 (plat_qti_gpu_smmu_aperture_supported() ?
+				  1U : 0U));
 			break;
 		}
 	case QTI_SIP_SVC_UID_ID:
@@ -450,6 +472,30 @@ static uintptr_t qti_sip_handler(uint32_t smc_fid,
 
 			return qti_sip_mem_assign(handle, GET_SMC_CC(smc_fid),
 						  x1, x2, x3, x4);
+			break;
+		}
+	case QTI_SIP_SVC_CP_SMMU_APERTURE_ID:
+		{
+			uint32_t pairs[4] = {
+				x2, x3, x4,
+				read_ctx_reg(get_gpregs_ctx(handle),
+					     CTX_GPREG_X5),
+			};
+			int ret;
+
+			if (!qti_check_syscall_availability(l_smc_fid, flags)) {
+				SMC_RET1(handle, QTI_SIP_NOT_SUPPORTED);
+			}
+			if (x1 != QTI_SIP_SVC_CP_SMMU_APERTURE_PARAM_ID) {
+				SMC_RET1(handle, QTI_SIP_INVALID_PARAM);
+			}
+			ret = plat_qti_gpu_smmu_aperture(pairs);
+			if (ret == -EINVAL) {
+				SMC_RET1(handle, QTI_SIP_INVALID_PARAM);
+			} else if (ret != 0) {
+				SMC_RET1(handle, QTI_SIP_NOT_SUPPORTED);
+			}
+			SMC_RET1(handle, QTI_SIP_SUCCESS);
 			break;
 		}
 	default:

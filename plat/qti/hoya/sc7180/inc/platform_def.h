@@ -52,6 +52,8 @@
 /*----------------------------------------------------------------------------*/
 #define PON_PS_HOLD_RESET_CTL			0x85a
 #define PON_PS_HOLD_RESET_CTL2			0x85b
+/* PMIC reset type for PSCI SYSTEM_RESET */
+#define PON_PS_HOLD_SYSTEM_RESET_TYPE		PON_RESET_TYPE_WARM_RESET
 
 /*----------------------------------------------------------------------------*/
 /* Chipset specific NOC error interrupt IDs.                                  */

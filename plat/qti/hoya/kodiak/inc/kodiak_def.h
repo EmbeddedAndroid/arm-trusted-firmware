@@ -8,6 +8,14 @@
 #ifndef KODIAK_DEF_H
 #define KODIAK_DEF_H
 
+/*
+ * The gold cores share the one DSU cluster; their memories are repaired by
+ * the APC1 rail sequencer before the first of them powers on.
+ */
+#define QTI_GOLD_HAS_SEPARATE_DSU	0
+#define QTI_APC1_MEM_REPAIR		1
+#define QTI_GOLD_RAIL_BOOT_MV		852U
+
 #include <hoya_def.h>
 
 /*----------------------------------------------------------------------------*/
@@ -47,6 +55,8 @@
 /*----------------------------------------------------------------------------*/
 #define PON_PS_HOLD_RESET_CTL			0x852
 #define PON_PS_HOLD_RESET_CTL2			0x853
+/* PMIC reset type for PSCI SYSTEM_RESET */
+#define PON_PS_HOLD_SYSTEM_RESET_TYPE		PON_RESET_TYPE_WARM_RESET
 /*----------------------------------------------------------------------------*/
 /* APSS HM registers */
 /*----------------------------------------------------------------------------*/
