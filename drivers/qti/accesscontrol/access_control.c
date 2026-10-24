@@ -496,6 +496,11 @@ uint64_t qti_accesscontrol_mem_assign(const qti_accesscontrol_mem_t *mem,
 	return mem_assign(mem, mem_len, src, src_len, perm, perm_len);
 }
 
+bool qti_accesscontrol_mem_assign_available(void)
+{
+	return true;
+}
+
 void qti_accesscontrol_init(void)
 {
 	int rc;

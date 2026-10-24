@@ -55,6 +55,10 @@ BL2_SOURCES		+=	drivers/io/io_fip.c					\
 				$(PLAT_PATH)/common/src/qti_image_desc.c		\
 				$(PLAT_PATH)/common/src/qti_io_storage.c
 
+# No access control backend: keep accepting MEM_ASSIGN as a no-op.
+QTI_MEM_ASSIGN_NOOP := 1
+$(eval $(call add_define,QTI_MEM_ASSIGN_NOOP))
+
 include drivers/arm/gic/v3/gicv3.mk
 
 BL31_SOURCES		+=	drivers/delay_timer/delay_timer.c			\

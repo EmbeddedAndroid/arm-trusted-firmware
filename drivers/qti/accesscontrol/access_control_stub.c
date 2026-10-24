@@ -9,8 +9,8 @@
 /*
  * Access-control stub for platforms that do not provide a memory-assignment
  * backend. The stub is intentionally free of any QTISECLIB dependency so it
- * can be reused by non-QTISECLIB architectures; the memory-assign request is
- * accepted as a no-op.
+ * can be reused by non-QTISECLIB architectures. Memory-assign requests are
+ * rejected, or accepted as a no-op with QTI_MEM_ASSIGN_NOOP.
  */
 uint64_t
 qti_accesscontrol_mem_assign(const qti_accesscontrol_mem_t *mem,
@@ -26,9 +26,14 @@ qti_accesscontrol_mem_assign(const qti_accesscontrol_mem_t *mem,
 	(void)perm;
 	(void)perm_len;
 
-	return 0;
+	return (QTI_MEM_ASSIGN_NOOP != 0) ? 0U : 1U;
 }
 
 void qti_accesscontrol_init(void)
 {
+}
+
+bool qti_accesscontrol_mem_assign_available(void)
+{
+	return QTI_MEM_ASSIGN_NOOP != 0;
 }

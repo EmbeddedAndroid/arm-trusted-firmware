@@ -32,3 +32,8 @@ qti_accesscontrol_mem_assign(const qti_accesscontrol_mem_t *mem,
 void qti_accesscontrol_init(void)
 {
 }
+
+bool qti_accesscontrol_mem_assign_available(void)
+{
+	return true;
+}
