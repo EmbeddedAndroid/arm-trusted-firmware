@@ -118,7 +118,9 @@
  * APC1 rail sequencer does not repair their memories; a chipset with another
  * layout defines these before including this file.
  */
+#ifndef QTI_FIRST_GOLD_CORE
 #define QTI_FIRST_GOLD_CORE		4
+#endif
 #ifndef QTI_GOLD_HAS_SEPARATE_DSU
 #define QTI_GOLD_HAS_SEPARATE_DSU	1
 #endif

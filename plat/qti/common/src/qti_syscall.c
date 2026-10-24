@@ -111,7 +111,6 @@ static bool qti_check_syscall_availability(u_register_t smc_fid,
 		return true;
 	case QTI_SIP_SVC_SECURE_IO_READ_ID:
 	case QTI_SIP_SVC_SECURE_IO_WRITE_ID:
-	case QTI_SIP_SVC_MEM_ASSIGN_ID:
 		if (is_caller_secure(flags)) {
 			return false;
 		}
@@ -119,6 +118,11 @@ static bool qti_check_syscall_availability(u_register_t smc_fid,
 	case QTI_SIP_SVC_CP_SMMU_APERTURE_ID:
 		return !is_caller_secure(flags) &&
 		       plat_qti_gpu_smmu_aperture_supported();
+	case QTI_SIP_SVC_MEM_ASSIGN_ID:
+		if (is_caller_secure(flags)) {
+			return false;
+		}
+		return qti_accesscontrol_mem_assign_available();
 	default:
 		return false;
 	}
@@ -465,8 +469,9 @@ static uintptr_t qti_sip_handler(uint32_t smc_fid,
 		}
 	case QTI_SIP_SVC_MEM_ASSIGN_ID:
 		{
-			if (is_caller_secure(flags)) {
-				/* Only NS expected */
+			if (is_caller_secure(flags) ||
+			    !qti_accesscontrol_mem_assign_available()) {
+				/* Only NS expected, and only with a backend */
 				SMC_RET1(handle, QTI_SIP_NOT_SUPPORTED);
 			}
 

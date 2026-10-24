@@ -132,6 +132,9 @@ BL31_SOURCES	+=	$(PLAT_PATH)/hoya/common/hoya_pm.c \
 			drivers/qti/watchdog/watchdog.c
 else
 $(eval $(call add_define,QTISECLIB_PATH))
+# No access control backend: keep accepting MEM_ASSIGN as a no-op.
+QTI_MEM_ASSIGN_NOOP := 1
+$(eval $(call add_define,QTI_MEM_ASSIGN_NOOP))
 # use library provided by QTISECLIB_PATH
 BL31_SOURCES	+=	$(PLAT_PATH)/hoya/common/qtiseclib_pm.c \
 			drivers/qti/sec_core/sec_core_stub.c \
