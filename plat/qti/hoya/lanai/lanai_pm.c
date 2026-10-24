@@ -307,6 +307,11 @@ void plat_qti_pwr_domain_suspend_finish(const uint8_t *states)
 	(void)states;
 }
 
+void plat_qti_cpu_pwrdn_request(void)
+{
+	qti_cpu_pwrdn_en();
+}
+
 void plat_qti_invoke_unhandled_isr(uint32_t id, void *handle)
 {
 	(void)id;

@@ -51,6 +51,13 @@ bool plat_qti_cpu_hold_retire(unsigned int core_pos)
 	/* Visible before PSCI marks this core OFF. */
 	dsbish();
 
+	/*
+	 * CORE_PWRDN_EN survives the pen and the warm boot: a core parked in
+	 * BL31 must not raise the power-down request on its next WFI after
+	 * release.
+	 */
+	qti_cpu_pwrdn_clear();
+
 	return true;
 }
 

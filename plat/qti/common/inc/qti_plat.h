@@ -74,8 +74,22 @@ void plat_qti_pwr_domain_suspend_finish(const uint8_t *states);
 int  plat_qti_pwr_psci_init(uintptr_t warmboot_entry);
 
 /*
+ * Called on CPU_OFF and on a suspend that powers the core down, after the
+ * backend's own preparation and the GIC CPU interface disable: request the
+ * power down from the core itself. DynamIQ cores take the request through
+ * CPUPWRCTLR_EL1.CORE_PWRDN_EN, which qti_cpu_pwrdn_en() sets; a backend
+ * whose cores have no such register (Cortex-A53 class) leaves the function
+ * empty.
+ */
+void plat_qti_cpu_pwrdn_request(void);
+void qti_cpu_pwrdn_en(void);
+void qti_cpu_pwrdn_clear(void);
+
+/*
  * Where nothing completes the power-down request of a core turned off,
- * QTI_CPU_OFF_HOLD parks such cores in BL31 instead (hoya_cpu_hold.c).
+ * QTI_CPU_OFF_HOLD parks such cores in BL31 instead (hoya_cpu_hold.c):
+ * plat_qti_cpu_hold_retire() clears CORE_PWRDN_EN and returns true for a
+ * core that will park, which then raises no power-down request.
  */
 #ifdef QTI_CPU_OFF_HOLD
 bool plat_qti_cpu_hold_retire(unsigned int core_pos);

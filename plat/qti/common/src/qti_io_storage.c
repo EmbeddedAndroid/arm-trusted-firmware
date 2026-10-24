@@ -50,6 +50,36 @@ static const io_uuid_spec_t qti_tos_fw_config_spec = {
 };
 #endif
 
+#if TRUSTED_BOARD_BOOT
+static const io_uuid_spec_t qti_trusted_key_cert_spec = {
+	.uuid = UUID_TRUSTED_KEY_CERT,
+};
+
+static const io_uuid_spec_t qti_soc_fw_key_cert_spec = {
+	.uuid = UUID_SOC_FW_KEY_CERT,
+};
+
+static const io_uuid_spec_t qti_tos_fw_key_cert_spec = {
+	.uuid = UUID_TRUSTED_OS_FW_KEY_CERT,
+};
+
+static const io_uuid_spec_t qti_nt_fw_key_cert_spec = {
+	.uuid = UUID_NON_TRUSTED_FW_KEY_CERT,
+};
+
+static const io_uuid_spec_t qti_soc_fw_cert_spec = {
+	.uuid = UUID_SOC_FW_CONTENT_CERT,
+};
+
+static const io_uuid_spec_t qti_tos_fw_cert_spec = {
+	.uuid = UUID_TRUSTED_OS_FW_CONTENT_CERT,
+};
+
+static const io_uuid_spec_t qti_nt_fw_cert_spec = {
+	.uuid = UUID_NON_TRUSTED_FW_CONTENT_CERT,
+};
+#endif
+
 struct qti_io_policy {
 	unsigned int image_id;
 	uintptr_t *dev_handle;
@@ -86,6 +116,50 @@ static const struct qti_io_policy qti_io_policies[] = {
 		.image_id   = TOS_FW_CONFIG_ID,
 		.dev_handle = &qti_fip_dev_handle,
 		.image_spec = (uintptr_t)&qti_tos_fw_config_spec,
+		.init_params = FIP_IMAGE_ID,
+	},
+#endif
+#if TRUSTED_BOARD_BOOT
+	{
+		.image_id   = TRUSTED_KEY_CERT_ID,
+		.dev_handle = &qti_fip_dev_handle,
+		.image_spec = (uintptr_t)&qti_trusted_key_cert_spec,
+		.init_params = FIP_IMAGE_ID,
+	},
+	{
+		.image_id   = SOC_FW_KEY_CERT_ID,
+		.dev_handle = &qti_fip_dev_handle,
+		.image_spec = (uintptr_t)&qti_soc_fw_key_cert_spec,
+		.init_params = FIP_IMAGE_ID,
+	},
+	{
+		.image_id   = TRUSTED_OS_FW_KEY_CERT_ID,
+		.dev_handle = &qti_fip_dev_handle,
+		.image_spec = (uintptr_t)&qti_tos_fw_key_cert_spec,
+		.init_params = FIP_IMAGE_ID,
+	},
+	{
+		.image_id   = NON_TRUSTED_FW_KEY_CERT_ID,
+		.dev_handle = &qti_fip_dev_handle,
+		.image_spec = (uintptr_t)&qti_nt_fw_key_cert_spec,
+		.init_params = FIP_IMAGE_ID,
+	},
+	{
+		.image_id   = SOC_FW_CONTENT_CERT_ID,
+		.dev_handle = &qti_fip_dev_handle,
+		.image_spec = (uintptr_t)&qti_soc_fw_cert_spec,
+		.init_params = FIP_IMAGE_ID,
+	},
+	{
+		.image_id   = TRUSTED_OS_FW_CONTENT_CERT_ID,
+		.dev_handle = &qti_fip_dev_handle,
+		.image_spec = (uintptr_t)&qti_tos_fw_cert_spec,
+		.init_params = FIP_IMAGE_ID,
+	},
+	{
+		.image_id   = NON_TRUSTED_FW_CONTENT_CERT_ID,
+		.dev_handle = &qti_fip_dev_handle,
+		.image_spec = (uintptr_t)&qti_nt_fw_cert_spec,
 		.init_params = FIP_IMAGE_ID,
 	},
 #endif

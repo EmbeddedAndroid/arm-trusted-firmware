@@ -3340,6 +3340,10 @@ STANDBY and the target power domain level specified should be the CPU. The
 handler should put the CPU into a low power retention state (usually by
 issuing a wfi instruction) and ensure that it can be woken up from that
 state by a normal interrupt. The generic code expects the handler to succeed.
+A platform with ``validate_power_state()`` and ``cpu_standby()`` but without
+``pwr_domain_suspend()`` and ``pwr_domain_suspend_finish()`` supports
+``CPU_SUSPEND`` for CPU standby states only; any other state is rejected with
+``PSCI_E_INVALID_PARAMS``.
 
 plat_psci_ops.pwr_domain_on()
 .............................

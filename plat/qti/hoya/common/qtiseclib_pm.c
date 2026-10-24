@@ -45,6 +45,11 @@ void plat_qti_pwr_domain_suspend_finish(const uint8_t *states)
 	qtiseclib_psci_node_suspend_finish(states);
 }
 
+void plat_qti_cpu_pwrdn_request(void)
+{
+	qti_cpu_pwrdn_en();
+}
+
 int plat_qti_pwr_psci_init(uintptr_t warmboot_entry)
 {
 	return qtiseclib_psci_init(warmboot_entry);
