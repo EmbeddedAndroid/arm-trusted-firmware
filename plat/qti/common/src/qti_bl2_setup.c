@@ -13,6 +13,7 @@
 #include <common/image_decompress.h>
 #include <common/tbbr/tbbr_img_def.h>
 #include <drivers/io/io_storage.h>
+#include <drivers/qti/accesscontrol/accesscontrol.h>
 #include <lib/xlat_tables/xlat_tables_v2.h>
 #include <plat/common/platform.h>
 
@@ -35,6 +36,11 @@ void bl2_plat_arch_setup(void)
 {
 	int ret;
 
+#if SEPARATE_BL2_NOLOAD_REGION
+	mmap_add_region(BL2_NOLOAD_START, BL2_NOLOAD_START,
+			BL2_NOLOAD_LIMIT - BL2_NOLOAD_START,
+			MT_MEMORY | MT_RW | MT_SECURE);
+#endif
 	qti_setup_page_tables(BL2_BASE,
 			      BL2_SIZE,
 			      BL_CODE_BASE,
@@ -42,6 +48,10 @@ void bl2_plat_arch_setup(void)
 			      BL_RO_DATA_BASE,
 			      BL_RO_DATA_END);
 	enable_mmu_el3(0);
+
+#if QTI_BL2_ACCESS_CONTROL
+	qti_accesscontrol_bl2_lock();
+#endif
 
 	ret = qti_io_setup();
 	if (ret) {
@@ -76,13 +86,21 @@ void bl2_plat_preload_setup(void)
 int bl2_plat_handle_pre_image_load(unsigned int image_id)
 {
 	struct image_info *image_info;
+	unsigned int attr = MT_MEMORY | MT_RW | MT_NS;
+#if QTI_BL2_ACCESS_CONTROL
+	entry_point_info_t *ep = &get_bl_mem_params_node(image_id)->ep_info;
+
+	/* The secure image carve-outs reject non-secure writes by now. */
+	if (GET_SECURITY_STATE(ep->h.attr) == SECURE) {
+		attr = MT_MEMORY | MT_RW | MT_SECURE;
+	}
+#endif
 
 	image_info = qti_get_image_info(image_id);
 
 	return mmap_add_dynamic_region(image_info->image_base,
 				      image_info->image_base,
-				      image_info->image_max_size,
-				      MT_MEMORY | MT_RW | MT_NS);
+				      image_info->image_max_size, attr);
 }
 
 int bl2_plat_handle_post_image_load(unsigned int image_id)
@@ -110,3 +128,10 @@ int bl2_plat_handle_post_image_load(unsigned int image_id)
 #endif
 	return 0;
 }
+
+#if QTI_BL2_ACCESS_CONTROL
+void bl2_plat_prepare_exit(void)
+{
+	qti_accesscontrol_bl2_release();
+}
+#endif

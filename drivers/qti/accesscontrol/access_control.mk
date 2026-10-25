@@ -10,6 +10,12 @@ PLAT_DRIVERS_INCLUDE_PATH	:= 	include/drivers/qti
 PLAT_INCLUDES +=	-I$(PLAT_DRIVERS_PATH)/accesscontrol \
 			-I$(PLAT_DRIVERS_INCLUDE_PATH)/accesscontrol \
 
+# Set to 1 to have BL2 lock memory before it reads the FIP. The platform
+# then implements the qti_accesscontrol_bl2_*() hooks.
+QTI_BL2_ACCESS_CONTROL		?=	0
+$(call assert_boolean,QTI_BL2_ACCESS_CONTROL)
+$(eval $(call add_define,QTI_BL2_ACCESS_CONTROL))
+
 ## Access control
 BL31_SOURCES +=	$(PLAT_DRIVERS_PATH)/accesscontrol/access_control.c \
 
@@ -28,3 +34,11 @@ PLAT_INCLUDES +=	-I$(PLAT_DRIVERS_PATH)/accesscontrol/xpu \
 BL31_SOURCES += 	$(PLAT_DRIVERS_PATH)/accesscontrol/xpu/xpu3.c \
 			$(PLAT_DRIVERS_PATH)/accesscontrol/xpu/${CHIPSET}/xpu_static_config.c \
 			$(PLAT_DRIVERS_PATH)/accesscontrol/xpu/${CHIPSET}/xpu_target_info.c
+
+## BL2 locks the FIP staging area and the secure image carve-outs
+ifeq (${QTI_BL2_ACCESS_CONTROL},1)
+BL2_SOURCES +=		$(PLAT_DRIVERS_PATH)/accesscontrol/access_control_bl2.c \
+			$(PLAT_DRIVERS_PATH)/accesscontrol/xpu/xpu3.c \
+			$(PLAT_DRIVERS_PATH)/accesscontrol/xpu/${CHIPSET}/xpu_static_config.c \
+			$(PLAT_DRIVERS_PATH)/accesscontrol/xpu/${CHIPSET}/xpu_target_info.c
+endif

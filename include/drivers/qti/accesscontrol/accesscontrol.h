@@ -41,4 +41,13 @@ void qti_accesscontrol_init(void);
 /* Whether qti_accesscontrol_mem_assign() is offered to callers. */
 bool qti_accesscontrol_mem_assign_available(void);
 
+/*
+ * With QTI_BL2_ACCESS_CONTROL, BL2 makes the FIP staging area and the secure
+ * image carve-outs secure-only before it reads the FIP, and gives the staging
+ * area back to the normal world when it exits. The release runs with the MMU
+ * and data cache off.
+ */
+void qti_accesscontrol_bl2_lock(void);
+void qti_accesscontrol_bl2_release(void);
+
 #endif /* ACCESSCONTROL_H */

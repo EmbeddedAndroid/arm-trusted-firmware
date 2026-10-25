@@ -12,6 +12,7 @@ Qualcomm Platforms
    monza
    qcs615_ride
    lanai_qrd
+   uno_q
 
 --------------
 

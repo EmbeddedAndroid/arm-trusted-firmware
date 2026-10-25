@@ -412,6 +412,11 @@ void plat_qti_pwr_domain_suspend_finish(const uint8_t *states)
 	(void)states;
 }
 
+void plat_qti_cpu_pwrdn_request(void)
+{
+	qti_cpu_pwrdn_en();
+}
+
 /*
  * No native EL3 handler exists for QTI-specific interrupts; an unhandled
  * interrupt reaching EL3 is not expected, so drop it.

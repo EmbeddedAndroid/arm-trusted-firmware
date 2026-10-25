@@ -12,14 +12,14 @@
 #include <spmi_arb.h>
 
 /*
- * PMIC arbiter v5 layout by default: the APID map in the core registers and
- * one channel register block per APID. Platforms with another arbiter
- * version define the QTI_SPMI_ARB_* values.
+ * PMIC arbiter v5 layout by default, at fixed offsets from PMIC_ARB_BASE: the
+ * APID map in the core registers and one channel register block per APID.
+ * Platforms with another arbiter version define the QTI_SPMI_ARB_* values.
  */
 #ifndef QTI_SPMI_ARB_APID_MAP_BASE
-#define QTI_SPMI_ARB_APID_MAP_BASE	0x0C440900U
+#define QTI_SPMI_ARB_APID_MAP_BASE	(PMIC_ARB_BASE + 0x40900U)
 #define QTI_SPMI_ARB_NUM_APID		((0x1100U - 0x900U) / sizeof(uint32_t))
-#define QTI_SPMI_ARB_CHNL_BASE		0x0C600000U
+#define QTI_SPMI_ARB_CHNL_BASE		(PMIC_ARB_BASE + 0x200000U)
 #define QTI_SPMI_ARB_CHNL_STRIDE	0x10000U
 #endif
 
