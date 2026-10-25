@@ -234,11 +234,12 @@ int qti_system_reset2(int is_vendor, int reset_type, u_register_t cookie)
 	uint32_t reset_config;
 	uint32_t reset_type_u32 = (uint32_t)reset_type;
 
+	/* The PSCI library only passes SYSTEM_WARM_RESET as architectural. */
 	if (is_vendor == 0) {
-		return PSCI_E_NOT_SUPPORTED;
+		reset_config = QTI_PON_CFG_WARM_RESET;
+	} else {
+		reset_config = reset_type_u32 & QTI_RESET2_VENDOR_VALUE_MASK;
 	}
-
-	reset_config = reset_type_u32 & QTI_RESET2_VENDOR_VALUE_MASK;
 	if ((reset_config != QTI_PON_CFG_WARM_RESET) &&
 	    (reset_config != QTI_PON_CFG_HARD_RESET)) {
 		return PSCI_E_INVALID_PARAMS;
@@ -246,10 +247,11 @@ int qti_system_reset2(int is_vendor, int reset_type, u_register_t cookie)
 
 	qti_sail_notify_reset2(reset_config);
 
-	if ((reset_type_u32 & QTI_RESET2_CONFIG_COOKIE) != 0U) {
+	/* An architectural reset carries no cookie. */
+	if ((is_vendor != 0) && ((reset_type_u32 & QTI_RESET2_CONFIG_COOKIE) != 0U)) {
 		qti_reset_write_sdam_cookie((uint8_t)(cookie << 1));
 		qti_reset_write_gpio_tcsr(0U);
-	} else if (cookie != 0U) {
+	} else if ((is_vendor != 0) && (cookie != 0U)) {
 		qti_reset_write_gpio_tcsr((uint32_t)cookie);
 		qti_reset_write_sdam_cookie(0U);
 	}
@@ -327,7 +329,9 @@ static plat_psci_ops_t plat_qti_psci_pm_ops = {
 	.pwr_domain_pwr_down = PLAT_QTI_PWR_DOMAIN_PWR_DOWN,
 	.system_off = qti_system_off,
 	.system_reset = qti_system_reset,
+#if QTI_RESET2_COOKIE_STORE_ENABLE
 	.system_reset2 = qti_system_reset2,
+#endif
 	.get_node_hw_state = NULL,
 	.translate_power_state_by_mpidr = NULL,
 	.get_sys_suspend_power_state = qti_get_sys_suspend_power_state,
