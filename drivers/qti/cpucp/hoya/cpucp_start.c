@@ -136,6 +136,11 @@ static int cpucp_fill_mx_levels(void)
 	return 0;
 }
 
+/*
+ * The boot firmware loads CPUCP and hands over with it not started. Booting
+ * on without a started CPUCP only fails later, at the first SCMI request of
+ * a secondary core, so a CPUCP that cannot be started stops the boot here.
+ */
 void qti_cpucp_init(void)
 {
 	const struct cpucp_config *cfg = cpucp_get_config();
@@ -143,7 +148,7 @@ void qti_cpucp_init(void)
 
 	if (version != CPUCP_SHARED_VERSION) {
 		ERROR("CPUCP: unsupported firmware interface %u\n", version);
-		return;
+		panic();
 	}
 
 	cpucp_set_clocks(cfg);
@@ -156,7 +161,7 @@ void qti_cpucp_init(void)
 	cpucp_fill_cpr_info(&cfg->cpr);
 	if (cpucp_fill_mx_levels() != 0) {
 		ERROR("CPUCP: no MX levels in the command DB\n");
-		return;
+		panic();
 	}
 
 	/* SLT status unknown: there is no platform info service. */

@@ -115,8 +115,7 @@ void bl31_platform_setup(void)
 
 	rcar_mssr_setup();
 
-	/* Update memory mapped and register based frequency */
-	write_cntfrq_el0(reg_cntfid);
+	/* Update the memory mapped frequency */
 	mmio_write_32(ARM_SYS_CNTCTL_BASE + CNTFID_OFF, reg_cntfid);
 
 	/* Enable the system level generic timer */

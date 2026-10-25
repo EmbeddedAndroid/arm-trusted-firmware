@@ -163,8 +163,7 @@ void bl31_platform_setup(void)
 	/* Initialize generic timer */
 	u_register_t reg_cntfid = RCAR_CNTC_EXTAL;
 
-	/* Update memory mapped and register based frequency */
-	write_cntfrq_el0((u_register_t)reg_cntfid);
+	/* Update the memory mapped frequency */
 	mmio_write_32(ARM_SYS_CNTCTL_BASE + (uintptr_t)CNTFID_OFF, reg_cntfid);
 
 	/* enable the system level generic timer */

@@ -7,15 +7,13 @@
 #include <drivers/delay_timer.h>
 
 #include <qti_plat.h>
+#include <qti_reset.h>
 #include <spmi_arb.h>
 
 /*
  * This driver implements PON support for PM8998-compatible PMICs. This can
  * include other part numbers like PM6150.
  */
-
-#define RESET_TYPE_WARM_RESET		1
-#define RESET_TYPE_SHUTDOWN		4
 
 #define S2_RESET_EN			BIT(7)
 
@@ -32,10 +30,16 @@ static void configure_ps_hold(uint32_t reset_type)
 
 void qti_pmic_prepare_reset(void)
 {
-	configure_ps_hold(RESET_TYPE_WARM_RESET);
+	configure_ps_hold(PON_PS_HOLD_SYSTEM_RESET_TYPE);
 }
 
 void qti_pmic_prepare_shutdown(void)
 {
-	configure_ps_hold(RESET_TYPE_SHUTDOWN);
+	configure_ps_hold(PON_RESET_TYPE_SHUTDOWN);
+}
+
+void qti_pmic_configure_reset(uint32_t reset_config)
+{
+	configure_ps_hold((reset_config == QTI_PON_CFG_HARD_RESET) ?
+			  PON_RESET_TYPE_HARD_RESET : PON_RESET_TYPE_WARM_RESET);
 }

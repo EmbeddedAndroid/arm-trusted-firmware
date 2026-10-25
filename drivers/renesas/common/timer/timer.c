@@ -8,7 +8,6 @@
 
 #include <arch.h>
 #include <lib/mmio.h>
-#include <plat/common/platform.h>
 
 #include "rcar_def.h"
 #include "rcar_private.h"
@@ -43,8 +42,6 @@ void rcar_pwrc_restore_timer_state(void)
 		rcar_pwrc_saved_cntfid);
 
 	/* Start generic timer back */
-	write_cntfrq_el0((u_register_t)plat_get_syscnt_freq2());
-
 	mmio_write_32((uintptr_t)(RCAR_CNTC_BASE + CNTCR_OFF),
 			CNTCR_FCREQ((uint32_t)(0)) | CNTCR_EN);
 }

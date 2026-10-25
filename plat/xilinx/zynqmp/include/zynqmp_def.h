@@ -29,9 +29,6 @@
 
 #define RT_CONSOLE_IS(con)	(RT_CONSOLE_ID_ ## con == CONSOLE_RUNTIME)
 
-/* Default counter frequency */
-#define ZYNQMP_DEFAULT_COUNTER_FREQ	0U
-
 /* Firmware Image Package */
 #define ZYNQMP_PRIMARY_CPU		0
 

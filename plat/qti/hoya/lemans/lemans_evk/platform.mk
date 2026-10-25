@@ -10,6 +10,8 @@ PLAT_PATH				:=	plat/qti
 CHIPSET					:=	lemans
 
 RESET_TO_BL2				:=	1
+QTI_RESET2_COOKIE_STORE_ENABLE		:=	1
+$(eval $(call add_define,QTI_RESET2_COOKIE_STORE_ENABLE))
 
 # Turn On Separate code & data.
 SEPARATE_CODE_AND_RODATA		:=	1
@@ -93,6 +95,7 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 				$(PLAT_PATH)/common/src/qti_ringbuf_console_helper.c	\
 				$(PLAT_PATH)/common/src/qti_syscall.c			\
 				$(PLAT_PATH)/common/src/qti_topology.c			\
+				$(PLAT_PATH)/common/src/qti_reset.c			\
 				$(PLAT_PATH)/common/src/spmi_arb.c			\
 				$(PLAT_PATH)/hoya/common/$(ARCH)/hoya_helpers.S		\
 				$(PLAT_PATH)/hoya/common/hoya_bl31_setup.c		\
@@ -100,6 +103,7 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 
 include drivers/qti/smem/smem.mk
 include drivers/qti/chipinfo/chipinfo.mk
+include drivers/qti/sail_comm/sail_comm.mk
 
 # Override this on the command line to point to the qtiseclib library
 QTISECLIB_PATH ?=
