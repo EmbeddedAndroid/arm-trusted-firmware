@@ -21,6 +21,7 @@ void plat_qti_bl31_setup_post(void)
 
 	qti_cpucp_init();
 	qti_smmu_gpu_init();
+	qti_pmic_route_pon_irqs();
 
 	/* set boot state to cold boot complete. */
 	g_qti_bl31_cold_booted = 0x1;

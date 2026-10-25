@@ -1,12 +1,19 @@
 /*
- * Copyright (c) 2024, Arm Limited and Contributors. All rights reserved.
- * Copyright (c) 2024, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2026, Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
+#ifndef TALOS_DEF_H
+#define TALOS_DEF_H
 
-#ifndef PLATFORM_DEF_H
-#define PLATFORM_DEF_H
+/*
+ * The two gold cores (6 and 7) share the DSU and L3 with the silver cores
+ * but sit on the APC1 rail, which XBL leaves collapsed.
+ */
+#define QTI_FIRST_GOLD_CORE			6
+#define QTI_GOLD_HAS_SEPARATE_DSU		0
+/* Gold (APC1) rail boot voltage, in mV. */
+#define QTI_GOLD_RAIL_BOOT_MV			872U
 
 #include <hoya_def.h>
 
@@ -19,34 +26,22 @@
 /* Peripherals base addresses */
 /*----------------------------------------------------------------------------*/
 #define QTI_SEC_PRNG_BASE			0x790000
+#define QTI_APSS_HM_BASE			0x17800000
+#define QTI_QTIMER_BASE				0x17C20000
+#define QTI_AOSS_BASE				0x0b000000
 
 /*----------------------------------------------------------------------------*/
-/* Device address space for mapping. Excluding starting 4K */
-/*----------------------------------------------------------------------------*/
-#define QTI_DEVICE_BASE				0x1000
-#define QTI_DEVICE_SIZE				(0x80000000 - QTI_DEVICE_BASE)
-
-/*******************************************************************************
- * BL31 specific defines.
- ******************************************************************************/
-/*
- * Put BL31 at DDR as per memory map. BL31_BASE is calculated using the
- * current BL31 debug size plus a little space for growth.
- */
-#define BL31_BASE				0x86200000
-#define BL31_SIZE				0x00100000
-#define BL31_LIMIT				(BL31_BASE + BL31_SIZE)
-
-/*----------------------------------------------------------------------------*/
-/* AOP CMD DB  address space for mapping */
+/* AOP CMD DB address space for mapping */
 /*----------------------------------------------------------------------------*/
 #define QTI_AOP_CMD_DB_BASE			0x85F20000
 #define QTI_AOP_CMD_DB_SIZE			0x00020000
+
 /*----------------------------------------------------------------------------*/
 /* SMEM base address */
 /*----------------------------------------------------------------------------*/
 #define QTI_SMEM_BASE				0x86000000
 #define QTI_SMEM_SIZE				0x00200000
+
 /*----------------------------------------------------------------------------*/
 /* LC PON register offsets */
 /*----------------------------------------------------------------------------*/
@@ -54,11 +49,13 @@
 #define PON_PS_HOLD_RESET_CTL2			0x85b
 /* PMIC reset type for PSCI SYSTEM_RESET */
 #define PON_PS_HOLD_SYSTEM_RESET_TYPE		PON_RESET_TYPE_WARM_RESET
+#define PON_INT_MID_SEL				0x81a
+#define PON_INT_MID_APPS			0x0
 
 /*----------------------------------------------------------------------------*/
-/* Chipset specific NOC error interrupt IDs.                                  */
+/* Chipset specific NOC error interrupt IDs. */
 /*----------------------------------------------------------------------------*/
 #define PLAT_INT_ID_A1_NOC_ERROR		(0x18B)
 #define PLAT_INT_ID_SYSTEM_NOC_ERROR		(0xC6)
 
-#endif /* PLATFORM_DEF_H */
+#endif /* TALOS_DEF_H */

@@ -106,6 +106,10 @@ PLAT_INCLUDES   +=	-Iinclude/drivers/qti/sec_core/${CHIPSET}		\
 			-Iinclude/drivers/qti/qtimer/bruin			\
 			-Iinclude/drivers/qti/watchdog/bruin
 
+# No access control backend: keep accepting MEM_ASSIGN as a no-op.
+QTI_MEM_ASSIGN_NOOP := 1
+$(eval $(call add_define,QTI_MEM_ASSIGN_NOOP))
+
 BL31_SOURCES	+=	drivers/qti/sec_core/sec_core.c				\
 			drivers/qti/sec_core/${CHIPSET}/sec_core_cfg.c		\
 			drivers/qti/accesscontrol/access_control_stub.c		\

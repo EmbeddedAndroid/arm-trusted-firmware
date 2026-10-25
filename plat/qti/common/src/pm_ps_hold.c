@@ -43,3 +43,15 @@ void qti_pmic_configure_reset(uint32_t reset_config)
 	configure_ps_hold((reset_config == QTI_PON_CFG_HARD_RESET) ?
 			  PON_RESET_TYPE_HARD_RESET : PON_RESET_TYPE_WARM_RESET);
 }
+
+/*
+ * On some platforms the boot loader leaves the PON interrupts (power key,
+ * RESIN) sent to an SPMI master other than the apps PMIC arbiter, so the OS
+ * never sees them.
+ */
+void qti_pmic_route_pon_irqs(void)
+{
+#ifdef PON_INT_MID_SEL
+	(void)spmi_arb_write8(PON_INT_MID_SEL, PON_INT_MID_APPS);
+#endif
+}
