@@ -40,5 +40,6 @@ void qti_pmic_prepare_shutdown(void)
 
 void qti_pmic_configure_reset(uint32_t reset_config)
 {
-	configure_ps_hold(reset_config);
+	configure_ps_hold((reset_config == QTI_PON_CFG_HARD_RESET) ?
+			  PON_RESET_TYPE_HARD_RESET : PON_RESET_TYPE_WARM_RESET);
 }
