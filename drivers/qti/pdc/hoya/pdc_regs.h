@@ -161,4 +161,12 @@
 	mmio_write_32(PDC_REG(PDC_BASE, PDC_IRQ_OWNER_OFF(i)), \
 		      (uint32_t)(val) & PDC_IRQ_OWNER_BMSK)
 
+/*
+ * Banked owner layout: one bit per input in IRQ_OWNER_BANKb (PDC_BASE +
+ * 0x4600 + 0x4*b, set for inputs owned by a non-zero DRV) and that single
+ * non-zero DRV in IRQ_NONZERO_DRV_CFG (PDC_BASE + 0x4640).
+ */
+#define PDC_IRQ_OWNER_BANK_OFF(b)	(0x4600U + 0x4U * (uint32_t)(b))
+#define PDC_IRQ_NONZERO_DRV_CFG_OFF	0x4640U
+
 #endif /* PDC_REGS_H */

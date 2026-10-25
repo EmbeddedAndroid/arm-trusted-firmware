@@ -39,7 +39,8 @@ static enum pdc_seq_result pdc_seq_init(struct pdc_seq *seq)
 	enum pdc_seq_result result;
 
 	if ((seq == NULL) || (seq->cfg == NULL) ||
-	    (seq->modes == NULL) || (seq->offset == 0U)) {
+	    ((seq->modes == NULL) && (seq->mode_count != 0U)) ||
+	    (seq->offset == 0U)) {
 		return PDC_SEQ_INVALID_HANDLE;
 	}
 

@@ -8,19 +8,43 @@
 #include <drivers/delay_timer.h>
 #include <lib/mmio.h>
 
+#include <platform_def.h>
 #include <spmi_arb.h>
 
-#define REG_APID_MAP(apid)	(0x0C440900U + sizeof(uint32_t) * apid)
-#define NUM_APID		((0x1100U - 0x900U) / sizeof(uint32_t))
+/*
+ * PMIC arbiter v5 layout by default: the APID map in the core registers and
+ * one channel register block per APID. Platforms with another arbiter
+ * version define the QTI_SPMI_ARB_* values.
+ */
+#ifndef QTI_SPMI_ARB_APID_MAP_BASE
+#define QTI_SPMI_ARB_APID_MAP_BASE	0x0C440900U
+#define QTI_SPMI_ARB_NUM_APID		((0x1100U - 0x900U) / sizeof(uint32_t))
+#define QTI_SPMI_ARB_CHNL_BASE		0x0C600000U
+#define QTI_SPMI_ARB_CHNL_STRIDE	0x10000U
+#endif
+
+/*
+ * With an ownership table (QTI_SPMI_ARB_OWNER_BASE, one word per APID), a
+ * PPID can have one APID per execution environment, and only the APID the
+ * table assigns to this EE (QTI_SPMI_ARB_EE) may use its channel.
+ */
+#ifdef QTI_SPMI_ARB_OWNER_BASE
+#define REG_APID_OWNER(apid)	(QTI_SPMI_ARB_OWNER_BASE + sizeof(uint32_t) * (apid))
+#define APID_OWNER_MASK		0x7U
+#endif
+
+#define REG_APID_MAP(apid)	(QTI_SPMI_ARB_APID_MAP_BASE + sizeof(uint32_t) * apid)
+#define NUM_APID		QTI_SPMI_ARB_NUM_APID
 
 #define PPID_MASK		(0xfffU << 8)
 
-#define REG_ARB_CMD(apid)	(0x0C600000U + 0x10000U * apid)
+#define REG_ARB_CHNL(apid)	(QTI_SPMI_ARB_CHNL_BASE + QTI_SPMI_ARB_CHNL_STRIDE * (apid))
+#define REG_ARB_CMD(apid)	(REG_ARB_CHNL(apid) + 0x0U)
 /* These are opcodes specific to this SPMI arbitrator, *not* SPMI commands. */
 #define OPC_EXT_WRITEL		0
 #define OPC_EXT_READL		1
 
-#define REG_ARB_STATUS(apid)	(0x0C600008U + 0x10000U * apid)
+#define REG_ARB_STATUS(apid)	(REG_ARB_CHNL(apid) + 0x8U)
 #define ARB_STATUS_DONE		BIT(0)
 #define ARB_STATUS_FAILURE	BIT(1)
 #define ARB_STATUS_DENIED	BIT(2)
@@ -29,8 +53,8 @@
 /* Fake status to report driver errors. */
 #define ARB_FAKE_STATUS_TIMEOUT	BIT(8)
 
-#define REG_ARB_RDATA0(apid)	(0x0C600018U + 0x10000U * apid)
-#define REG_ARB_WDATA0(apid)	(0x0C600010U + 0x10000U * apid)
+#define REG_ARB_RDATA0(apid)	(REG_ARB_CHNL(apid) + 0x18U)
+#define REG_ARB_WDATA0(apid)	(REG_ARB_CHNL(apid) + 0x10U)
 
 static int addr_to_apid(uint32_t addr)
 {
@@ -38,9 +62,16 @@ static int addr_to_apid(uint32_t addr)
 
 	for (i = 0U; i < NUM_APID; i++) {
 		uint32_t reg = mmio_read_32(REG_APID_MAP(i));
-		if ((reg != 0U) && ((addr & PPID_MASK) == (reg & PPID_MASK))) {
-			return i;
+		if ((reg == 0U) || ((addr & PPID_MASK) != (reg & PPID_MASK))) {
+			continue;
 		}
+#ifdef QTI_SPMI_ARB_OWNER_BASE
+		if ((mmio_read_32(REG_APID_OWNER(i)) & APID_OWNER_MASK) !=
+		    QTI_SPMI_ARB_EE) {
+			continue;
+		}
+#endif
+		return i;
 	}
 
 	return -1;
@@ -78,6 +109,7 @@ int spmi_arb_read8(uint32_t addr)
 	int apid = addr_to_apid(addr);
 
 	if (apid < 0) {
+		ERROR("SPMI_ARB no APID for 0x%x\n", addr);
 		return apid;
 	}
 
@@ -97,6 +129,7 @@ int spmi_arb_write8(uint32_t addr, uint8_t data)
 	int apid = addr_to_apid(addr);
 
 	if (apid < 0) {
+		ERROR("SPMI_ARB no APID for 0x%x\n", addr);
 		return apid;
 	}
 

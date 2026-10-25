@@ -8,6 +8,15 @@
 
 $(eval $(call add_define,QTI_PDC_ENABLED))
 
+# Set to 0 where the AOP programs the apps PDC sleep and wake TCSes.
+QTI_PDC_TCS ?= 1
+$(eval $(call add_define,QTI_PDC_TCS))
+
+# Set to 1 where the interrupt owners are banked bitmasks with a single
+# non-zero owner DRV.
+QTI_PDC_IRQ_OWNER_BANKED ?= 0
+$(eval $(call add_define,QTI_PDC_IRQ_OWNER_BANKED))
+
 PDC_DRV_PATH := drivers/qti/pdc
 
 # Every supported apps PDC has the hoya register map. A chipset directory
@@ -25,6 +34,11 @@ include $(PDC_COMMON)/pdc_config.mk
 
 PDC_ENABLE_TCS ?= 1
 PDC_SEQ_TARGET_SOURCE ?= $(PDC_DRV_PATH)/pdc_seq_cmd.c
+
+# A PDC whose TCSes the AOP programs needs no TCS code in BL31.
+ifeq ($(QTI_PDC_TCS),0)
+PDC_ENABLE_TCS := 0
+endif
 
 PLAT_INCLUDES += \
 	-I$(PDC_COMMON)
