@@ -11,6 +11,7 @@ Qualcomm Platforms
    lemans_evk
    monza
    lanai_qrd
+   kailua_hdk
 
 --------------
 
