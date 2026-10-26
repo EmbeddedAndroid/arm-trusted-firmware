@@ -211,6 +211,11 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 				drivers/qti/accesscontrol/access_control_stub.c		\
 				drivers/qti/qtimer/qtimer.c
 
+# The AOP programs the apps PDC sleep and wake TCSes.
+QTI_PDC_TCS		:=	0
+QTI_PDC_IRQ_OWNER_BANKED :=	1
+include drivers/qti/pdc/pdc.mk
+
 # Nothing completes the power-down request of a core turned off: no PCU
 # power-collapse sequence is ported.
 include plat/qti/hoya/common/cpu_hold.mk
