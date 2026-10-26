@@ -10,6 +10,9 @@ records its conflict resolutions, the ones redone in the refresh under
 "Conflicts (refresh 2026-10-25)". Snapshot of the gated state before the
 refresh: tag qcom/integration-20261024.
 
+Added 2026-10-26: qcom/kailua (SM8550 HDK), merged on top of the gated
+refresh; the state before it is tag qcom/integration-20261025.
+
 ## Platform branches
 
 | platform | branch | on | carries | upstream status |
@@ -19,6 +22,7 @@ refresh: tag qcom/integration-20261024.
 | lemans | qcom/lemans | kodiak | the monaco set; 53616 PS4 (Dinesh, PDC hooks); 54830 PS1 (Dinesh, SYSTEM_RESET2) + two fixes; GPU SMMU aperture | open; aperture and the two SYSTEM_RESET2 fixes not submitted |
 | talos | qcom/talos | kodiak | Talos SoC, PDC, XBL boot, PON; 54926 PS8; 55530 PS3 | Talos patches not submitted |
 | lanai | qcom/lanai | kodiak | SM8650 QRD | not submitted |
+| kailua | qcom/kailua | lanai | SM8550 HDK (shares the Lanai DSU power code) | not submitted |
 | agatti | qcom/agatti | base | Igor's topic agatti-uno-q-reworked (55728..55735 PS1) + access control, TBB, aperture, PSCI fixes | topic open; fixes not submitted |
 | shikra | qcom/shikra | base | 53770 PS9 (IPCC, Nord and Shikra); shikra-enable topic merged in the base | open |
 
@@ -140,6 +144,15 @@ Each commit of a platform branch (from its parent: the base or the branch it bui
 | dc6def90397f | feat(qti): add IPCC driver with Nord and Shikra support | pradeep-kondoju | Gerrit 53770 PS9 (ded6567822, open) |  |
 
 
+### qcom/kailua (on qcom/lanai)
+
+| commit | subject | author | submission | note |
+|---|---|---|---|---|
+| a3ec68aed521 | refactor(qti): hoya: share the DSU core power-up between chipsets | Tyler Baker | not submitted |  |
+| b203ab8c5ee1 | feat(qti): hoya: power up silver complexes before their cores | Tyler Baker | not submitted |  |
+| ad8fc4429740 | feat(qti): add the SM8550 (Kailua) HDK platform | Tyler Baker | not submitted |  |
+| 7b67e893061f | feat(qti): kailua: enable the apps PDC | Tyler Baker | not submitted |  |
+
 ## In-flight submissions not carried
 
 - 55272 PS1 shikra-accesscontrol (layered XPU3/VMIDMT restructure; no Shikra code yet): carrying it means porting the unsubmitted Agatti access control (BL2 lock, dynamic locks, wide MPU) and the xPU syndrome fix onto it; held for Tyler.
@@ -165,3 +178,4 @@ job cannot reach it). Jobs: https://lava.infra.foundries.io/scheduler/job/<id>.
 | talos | public | QCDFP-261025-92 | 512759 | equal to 511901 except the known KVM PMU timing race (now passing) and the OSM cpufreq checks (not carried, skip) |
 | shikra | public | QCDFP-261025-91 | 512770 | U-Boot only (Shikra v4) on the stock XBL/QSEE/Gunyah health image: FP, Linux, login and the health smoke tests pass as health job 511579; no upstream TF-A/OP-TEE boot path yet |
 | lanai | public |  |  | untested: no LAVA board |
+| kailua | public |  |  | untested: no board yet (lab access pending) |
