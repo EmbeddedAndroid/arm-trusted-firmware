@@ -15,19 +15,20 @@
 #include <lib/spinlock.h>
 #include <lib/utils_def.h>
 
+#include <hoya_dsu_cfg.h>
 #include <platform_def.h>
 #include <qti_plat.h>
 
-/* Per-core IPM blocks (APSS_ALIAS_n). */
+/* Per-core IPM blocks (APSS_ALIAS_n); complex IPMs have the same layout. */
 #define CPU_IPM_BASE(core)		(QTI_APSS_HM_BASE + 0x800000U + \
 					 ((core) * 0x10000U))
-#define CPU_HEAD_SWITCH_CTL(core)	(CPU_IPM_BASE(core) + 0x08U)
-#define CPU_SEQ_FORCE_PWR_CTL_EN(core)	(CPU_IPM_BASE(core) + 0x1cU)
-#define CPU_SEQ_FORCE_PWR_CTL_VAL(core)	(CPU_IPM_BASE(core) + 0x20U)
+#define IPM_HEAD_SWITCH_CTL		0x08U
+#define IPM_SEQ_FORCE_PWR_CTL_EN	0x1cU
+#define IPM_SEQ_FORCE_PWR_CTL_VAL	0x20U
 
-#define CL_IPM_BASE			(QTI_APSS_HM_BASE + 0x8a0000U)
+#define IPM_HEAD_SWITCH_PWRDUP		BIT_32(10)
 
-/* Core PPUs on the DSU-110 utility bus. */
+/* Core PPUs on the DSU utility bus. */
 #define CPU_PPU_BASE(core)		(QTI_APSS_HM_BASE + 0xe80000U + \
 					 ((core) * 0x100000U))
 #define PPU_PWPR(core)			(CPU_PPU_BASE(core) + 0x0U)
@@ -61,53 +62,7 @@
 
 #define SAW4_PMIC_WRITE_RETRY		200U
 
-/* Nominal voltage of the APC1 and APC2 rails until CPUCP scales them. */
-#define GOLD_RAIL_BOOT_MV		824U
-
 #define MEM_REPAIR_TIMEOUT_US		10000U
-
-/*
- * The Cortex-A720 cores 2 to 4 sit on the APC2 rail, the Cortex-A720 cores
- * 5 and 6 and the Cortex-X4 core 7 on APC1. Both rails are off at cold boot:
- * the first core of each is preceded by the rail bring-up through its SAW4
- * and the repair of the memories on the rail.
- */
-struct gold_rail {
-	unsigned int first_core;
-	unsigned int last_core;
-	uintptr_t saw4;
-	uintptr_t repair_en;
-	uintptr_t repair_val;
-	uintptr_t repair_sts;
-	uint32_t repair_bit;
-	uint32_t repair_done;
-	bool on;
-};
-
-static struct gold_rail gold_rails[] = {
-	{
-		/* APC2 */
-		.first_core = 2U,
-		.last_core = 4U,
-		.saw4 = QTI_APSS_HM_BASE + 0x902000U,
-		.repair_en = CL_IPM_BASE + 0x278U,
-		.repair_val = CL_IPM_BASE + 0x27cU,
-		.repair_sts = CL_IPM_BASE + 0x288U,
-		.repair_bit = BIT_32(17),
-		.repair_done = BIT_32(16),
-	},
-	{
-		/* APC1 */
-		.first_core = 5U,
-		.last_core = 7U,
-		.saw4 = QTI_APSS_HM_BASE + 0x901000U,
-		.repair_en = CL_IPM_BASE + 0x180U,
-		.repair_val = CL_IPM_BASE + 0x184U,
-		.repair_sts = CL_IPM_BASE + 0x190U,
-		.repair_bit = BIT_32(8),
-		.repair_done = BIT_32(4),
-	},
-};
 
 static spinlock_t gold_rail_lock;
 
@@ -128,7 +83,7 @@ static bool saw4_pmic_wait(uintptr_t saw4, uint32_t data, bool check_data)
 	return false;
 }
 
-static bool gold_rail_enable(const struct gold_rail *rail)
+static bool gold_rail_enable(const struct hoya_gold_rail *rail)
 {
 	mmio_setbits_32(rail->saw4 + SAW4_AVS_CTL, SAW4_AVS_CTL_EN);
 	mmio_setbits_32(rail->saw4 + SAW4_AVS_CTL, SAW4_AVS_CTL_CTL_SEL);
@@ -141,8 +96,8 @@ static bool gold_rail_enable(const struct gold_rail *rail)
 	udelay(90);
 
 	mmio_write_32(rail->saw4 + SAW4_VCTL,
-		      SAW4_VCTL_SET_MV(GOLD_RAIL_BOOT_MV));
-	if (!saw4_pmic_wait(rail->saw4, GOLD_RAIL_BOOT_MV, true)) {
+		      SAW4_VCTL_SET_MV(HOYA_GOLD_RAIL_BOOT_MV));
+	if (!saw4_pmic_wait(rail->saw4, HOYA_GOLD_RAIL_BOOT_MV, true)) {
 		ERROR("SAW4 0x%lx: rail voltage timed out\n", rail->saw4);
 		return false;
 	}
@@ -150,7 +105,7 @@ static bool gold_rail_enable(const struct gold_rail *rail)
 	return true;
 }
 
-static bool gold_rail_repair_memories(const struct gold_rail *rail)
+static bool gold_rail_repair_memories(const struct hoya_gold_rail *rail)
 {
 	uint64_t timeout;
 	bool done = true;
@@ -181,8 +136,8 @@ static bool gold_rail_power_on(unsigned int core)
 
 	spin_lock(&gold_rail_lock);
 
-	for (unsigned int i = 0U; i < ARRAY_SIZE(gold_rails); i++) {
-		struct gold_rail *rail = &gold_rails[i];
+	for (unsigned int i = 0U; i < ARRAY_SIZE(hoya_gold_rails); i++) {
+		struct hoya_gold_rail *rail = &hoya_gold_rails[i];
 
 		if ((core < rail->first_core) || (core > rail->last_core) ||
 		    rail->on) {
@@ -221,6 +176,63 @@ static void cpu_ppu_on(unsigned int core)
 			   PPU_PWPR_PWR_POLICY_ON);
 }
 
+/* The IPM power-up sequence of a core or a complex. */
+static void ipm_power_up(uintptr_t ipm)
+{
+	/* Skew between the head switch enables, 40 XO cycles. */
+	mmio_write_32(ipm + IPM_HEAD_SWITCH_CTL, 0x28U);
+	mmio_write_32(ipm + IPM_SEQ_FORCE_PWR_CTL_EN, 0x0U);
+
+	/* Close the head switch, then drop the memory and logic clamps. */
+	mmio_write_32(ipm + IPM_SEQ_FORCE_PWR_CTL_VAL, 0x642U);
+	udelay(2);
+	mmio_write_32(ipm + IPM_SEQ_FORCE_PWR_CTL_VAL, 0x402U);
+
+	/* Wake the memories: slp_nret_n, then slp_ret_n. */
+	mmio_write_32(ipm + IPM_SEQ_FORCE_PWR_CTL_VAL, 0x40aU);
+	udelay(4);
+	mmio_write_32(ipm + IPM_SEQ_FORCE_PWR_CTL_VAL, 0x40eU);
+	udelay(4);
+
+	/* Pulse wl_en_clk. */
+	mmio_write_32(ipm + IPM_SEQ_FORCE_PWR_CTL_VAL, 0x50eU);
+	udelay(2);
+	mmio_write_32(ipm + IPM_SEQ_FORCE_PWR_CTL_VAL, 0x40eU);
+
+	/* Ungate the clock, release reset and mark the block active. */
+	mmio_write_32(ipm + IPM_SEQ_FORCE_PWR_CTL_VAL, 0x40cU);
+	udelay(2);
+	mmio_write_32(ipm + IPM_SEQ_FORCE_PWR_CTL_VAL, 0x43cU);
+	mmio_write_32(ipm + IPM_SEQ_FORCE_PWR_CTL_VAL, 0x443cU);
+
+	/* Assert PWRDUP. */
+	mmio_write_32(ipm + IPM_HEAD_SWITCH_CTL, 0x428U);
+}
+
+static spinlock_t complex_lock;
+
+/* Power up the complex of @core if the boot firmware left it off. */
+static void complex_power_on(unsigned int core)
+{
+	if (ARRAY_SIZE(hoya_complexes) == 0U) {
+		return;
+	}
+
+	spin_lock(&complex_lock);
+
+	for (unsigned int i = 0U; i < ARRAY_SIZE(hoya_complexes); i++) {
+		const struct hoya_complex *cplx = &hoya_complexes[i];
+
+		if ((core >= cplx->first_core) && (core <= cplx->last_core) &&
+		    ((mmio_read_32(cplx->ipm + IPM_HEAD_SWITCH_CTL) &
+		      IPM_HEAD_SWITCH_PWRDUP) == 0U)) {
+			ipm_power_up(cplx->ipm);
+		}
+	}
+
+	spin_unlock(&complex_lock);
+}
+
 int plat_qti_pwr_psci_init(uintptr_t warmboot_entry)
 {
 	(void)warmboot_entry;
@@ -229,8 +241,8 @@ int plat_qti_pwr_psci_init(uintptr_t warmboot_entry)
 }
 
 /*
- * Cold boot of a secondary core. The boot firmware powers the A520 complex
- * with core 0; cores 2 to 7 also need their rail.
+ * Cold boot of a secondary core: the first core on a gold rail also brings
+ * the rail up, and a silver core whose complex is off powers it first.
  */
 int plat_qti_pwr_domain_on(u_register_t mpidr, int core_pos)
 {
@@ -246,34 +258,9 @@ int plat_qti_pwr_domain_on(u_register_t mpidr, int core_pos)
 		return PSCI_E_INTERN_FAIL;
 	}
 
-	/* Skew between the head switch enables, 40 XO cycles. */
-	mmio_write_32(CPU_HEAD_SWITCH_CTL(core), 0x28U);
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_EN(core), 0x0U);
+	complex_power_on(core);
 
-	/* Close the head switch, then drop the memory and logic clamps. */
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core), 0x642U);
-	udelay(2);
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core), 0x402U);
-
-	/* Wake the memories: slp_nret_n, then slp_ret_n. */
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core), 0x40aU);
-	udelay(4);
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core), 0x40eU);
-	udelay(4);
-
-	/* Pulse wl_en_clk. */
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core), 0x50eU);
-	udelay(2);
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core), 0x40eU);
-
-	/* Ungate the clock, release reset and mark the core active. */
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core), 0x40cU);
-	udelay(2);
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core), 0x43cU);
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core), 0x443cU);
-
-	/* Assert CPU_PWRDUP. */
-	mmio_write_32(CPU_HEAD_SWITCH_CTL(core), 0x428U);
+	ipm_power_up(CPU_IPM_BASE(core));
 
 	cpu_ppu_on(core);
 

@@ -13,6 +13,7 @@ Qualcomm Platforms
    qcs615_ride
    lanai_qrd
    uno_q
+   kailua_hdk
 
 --------------
 
