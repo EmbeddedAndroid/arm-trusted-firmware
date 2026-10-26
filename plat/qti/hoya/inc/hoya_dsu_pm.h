@@ -31,4 +31,15 @@ struct hoya_gold_rail {
 	bool on;
 };
 
+/*
+ * A silver complex, cores [first_core, last_core] sharing an L2, with its own
+ * IPM block: powered up before the first of its cores unless the boot
+ * firmware already did.
+ */
+struct hoya_complex {
+	unsigned int first_core;
+	unsigned int last_core;
+	uintptr_t ipm;
+};
+
 #endif /* HOYA_DSU_PM_H */

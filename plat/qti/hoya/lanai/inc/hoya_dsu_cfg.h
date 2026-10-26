@@ -17,8 +17,7 @@
 
 /*
  * The Cortex-A720 cores 2 to 4 sit on the APC2 rail, the Cortex-A720 cores
- * 5 and 6 and the Cortex-X4 core 7 on APC1. The second Cortex-A520 shares the
- * complex the boot firmware powers with core 0.
+ * 5 and 6 and the Cortex-X4 core 7 on APC1.
  */
 static struct hoya_gold_rail hoya_gold_rails[] = {
 	{
@@ -44,5 +43,8 @@ static struct hoya_gold_rail hoya_gold_rails[] = {
 		.repair_done = BIT_32(4),
 	},
 };
+
+/* The second Cortex-A520 shares the complex the boot firmware powers. */
+static const struct hoya_complex hoya_complexes[] = {};
 
 #endif /* HOYA_DSU_CFG_H */
