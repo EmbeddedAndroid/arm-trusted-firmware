@@ -148,8 +148,8 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 				$(PLAT_PATH)/common/src/spmi_arb.c			\
 				$(PLAT_PATH)/hoya/common/$(ARCH)/hoya_helpers.S		\
 				$(PLAT_PATH)/hoya/common/hoya_bl31_setup.c		\
-				$(PLAT_PATH)/hoya/${CHIPSET}/lanai_gicv3.c		\
-				$(PLAT_PATH)/hoya/${CHIPSET}/lanai_pm.c			\
+				$(PLAT_PATH)/hoya/common/hoya_dsu_gicv3.c		\
+				$(PLAT_PATH)/hoya/common/hoya_dsu_pm.c		\
 				$(PLAT_PATH)/hoya/qtiseclib/src/qtiseclib_cb_interface.c \
 				$(PLAT_PATH)/hoya/qtiseclib/src/qtiseclib_interface_stub.c \
 				drivers/qti/accesscontrol/access_control_stub.c		\
@@ -165,7 +165,7 @@ include drivers/qti/pdc/pdc.mk
 include plat/qti/hoya/common/cpu_hold.mk
 
 PLAT_INCLUDES		+=	-Iinclude/drivers/qti/sec_core/${CHIPSET}		\
-				-Iinclude/drivers/qti/watchdog/${CHIPSET}
+				-Iinclude/drivers/qti/watchdog/hoya_dsu
 
 BL31_SOURCES		+=	drivers/qti/sec_core/sec_core.c				\
 				drivers/qti/sec_core/${CHIPSET}/sec_core_cfg.c		\
