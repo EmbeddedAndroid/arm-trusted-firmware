@@ -101,6 +101,11 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 include drivers/qti/smem/smem.mk
 include drivers/qti/chipinfo/chipinfo.mk
 
+QTI_ICB_NOCERR_ENABLED	:=	1
+QTI_ICB_CONFIG_ENABLED	:=	1
+QTI_ICB_ENABLED		:=	1
+include drivers/qti/icb/icb.mk
+
 # Override this on the command line to point to the qtiseclib library
 QTISECLIB_PATH ?=
 
@@ -116,7 +121,6 @@ include drivers/qti/pwr_utils/pwr_utils.mk
 include drivers/qti/rpmh/rpmh.mk
 include drivers/qti/clock/clock.mk
 include drivers/qti/cpucp/cpucp.mk
-include drivers/qti/icb/icb.mk
 include drivers/qti/coreinit/coreinit.mk
 
 PLAT_INCLUDES   +=      -Iinclude/drivers/qti/sec_core/${CHIPSET} \
