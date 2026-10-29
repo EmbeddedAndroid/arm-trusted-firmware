@@ -27,6 +27,8 @@ Status
   yet, and CPU standby (WFI) is the only idle state.
 - SYSTEM_RESET and SYSTEM_OFF go through PS_HOLD and the PMK8550 PON over
   the PMIC arbiter v7.
+- BL31 gives the apps PDC inputs to the HLOS DRV; the AOP owns the PDC
+  sequences.
 - The secure watchdog is not serviced.
 - TF-A programs no XPU: whether the boot chain protects the carve-outs that
   hold BL31 and BL32 is not yet verified.
