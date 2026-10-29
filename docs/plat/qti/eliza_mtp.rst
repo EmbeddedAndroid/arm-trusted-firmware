@@ -29,7 +29,7 @@ Status
   the PMIC arbiter v7.
 - BL31 gives the apps PDC inputs to the HLOS DRV; the AOP owns the PDC
   sequences.
-- The secure watchdog is not serviced.
+- BL31 services the secure APSS watchdog.
 - TF-A programs no XPU: whether the boot chain protects the carve-outs that
   hold BL31 and BL32 is not yet verified.
 

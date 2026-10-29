@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include <common/debug.h>
+#include <drivers/qti/watchdog/watchdog.h>
 #include <lib/psci/psci.h>
 
 #include <platform_def.h>
@@ -39,11 +40,15 @@ void plat_qti_pwr_domain_on_finish(int core_pos, const uint8_t *states)
 	(void)states;
 
 	plat_qti_gic_pcpu_init();
+	qti_watchdog_set_target(QTI_WATCHDOG_CPU_WAKEUP);
 }
 
+/* Hand the watchdog bark to an online core before this one is parked. */
 void plat_qti_pwr_domain_off(const uint8_t *states)
 {
 	(void)states;
+
+	qti_watchdog_set_target(QTI_WATCHDOG_CPU_HOTPLUG);
 }
 
 void plat_qti_pwr_domain_suspend(const uint8_t *states)
