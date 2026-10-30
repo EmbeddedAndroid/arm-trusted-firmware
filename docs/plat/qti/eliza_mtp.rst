@@ -24,8 +24,9 @@ Status
 ------
 
 - BL31 runs the native PSCI: it powers the secondary cores on directly and
-  parks cores turned off in BL31, and CPU standby (WFI) is the only idle
-  state.
+  parks cores turned off in BL31. It accepts the core and cluster idle
+  states of the device tree and holds a core suspended to a power-down
+  state in BL31; nothing above the core is powered down.
 - SYSTEM_RESET and SYSTEM_OFF go through PS_HOLD and the PMK8550 PON over
   the PMIC arbiter v7.
 - BL31 gives the apps PDC inputs to the HLOS DRV; the AOP owns the PDC

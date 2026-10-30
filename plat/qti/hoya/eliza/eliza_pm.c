@@ -335,14 +335,46 @@ void plat_qti_invoke_unhandled_isr(uint32_t id, void *handle)
 	(void)handle;
 }
 
-/* Only CPU standby (WFI) is offered: no power-collapse sequence is ported. */
+/*
+ * The idle states of the SM7750 device tree, in the State ID format of the
+ * stock PSCI: CPU state in bits [3:0], cluster (L3) state in [7:4], RSC and
+ * PDC states and a system cache request above them, and bit 24 marking the
+ * last core of the cluster. The power-down states hold the core in BL31
+ * until its wake-up event (hoya_cpu_hold.c). Nothing above the core is
+ * powered down, so the RSC, PDC and system cache requests leave those levels
+ * running.
+ */
+#define ELIZA_PSTATE_LAST_CPU		BIT_32(24)
+
 const unsigned int *plat_qti_pm_idle_states(void)
 {
 	static const unsigned int idle_states[] = {
 		qti_make_pwrstate_lvl0(QTI_LOCAL_STATE_STB,
 				       PSTATE_TYPE_STANDBY),
+		/* cpu-sleep-0, cluster-sleep-0, cluster-sleep-1 */
+		0x40000004U,
+		0x41000044U,
+		0x4100b344U,
 		0,
 	};
 
 	return idle_states;
+}
+
+void plat_qti_parse_state_id(unsigned int state_id,
+			     psci_power_state_t *req_state)
+{
+	unsigned int lvl;
+
+	for (lvl = QTI_PWR_LVL0; lvl <= PLAT_MAX_PWR_LVL; lvl++) {
+		req_state->pwr_domain_state[lvl] = PSCI_LOCAL_STATE_RUN;
+	}
+	req_state->pwr_domain_state[QTI_PWR_LVL0] = state_id & 0xfU;
+	req_state->pwr_domain_state[QTI_PWR_LVL1] = (state_id >> 4) & 0xfU;
+
+#if PSCI_OS_INIT_MODE
+	req_state->last_at_pwrlvl =
+		((state_id & ELIZA_PSTATE_LAST_CPU) != 0U) ? QTI_PWR_LVL1 :
+							      QTI_PWR_LVL0;
+#endif
 }
