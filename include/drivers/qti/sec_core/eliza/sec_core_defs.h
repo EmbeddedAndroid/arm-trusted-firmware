@@ -22,4 +22,10 @@
 #define GOLD_SAW4_SECURE_ADDR			(QTI_APSS_HM_BASE + 0x00901c00)
 #define SAW4_SECURE_RMSK			0x7
 
+/* WDOG_SECURE of the APSS watchdog timers: 0 secure, 1 non-secure. */
+#define WDT_TMR1_WDOG_SECURE_ADDR		(QTI_APSS_HM_BASE + 0x00410000)
+#define WDT_TMR2_WDOG_SECURE_ADDR		(QTI_APSS_HM_BASE + 0x00411000)
+#define WDOG_SECURE_SEC				0x0
+#define WDOG_SECURE_NSEC			0x1
+
 #endif /* SEC_CORE_DEFS_H */
