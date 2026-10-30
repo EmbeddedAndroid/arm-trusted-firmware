@@ -102,6 +102,7 @@ static inline bool plat_qti_cpu_hold_release(unsigned int core_pos)
 void plat_qti_bl31_setup_post(void);
 void plat_qti_lpass_init(void);
 void plat_qti_gdsc_init(void);
+void plat_qti_clocked_boot_init(void);
 void plat_qti_invoke_unhandled_isr(uint32_t id, void *handle);
 
 /*
