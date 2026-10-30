@@ -47,6 +47,12 @@ struct qti_smmu_gpu_cx {
 	/* Aperture slots, numbered as the OS requests them. */
 	const uintptr_t *aperture;
 	size_t num_aperture;
+	/*
+	 * Aperture control and the value that enables the slots, where the
+	 * aperture has one (0: none). It is in GPU CX like the slots.
+	 */
+	uintptr_t aperture_ctrl;
+	uint32_t aperture_ctrl_en;
 	/* Context bank 0 as an offset in the GPU register space. */
 	uint32_t cb0_offset;
 	uint32_t num_cbs;
