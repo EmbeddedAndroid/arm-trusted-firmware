@@ -189,11 +189,19 @@ static void qti_node_power_off(const psci_power_state_t *target_state)
 
 static void qti_node_suspend(const psci_power_state_t *target_state)
 {
-	plat_qti_cpu_hold_suspend(plat_my_core_pos());
+	bool hold = plat_qti_cpu_hold_suspend(plat_my_core_pos());
+
 	plat_qti_pwr_domain_suspend((const uint8_t *)target_state->pwr_domain_state);
 	if (is_cpu_off(target_state)) {
-		plat_qti_gic_cpuif_disable();
-		qti_set_cpupwrctlr_val(true);
+		/*
+		 * A core held in BL31 waits for its wake-up interrupt in WFI,
+		 * which needs the CPU interface, and must not raise the
+		 * power-down request on that WFI.
+		 */
+		if (!hold) {
+			plat_qti_gic_cpuif_disable();
+		}
+		qti_set_cpupwrctlr_val(!hold);
 	}
 }
 

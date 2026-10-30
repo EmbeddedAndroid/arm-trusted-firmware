@@ -22,6 +22,10 @@
  * entrypoint. Parked cores stay powered, so no power level above the core
  * may be powered down while any core is parked.
  *
+ * A core suspended to a power-down state is held the same way, in WFI, and
+ * resumes through the warm boot entrypoint on its first wake-up event, as
+ * after a power-down: the OS restores its context as it would there.
+ *
  * Each field has one writer at a time:
  * - retiring is written by the core itself, set in its pwr_domain_off()
  *   and cleared on a suspend. It tells CPU_ON a released core will reach
@@ -41,6 +45,7 @@ struct cpu_hold {
 static struct cpu_hold cpu_hold[PLATFORM_CORE_COUNT];
 
 void __dead2 plat_qti_cpu_hold_park(uintptr_t go);
+void __dead2 plat_qti_cpu_hold_wait(void);
 
 bool plat_qti_cpu_hold_retire(unsigned int core_pos)
 {
@@ -54,9 +59,11 @@ bool plat_qti_cpu_hold_retire(unsigned int core_pos)
 	return true;
 }
 
-void plat_qti_cpu_hold_suspend(unsigned int core_pos)
+bool plat_qti_cpu_hold_suspend(unsigned int core_pos)
 {
 	cpu_hold[core_pos].retiring = 0U;
+
+	return true;
 }
 
 void plat_qti_pwr_domain_pwr_down(const psci_power_state_t *target_state)
@@ -65,8 +72,12 @@ void plat_qti_pwr_domain_pwr_down(const psci_power_state_t *target_state)
 
 	(void)target_state;
 
+	/*
+	 * PSCI calls this only for CPU_OFF, which sets retiring, and for a
+	 * suspend to a power-down state, which clears it.
+	 */
 	if (hold->retiring == 0U) {
-		return;
+		plat_qti_cpu_hold_wait();
 	}
 
 	plat_qti_cpu_hold_park((uintptr_t)&hold->go);
