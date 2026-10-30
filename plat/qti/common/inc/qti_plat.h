@@ -133,6 +133,8 @@ void plat_qti_invoke_unhandled_isr(uint32_t id, void *handle);
  * standby only, while qtiseclib_pm.c advertises the firmware power-down ladder.
  */
 const unsigned int *plat_qti_pm_idle_states(void);
+void plat_qti_parse_state_id(unsigned int state_id,
+			     psci_power_state_t *req_state);
 
 typedef struct chip_id_info {
 	uint16_t jtag_id;

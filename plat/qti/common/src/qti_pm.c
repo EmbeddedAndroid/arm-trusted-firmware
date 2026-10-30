@@ -33,6 +33,26 @@
 DEFINE_RENAME_SYSREG_RW_FUNCS(cpu_pwrctrl_val, S3_0_C15_C2_7)
 
 
+/*
+ * Default State ID format: one nibble per power level from the CPU up, then
+ * the last power level at which the calling core is the last one running.
+ */
+#pragma weak plat_qti_parse_state_id
+void plat_qti_parse_state_id(unsigned int state_id,
+			     psci_power_state_t *req_state)
+{
+	unsigned int i;
+
+	for (i = QTI_PWR_LVL0; i <= PLAT_MAX_PWR_LVL; i++) {
+		req_state->pwr_domain_state[i] = state_id &
+		    QTI_LOCAL_PSTATE_MASK;
+		state_id >>= QTI_LOCAL_PSTATE_WIDTH;
+	}
+#if PSCI_OS_INIT_MODE
+	req_state->last_at_pwrlvl = state_id & QTI_LOCAL_PSTATE_MASK;
+#endif
+}
+
 /*******************************************************************************
  * QTI standard platform handler called to check the validity of the power
  * state parameter. The power state parameter has to be a composite power
@@ -41,7 +61,6 @@ DEFINE_RENAME_SYSREG_RW_FUNCS(cpu_pwrctrl_val, S3_0_C15_C2_7)
 int qti_validate_power_state(unsigned int power_state,
 			     psci_power_state_t *req_state)
 {
-	unsigned int state_id;
 	int i;
 	const unsigned int *idle_states = plat_qti_pm_idle_states();
 
@@ -66,18 +85,7 @@ int qti_validate_power_state(unsigned int power_state,
 	if (!idle_states[i])
 		return PSCI_E_INVALID_PARAMS;
 
-	i = 0;
-	state_id = psci_get_pstate_id(power_state);
-
-	/* Parse the State ID and populate the state info parameter */
-	for (i = QTI_PWR_LVL0; i <= PLAT_MAX_PWR_LVL; i++) {
-		req_state->pwr_domain_state[i] = state_id &
-		    QTI_LOCAL_PSTATE_MASK;
-		state_id >>= QTI_LOCAL_PSTATE_WIDTH;
-	}
-#if PSCI_OS_INIT_MODE
-	req_state->last_at_pwrlvl = state_id & QTI_LOCAL_PSTATE_MASK;
-#endif
+	plat_qti_parse_state_id(psci_get_pstate_id(power_state), req_state);
 
 	return PSCI_E_SUCCESS;
 }
@@ -225,12 +233,8 @@ __dead2 void qti_system_reset(void)
 void qti_get_sys_suspend_power_state(psci_power_state_t *req_state)
 {
 	int i;
-	unsigned int state_id, power_state;
+	unsigned int power_state;
 	const unsigned int *idle_states = plat_qti_pm_idle_states();
-
-	for (i = 0; i <= PLAT_MAX_PWR_LVL; i++) {
-		req_state->pwr_domain_state[i] = PSCI_LOCAL_STATE_RUN;
-	}
 
 	/*
 	 * Find deepest state.
@@ -245,16 +249,7 @@ void qti_get_sys_suspend_power_state(psci_power_state_t *req_state)
 	/* Need at least one valid state before the terminator. */
 	assert(i > 0);
 	power_state = idle_states[i - 1];
-	state_id = psci_get_pstate_id(power_state);
-
-	i = 0;
-
-	/* Parse the State ID and populate the state info parameter */
-	while (state_id) {
-		req_state->pwr_domain_state[i++] =
-		    state_id & QTI_LOCAL_PSTATE_MASK;
-		state_id >>= QTI_LOCAL_PSTATE_WIDTH;
-	}
+	plat_qti_parse_state_id(psci_get_pstate_id(power_state), req_state);
 
 #if PSCI_OS_INIT_MODE
 	req_state->last_at_pwrlvl = PLAT_MAX_PWR_LVL;
