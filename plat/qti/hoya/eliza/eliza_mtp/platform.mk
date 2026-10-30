@@ -143,6 +143,12 @@ QTI_PDC_TCS		:=	0
 QTI_PDC_IRQ_OWNER_BANKED :=	1
 include drivers/qti/pdc/pdc.mk
 
+# The GPU GX rail is voted on through the TZ DRV of the apps RSC while BL31
+# runs the GPU GDSC power-up sequence at cold boot.
+include drivers/qti/cmd_db/cmd_db.mk
+include drivers/qti/pwr_utils/pwr_utils.mk
+include drivers/qti/rpmh/rpmh.mk
+
 # The GPU SMMU secure registers and aperture are in GPU CX.
 QTI_SMMU_GPU_CX		:=	1
 include drivers/qti/smmu/smmu.mk
