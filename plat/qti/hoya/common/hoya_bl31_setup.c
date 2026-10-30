@@ -15,6 +15,11 @@
  */
 uint32_t g_qti_bl31_cold_booted;
 
+#pragma weak plat_qti_gdsc_init
+void plat_qti_gdsc_init(void)
+{
+}
+
 #pragma weak plat_qti_lpass_init
 void plat_qti_lpass_init(void)
 {
@@ -25,6 +30,7 @@ void plat_qti_bl31_setup_post(void)
 	qtiseclib_bl31_platform_setup();
 
 	qti_cpucp_init();
+	plat_qti_gdsc_init();
 	qti_smmu_gpu_init();
 	plat_qti_lpass_init();
 

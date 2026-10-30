@@ -129,6 +129,7 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 				$(PLAT_PATH)/common/src/spmi_arb.c			\
 				$(PLAT_PATH)/hoya/common/$(ARCH)/hoya_helpers.S		\
 				$(PLAT_PATH)/hoya/common/hoya_bl31_setup.c		\
+				$(PLAT_PATH)/hoya/${CHIPSET}/eliza_gdsc.c		\
 				$(PLAT_PATH)/hoya/${CHIPSET}/eliza_gicv3.c		\
 				$(PLAT_PATH)/hoya/${CHIPSET}/eliza_lpass.c		\
 				$(PLAT_PATH)/hoya/${CHIPSET}/eliza_pm.c			\

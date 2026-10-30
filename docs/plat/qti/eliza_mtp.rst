@@ -37,6 +37,8 @@ Status
   the normal world.
 - BL31 releases the LPASS boot IMEM at cold boot for the ADSP.
 - BL31 sets up the GPU SMMU and serves the GPU SMMU aperture call.
+- BL31 hands the GPU CX and GX GDSC controls to the voting logic with
+  register retention.
 - TF-A programs no XPU: whether the boot chain protects the carve-outs that
   hold BL31 and BL32 is not yet verified.
 
