@@ -34,6 +34,7 @@ Status
 - BL31 services the secure APSS watchdog and hands the non-secure one to
   the normal world.
 - BL31 releases the LPASS boot IMEM at cold boot for the ADSP.
+- BL31 sets up the GPU SMMU and serves the GPU SMMU aperture call.
 - TF-A programs no XPU: whether the boot chain protects the carve-outs that
   hold BL31 and BL32 is not yet verified.
 

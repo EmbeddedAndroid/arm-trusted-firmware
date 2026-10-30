@@ -142,6 +142,10 @@ QTI_PDC_TCS		:=	0
 QTI_PDC_IRQ_OWNER_BANKED :=	1
 include drivers/qti/pdc/pdc.mk
 
+# The GPU SMMU secure registers and aperture are in GPU CX.
+QTI_SMMU_GPU_CX		:=	1
+include drivers/qti/smmu/smmu.mk
+
 # Nothing completes the power-down request of a core turned off: no PCU
 # power-collapse sequence is ported.
 include plat/qti/hoya/common/cpu_hold.mk
