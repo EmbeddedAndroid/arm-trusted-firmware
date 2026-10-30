@@ -28,7 +28,9 @@ Status
   states of the device tree and holds a core suspended to a power-down
   state in BL31; nothing above the core is powered down.
 - SYSTEM_RESET and SYSTEM_OFF go through PS_HOLD and the PMK8550 PON over
-  the PMIC arbiter v7.
+  the PMIC arbiter v7. On the MTP, SYSTEM_RESET does not reset the SoC
+  yet: PS_HOLD drops with the PON reset configured, but the PMIC does not
+  act, and BL31 panics after a second.
 - BL31 gives the apps PDC inputs to the HLOS DRV; the AOP owns the PDC
   sequences.
 - BL31 services the secure APSS watchdog and hands the non-secure one to
