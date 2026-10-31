@@ -74,9 +74,9 @@
  * Processor identifier
  *
  * Pass this as the proc_id argument to qti_smem_host_id().
- * Currently only QTI_SMEM_PROC_TZ is supported.
  * -----------------------------------------------------------------------
  */
+#define QTI_SMEM_PROC_ADSP 2U
 #define QTI_SMEM_PROC_TZ 7U
 
 /* Lookup flags - currently only 0 is valid */
@@ -114,6 +114,25 @@ int qti_smem_init(void);
  */
 int qti_smem_host_id(uint16_t proc_id, uint16_t proc_num, uint16_t pd_num,
 		     uint16_t chiplet, uint16_t *host);
+
+/*
+ * qti_smem_partition() - Get one entry of the SMEM partition table.
+ * @idx:    [in]  table index, from 0
+ * @offset: [out] partition offset from the SMEM base
+ * @size:   [out] partition size in bytes
+ * @host0:  [out] first host of the partition
+ * @host1:  [out] second host of the partition
+ *
+ * Return:
+ *   0        success
+ *  -EINVAL   an output pointer is NULL
+ *  -ENODEV   the driver is not initialized
+ *  -ENOENT   @idx is past the last entry
+ *  -ERANGE   the entry does not describe a partition inside SMEM
+ *  -EIO      the table is not mapped
+ */
+int qti_smem_partition(uint32_t idx, uint32_t *offset, uint32_t *size,
+		       uint16_t *host0, uint16_t *host1);
 
 /*
  * qti_smem_lookup() - Look up an existing SMEM item.
