@@ -13,6 +13,7 @@
 #include <lib/mmio.h>
 #include <lib/utils_def.h>
 
+#include <qti_llcc_mpu.h>
 #include <qti_plat.h>
 
 /* GCC */
@@ -142,4 +143,6 @@ void plat_qti_lpass_init(void)
 	if (!sway_on) {
 		mmio_clrbits_32(GCC_LPASS_CFG_NOC_SWAY_CBCR, CBCR_CLK_ENABLE);
 	}
+
+	qti_llcc_mpu_open_adsp_smem();
 }
