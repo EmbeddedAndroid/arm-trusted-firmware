@@ -248,5 +248,15 @@ int plat_qti_gpu_smmu_aperture(const uint32_t pairs[4])
 		}
 	}
 
+	/* Enable the slots once they point at their context banks. */
+	if ((ret == 0) && (gpu->aperture_ctrl != 0U)) {
+		mmio_write_32(gpu->aperture_ctrl, gpu->aperture_ctrl_en);
+		if (mmio_read_32(gpu->aperture_ctrl) != gpu->aperture_ctrl_en) {
+			ERROR("GPU SMMU: aperture control reads 0x%x\n",
+			      mmio_read_32(gpu->aperture_ctrl));
+			ret = -EIO;
+		}
+	}
+
 	return ret;
 }

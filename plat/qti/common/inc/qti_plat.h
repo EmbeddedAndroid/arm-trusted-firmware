@@ -87,14 +87,16 @@ void qti_cpu_pwrdn_en(void);
 void qti_cpu_pwrdn_clear(void);
 
 /*
- * Where nothing completes the power-down request of a core turned off,
- * QTI_CPU_OFF_HOLD parks such cores in BL31 instead (hoya_cpu_hold.c):
- * plat_qti_cpu_hold_retire() clears CORE_PWRDN_EN and returns true for a
- * core that will park, which then raises no power-down request.
+ * Where nothing completes the power-down request of a core turned off or
+ * suspended, QTI_CPU_OFF_HOLD parks such cores in BL31 instead
+ * (hoya_cpu_hold.c): plat_qti_cpu_hold_retire() clears CORE_PWRDN_EN and
+ * returns true for a core that will park, which then raises no power-down
+ * request; plat_qti_cpu_hold_suspend() returns true for a core that will be
+ * held, which clears CORE_PWRDN_EN instead.
  */
 #ifdef QTI_CPU_OFF_HOLD
 bool plat_qti_cpu_hold_retire(unsigned int core_pos);
-void plat_qti_cpu_hold_suspend(unsigned int core_pos);
+bool plat_qti_cpu_hold_suspend(unsigned int core_pos);
 bool plat_qti_cpu_hold_release(unsigned int core_pos);
 void plat_qti_pwr_domain_pwr_down(const psci_power_state_t *target_state);
 #define PLAT_QTI_PWR_DOMAIN_PWR_DOWN	plat_qti_pwr_domain_pwr_down
@@ -105,9 +107,10 @@ static inline bool plat_qti_cpu_hold_retire(unsigned int core_pos)
 	return false;
 }
 
-static inline void plat_qti_cpu_hold_suspend(unsigned int core_pos)
+static inline bool plat_qti_cpu_hold_suspend(unsigned int core_pos)
 {
 	(void)core_pos;
+	return false;
 }
 
 static inline bool plat_qti_cpu_hold_release(unsigned int core_pos)
@@ -119,6 +122,9 @@ static inline bool plat_qti_cpu_hold_release(unsigned int core_pos)
 #endif
 
 void plat_qti_bl31_setup_post(void);
+void plat_qti_lpass_init(void);
+void plat_qti_gdsc_init(void);
+void plat_qti_clocked_boot_init(void);
 void plat_qti_invoke_unhandled_isr(uint32_t id, void *handle);
 
 /*
@@ -154,6 +160,8 @@ void plat_qti_invoke_unhandled_isr(uint32_t id, void *handle);
  * standby only, while qtiseclib_pm.c advertises the firmware power-down ladder.
  */
 const unsigned int *plat_qti_pm_idle_states(void);
+void plat_qti_parse_state_id(unsigned int state_id,
+			     psci_power_state_t *req_state);
 
 typedef struct chip_id_info {
 	uint16_t jtag_id;

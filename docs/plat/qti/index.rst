@@ -14,6 +14,7 @@ Qualcomm Platforms
    lanai_qrd
    uno_q
    kailua_hdk
+   eliza_mtp
 
 --------------
 

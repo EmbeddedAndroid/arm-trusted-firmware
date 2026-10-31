@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2026, Qualcomm Technologies, Inc. and/or its subsidiaries.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+#ifndef SEC_CORE_DEFS_H
+#define SEC_CORE_DEFS_H
+
+#include <eliza_def.h>
+
+#define APSS_SHARED_KRYO_RVBARADDR_LO_ADDR	(QTI_APSS_HM_BASE + 0x0060f010)
+#define APSS_SHARED_KRYO_RVBARADDR_HI_ADDR	(QTI_APSS_HM_BASE + 0x0060f014)
+
+#define APSS_ALIAS_0_APC_SECURE_ADDR		(QTI_APSS_HM_BASE + 0x00800000)
+#define APSS_ALIASn_APC_SECURE_OFFSET_TO_NEXT	0x10000
+#define APSS_ALIAS_0_APC_SECURE_RMSK		0x1
+#define APSS_CL_SECURE_ADDR			(QTI_APSS_HM_BASE + 0x008b0000)
+#define APSS_CL_SECURE_RMSK			0x1
+
+#define SILVER_SAW4_SECURE_ADDR			(QTI_APSS_HM_BASE + 0x00900c00)
+#define GOLD_SAW4_SECURE_ADDR			(QTI_APSS_HM_BASE + 0x00901c00)
+#define SAW4_SECURE_RMSK			0x7
+
+/* WDOG_SECURE of the APSS watchdog timers: 0 secure, 1 non-secure. */
+#define WDT_TMR1_WDOG_SECURE_ADDR		(QTI_APSS_HM_BASE + 0x00410000)
+#define WDT_TMR2_WDOG_SECURE_ADDR		(QTI_APSS_HM_BASE + 0x00411000)
+#define WDOG_SECURE_SEC				0x0
+#define WDOG_SECURE_NSEC			0x1
+
+#endif /* SEC_CORE_DEFS_H */

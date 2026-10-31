@@ -119,10 +119,16 @@ void bl31_plat_arch_setup(void)
  * Boot-time init that needs the TF-A init-only clocks held. Add future
  * clock-dependent init calls here rather than bracketing them inline.
  */
+#pragma weak plat_qti_clocked_boot_init
+void plat_qti_clocked_boot_init(void)
+{
+}
+
 static void clocked_boot_init(void)
 {
 	qti_smmu_clocked_init();
 	qti_accesscontrol_init();
+	plat_qti_clocked_boot_init();
 }
 
 /*******************************************************************************
