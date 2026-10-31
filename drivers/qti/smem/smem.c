@@ -485,6 +485,39 @@ out:
 	return ret;
 }
 
+int qti_smem_partition(uint32_t idx, uint32_t *offset, uint32_t *size,
+		       uint16_t *host0, uint16_t *host1)
+{
+	const struct qti_smem_toc_entry *e;
+	void *toc_va;
+
+	if ((offset == NULL) || (size == NULL) || (host0 == NULL) ||
+	    (host1 == NULL))
+		return -EINVAL;
+
+	if (qti_smem_info.initialized == 0)
+		return -ENODEV;
+
+	if (idx >= qti_smem_info.num_toc_entries)
+		return -ENOENT;
+
+	toc_va = qti_smem_plat_get_addr(qti_smem_info.toc_offset);
+	if (toc_va == NULL)
+		return -EIO;
+
+	e = (const struct qti_smem_toc_entry *)((const uint8_t *)toc_va +
+		sizeof(struct qti_smem_toc_header)) + idx;
+	if (smem_validate_toc_entry(e) != 0)
+		return -ERANGE;
+
+	*offset = smem_rd32(&e->offset);
+	*size = smem_rd32(&e->size);
+	*host0 = smem_rd16(&e->host0);
+	*host1 = smem_rd16(&e->host1);
+
+	return 0;
+}
+
 /*
  * qti_smem_lookup() - Look up an existing SMEM item.
  *
