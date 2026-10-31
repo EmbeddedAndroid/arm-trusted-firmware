@@ -40,8 +40,13 @@ Status
 - BL31 hands the GPU CX and GX GDSC controls to the voting logic with
   register retention, and powers GX up and down once at cold boot with the
   GX rail voted through the RPMh TZ client.
-- TF-A programs no XPU: whether the boot chain protects the carve-outs that
-  hold BL31 and BL32 is not yet verified.
+- BL31 opens the SMEM partitions shared with the ADSP to the apps
+  non-secure access domain at the LLCC MPU, as the Qualcomm TZ does: the
+  ADSP's traffic carries that domain, and the boot firmware protects its
+  partitions without it. HLOS, which uses the same domain, gains access to
+  them too, as with the Qualcomm TZ.
+- TF-A programs no other XPU: whether the boot chain protects the
+  carve-outs that hold BL31 and BL32 is not yet verified.
 
 How to build
 ------------
