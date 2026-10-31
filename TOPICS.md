@@ -13,6 +13,9 @@ refresh: tag qcom/integration-20261024.
 Added 2026-10-26: qcom/kailua (SM8550 HDK), merged on top of the gated
 refresh; the state before it is tag qcom/integration-20261025.
 
+Added 2026-10-31: qcom/eliza (SM7750 MTP), merged on top of the
+2026-10-26 state (tag qcom/integration-20261026).
+
 ## Platform branches
 
 | platform | branch | on | carries | upstream status |
@@ -25,6 +28,7 @@ refresh; the state before it is tag qcom/integration-20261025.
 | kailua | qcom/kailua | lanai | SM8550 HDK (shares the Lanai DSU power code) | not submitted |
 | agatti | qcom/agatti | base | Igor's topic agatti-uno-q-reworked (55728..55735 PS1) + access control, TBB, aperture, PSCI fixes | topic open; fixes not submitted |
 | shikra | qcom/shikra | base | 53770 PS9 (IPCC, Nord and Shikra); shikra-enable topic merged in the base | open |
+| eliza | qcom/eliza | lanai | SM7750 MTP: platform, PDC, watchdogs, secondary cores, PSCI State ID decode and BL31 suspend hold, SMMUs, LPASS IMEM, RPMh TZ client, GPU GX power-up; 55530 PS3 | not submitted; 55530 open |
 
 ## Per-patch submission map
 
@@ -153,6 +157,28 @@ Each commit of a platform branch (from its parent: the base or the branch it bui
 | ad8fc4429740 | feat(qti): add the SM8550 (Kailua) HDK platform | Tyler Baker | not submitted |  |
 | 7b67e893061f | feat(qti): kailua: enable the apps PDC | Tyler Baker | not submitted |  |
 
+### qcom/eliza (on qcom/lanai)
+
+| commit | subject | author | submission | note |
+|---|---|---|---|---|
+| e69326236519 | fix(qti): only advertise SYSTEM_SUSPEND with a system-level state | Tyler Baker | Gerrit 55530 PS3 | same patch as on qcom/talos |
+| 0a2e3577dac3 | feat(qti): add the SM7750 (Eliza) MTP platform | Tyler Baker | not submitted |  |
+| 2fd2d83f97a8 | feat(qti): eliza: give the apps PDC inputs to the HLOS DRV | Tyler Baker | not submitted |  |
+| ae89c371f7e7 | feat(qti): eliza: service the secure watchdog | Tyler Baker | not submitted |  |
+| ce8db72873f1 | feat(qti): eliza: power on the secondary cores | Tyler Baker | not submitted |  |
+| 19732bbaea6e | feat(qti): eliza: give the non-secure watchdog to the normal world | Tyler Baker | not submitted |  |
+| d7a821d64046 | refactor(qti): let the platform decode the PSCI State ID | Tyler Baker | not submitted |  |
+| 974904d2d9cf | feat(qti): hoya: hold cores suspended to a power-down state in BL31 | Tyler Baker | not submitted |  |
+| 98407a35e8d2 | feat(qti): eliza: accept the device tree idle states | Tyler Baker | not submitted |  |
+| fe14225c6bd2 | feat(qti): eliza: release the LPASS boot IMEM at cold boot | Tyler Baker | not submitted |  |
+| 3ff4a8f5e69b | feat(qti): smmu: enable the GPU SMMU aperture where it has a control | Tyler Baker | not submitted |  |
+| e55c608b03d9 | feat(qti): eliza: set up the apps and GPU SMMUs | Tyler Baker | not submitted |  |
+| 07f204f4228a | docs(qti): eliza: note that SYSTEM_RESET does not reset the MTP | Tyler Baker | not submitted |  |
+| a0b8ad371869 | feat(qti): eliza: hand the GPU GDSC controls to the voting logic | Tyler Baker | not submitted |  |
+| c3ca2588d6aa | feat(qti): add a platform hook for clocked cold-boot setup | Tyler Baker | not submitted |  |
+| e33d5b7dfafd | feat(qti): eliza: enable the RPMh TZ client | Tyler Baker | not submitted |  |
+| 00d12c5b13c0 | feat(qti): eliza: run the GPU GX power-up sequence at cold boot | Tyler Baker | not submitted |  |
+
 ## In-flight submissions not carried
 
 - 55272 PS1 shikra-accesscontrol (layered XPU3/VMIDMT restructure; no Shikra code yet): carrying it means porting the unsubmitted Agatti access control (BL2 lock, dynamic locks, wide MPU) and the xPU syndrome fix onto it; held for Tyler.
@@ -179,3 +205,4 @@ job cannot reach it). Jobs: https://lava.infra.foundries.io/scheduler/job/<id>.
 | shikra | public | QCDFP-261025-91 | 512770 | U-Boot only (Shikra v4) on the stock XBL/QSEE/Gunyah health image: FP, Linux, login and the health smoke tests pass as health job 511579; no upstream TF-A/OP-TEE boot path yet |
 | lanai | public |  |  | untested: no LAVA board |
 | kailua | public |  |  | untested: no board yet (lab access pending) |
+| eliza | public | QCDFP-261031-408 | MTP, no LAVA board | BOARD-REQUEST-3: TF-A/OP-TEE/U-Boot FP, U-Boot UFS clock lines gone, UFS, fastboot, GPU, NPU, CPU hotplug pass (BOARD-REQUEST-1 on 401 passed the same steps) |
