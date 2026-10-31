@@ -37,6 +37,7 @@
 
 #include <platform_def.h>
 #include <qti_interrupt_svc.h>
+#include <qti_llcc_mpu.h>
 #include <qti_plat.h>
 #ifdef TFA_BL31_RING_LOG_BASE
 #include <qti_ringbuf_console.h>
@@ -141,6 +142,7 @@ void bl31_platform_setup(void)
 	qti_pdc_init();
 
 	qti_smem_init();
+	qti_llcc_mpu_open_adsp_smem();
 
 	if (qti_chipinfo_init() != CHIPINFO_SUCCESS) {
 		WARN("ChipInfo initialization error\n");
