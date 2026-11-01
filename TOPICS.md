@@ -16,6 +16,9 @@ refresh; the state before it is tag qcom/integration-20261025.
 Added 2026-10-31: qcom/eliza (SM7750 MTP), merged on top of the
 2026-10-26 state (tag qcom/integration-20261026).
 
+Added 2026-11-01: the ADSP SMEM partitions at the LLCC MPU (common
+helper, SM7750 user) on qcom/eliza.
+
 ## Platform branches
 
 | platform | branch | on | carries | upstream status |
@@ -28,7 +31,7 @@ Added 2026-10-31: qcom/eliza (SM7750 MTP), merged on top of the
 | kailua | qcom/kailua | lanai | SM8550 HDK (shares the Lanai DSU power code) | not submitted |
 | agatti | qcom/agatti | base | Igor's topic agatti-uno-q-reworked (55728..55735 PS1) + access control, TBB, aperture, PSCI fixes | topic open; fixes not submitted |
 | shikra | qcom/shikra | base | 53770 PS9 (IPCC, Nord and Shikra); shikra-enable topic merged in the base | open |
-| eliza | qcom/eliza | lanai | SM7750 MTP: platform, PDC, watchdogs, secondary cores, PSCI State ID decode and BL31 suspend hold, SMMUs, LPASS IMEM, RPMh TZ client, GPU GX power-up; 55530 PS3 | not submitted; 55530 open |
+| eliza | qcom/eliza | lanai | SM7750 MTP: platform, PDC, watchdogs, secondary cores, PSCI State ID decode and BL31 suspend hold, SMMUs, LPASS IMEM, RPMh TZ client, GPU GX power-up, ADSP SMEM at the LLCC MPU; 55530 PS3 | not submitted; 55530 open |
 
 ## Per-patch submission map
 
@@ -178,6 +181,9 @@ Each commit of a platform branch (from its parent: the base or the branch it bui
 | c3ca2588d6aa | feat(qti): add a platform hook for clocked cold-boot setup | Tyler Baker | not submitted |  |
 | e33d5b7dfafd | feat(qti): eliza: enable the RPMh TZ client | Tyler Baker | not submitted |  |
 | 00d12c5b13c0 | feat(qti): eliza: run the GPU GX power-up sequence at cold boot | Tyler Baker | not submitted |  |
+| f21d2f6d9abe | feat(qti): smem: add a partition table accessor | Tyler Baker | not submitted |  |
+| 86c9029e1674 | feat(qti): add an LLCC MPU helper for the ADSP SMEM partitions | Tyler Baker | not submitted |  |
+| 0d7c2a6d3183 | fix(qti): eliza: open the ADSP SMEM partitions at the LLCC MPU | Tyler Baker | not submitted |  |
 
 ## In-flight submissions not carried
 
@@ -206,3 +212,4 @@ job cannot reach it). Jobs: https://lava.infra.foundries.io/scheduler/job/<id>.
 | lanai | public |  |  | untested: no LAVA board |
 | kailua | public |  |  | untested: no board yet (lab access pending) |
 | eliza | public | QCDFP-261031-408 | MTP, no LAVA board | BOARD-REQUEST-3: TF-A/OP-TEE/U-Boot FP, U-Boot UFS clock lines gone, UFS, fastboot, GPU, NPU, CPU hotplug pass (BOARD-REQUEST-1 on 401 passed the same steps) |
+| eliza | public | QCDFP-261031-423 | MTP, no LAVA board | BOARD-REQUEST-2: ADSP running with the Linux DT island stream and QUPv3 1 firmware-name; BOARD-REQUEST-3: eliza-mtp sound card, both speakers and DMICs (microphone loopback); BOARD-REQUEST-4 to 6: one ADSP SMMU fault per OP-TEE resource table region left out |
