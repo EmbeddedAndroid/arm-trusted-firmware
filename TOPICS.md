@@ -22,6 +22,9 @@ helper, SM7750 user) on qcom/eliza.
 Added 2026-11-02 (after tag qcom/integration-20261102): the LMh rail id
 fix on qcom/lanai.
 
+Added 2026-11-02 (after tag qcom/integration-20261102a): the Lanai list
+of blocks that are not enabled yet.
+
 ## Platform branches
 
 | platform | branch | on | carries | upstream status |
@@ -30,7 +33,7 @@ fix on qcom/lanai.
 | monaco | qcom/monaco | base | Gerrit topic qti-monaco-v2 (55528/55529/55531 PS2, 55530 PS3, 54579 PS7 Dinesh, 55765..55767 PS1); 55253 PS4; 55088 PS3 | open; 55766 and 55088 carried adapted (shikra define, base without the abandoned CNTFRQ series) |
 | lemans | qcom/lemans | kodiak | the monaco set; 53616 PS4 (Dinesh, PDC hooks); 54830 PS1 (Dinesh, SYSTEM_RESET2) + two fixes; GPU SMMU aperture | open; aperture and the two SYSTEM_RESET2 fixes not submitted |
 | talos | qcom/talos | kodiak | Talos SoC, PDC, XBL boot, PON; 54926 PS8; 55530 PS3 | Talos patches not submitted |
-| lanai | qcom/lanai | kodiak, then qcom/integration-20261101 | SM8650 QRD: platform, PDC, watchdogs, secondary cores, non-secure watchdog hand-over, CPUCP clock domains, LMh thermal limits; known limitations in docs/plat/qti/lanai_qrd.rst | not submitted |
+| lanai | qcom/lanai | kodiak, then qcom/integration-20261101 | SM8650 QRD: platform, PDC, watchdogs, secondary cores, non-secure watchdog hand-over, CPUCP clock domains, LMh thermal limits; known limitations in docs/plat/qti/lanai_qrd.rst; NOT ENABLED YET: ADSP, CDSP and modem (no SM8650 PAS in OP-TEE), so no FastRPC, audio or CDSP NPU; GPU zap shader and iris video (PAS); GPU rendering not verified (no GPU SMMU aperture call) | not submitted |
 | kailua | qcom/kailua | lanai | SM8550 HDK (shares the Lanai DSU power code) | not submitted |
 | agatti | qcom/agatti | base | Igor's topic agatti-uno-q-reworked (55728..55735 PS1) + access control, TBB, aperture, PSCI fixes | topic open; fixes not submitted |
 | shikra | qcom/shikra | base | 53770 PS9 (IPCC, Nord and Shikra); shikra-enable topic merged in the base | open |
@@ -156,6 +159,7 @@ On top of qcom/integration-20261101 (c6dedc7baa16; qcom/lanai fast-forwards to i
 | 7d45787c662e | feat(qti): lanai: enable thermal limits management for the CPUs | Tyler Baker | not submitted | was 427557b48430 |
 | e23999d5ac9d | docs(qti): lanai: list the known limitations of the QRD | Tyler Baker | not submitted | was 1b5fcefe6308 |
 | 4602f0d57bed | fix(qti): lmh: take the LLM rail ids from the command DB aux data | Tyler Baker | not submitted | fixes 7d45787c662e |
+| 8184b7991157 | docs(qti): lanai: list the blocks that are not enabled yet | Tyler Baker | not submitted |  |
 
 ### qcom/shikra (on the base)
 
