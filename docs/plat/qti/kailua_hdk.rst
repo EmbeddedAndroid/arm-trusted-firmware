@@ -40,6 +40,9 @@ The port has not run on hardware yet.
   its first secondary core, and every other domain when its first core
   comes up, so that the kernel's EPSS cpufreq driver can scale them. No
   request is sent at cold boot, while CPUCP may still be initialising.
+- BL31 programs the CPU limits management (LMh) blocks of the two cluster
+  rails before that, so the clusters are throttled from 95 C and at 105 C
+  on their own temperature sensors.
 - BL31 services the secure APSS watchdog and hands the non-secure one to
   the normal world.
 - TF-A programs no XPU: whether the boot chain protects the TA area that

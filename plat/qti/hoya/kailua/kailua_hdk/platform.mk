@@ -220,6 +220,8 @@ $(eval $(call add_define,QTI_MEM_ASSIGN_NOOP))
 QTI_PDC_TCS		:=	0
 QTI_PDC_IRQ_OWNER_BANKED :=	1
 include drivers/qti/pdc/pdc.mk
+include drivers/qti/cmd_db/cmd_db.mk
+include drivers/qti/lmh/lmh.mk
 include drivers/qti/cpucp/cpucp.mk
 # A silver core running while its domain is enabled dies: the boot core
 # enables it before it powers up core 1.
