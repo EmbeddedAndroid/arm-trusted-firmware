@@ -28,6 +28,9 @@ of blocks that are not enabled yet.
 Added 2026-11-02 (after tag qcom/integration-20261102d): the SM8550 QRD
 bring-up on qcom/kailua, now on qcom/lanai 8184b7991157.
 
+Added 2026-11-02 (after tag qcom/integration-20261102f): the Kailua list
+of blocks that are not enabled yet.
+
 ## Platform branches
 
 | platform | branch | on | carries | upstream status |
@@ -37,7 +40,7 @@ bring-up on qcom/kailua, now on qcom/lanai 8184b7991157.
 | lemans | qcom/lemans | kodiak | the monaco set; 53616 PS4 (Dinesh, PDC hooks); 54830 PS1 (Dinesh, SYSTEM_RESET2) + two fixes; GPU SMMU aperture | open; aperture and the two SYSTEM_RESET2 fixes not submitted |
 | talos | qcom/talos | kodiak | Talos SoC, PDC, XBL boot, PON; 54926 PS8; 55530 PS3 | Talos patches not submitted |
 | lanai | qcom/lanai | kodiak, then qcom/integration-20261101 | SM8650 QRD: platform, PDC, watchdogs, secondary cores, non-secure watchdog hand-over, CPUCP clock domains, LMh thermal limits; known limitations in docs/plat/qti/lanai_qrd.rst; NOT ENABLED YET: ADSP, CDSP and modem (no SM8650 PAS in OP-TEE), so no FastRPC, audio or CDSP NPU; GPU zap shader and iris video (PAS); GPU rendering not verified (no GPU SMMU aperture call) | not submitted |
-| kailua | qcom/kailua | lanai (8184b7991157) | SM8550 HDK and QRD (shares the Lanai DSU power code): platform, PDC, non-secure watchdog hand-over, FEAT_MTE2 off, CPUCP clock domains with the SAW4 SRM, LMh thermal limits; known limitations in docs/plat/qti/kailua_hdk.rst | not submitted |
+| kailua | qcom/kailua | lanai (8184b7991157) | SM8550 HDK and QRD (shares the Lanai DSU power code): platform, PDC, non-secure watchdog hand-over, FEAT_MTE2 off, CPUCP clock domains with the SAW4 SRM, LMh thermal limits; known limitations in docs/plat/qti/kailua_hdk.rst; NOT ENABLED YET: ADSP, CDSP and modem (no SM8550 PAS in OP-TEE), so no FastRPC, audio or CDSP NPU; GPU zap shader and iris video (PAS); GPU rendering not verified (no GPU SMMU aperture call) | not submitted |
 | agatti | qcom/agatti | base | Igor's topic agatti-uno-q-reworked (55728..55735 PS1) + access control, TBB, aperture, PSCI fixes | topic open; fixes not submitted |
 | shikra | qcom/shikra | base | 53770 PS9 (IPCC, Nord and Shikra); shikra-enable topic merged in the base | open |
 | eliza | qcom/eliza | lanai | SM7750 MTP: platform, PDC, watchdogs, secondary cores, PSCI State ID decode and BL31 suspend hold, SMMUs, LPASS IMEM, RPMh TZ client, GPU GX power-up, ADSP SMEM at the LLCC MPU; 55530 PS3 | not submitted; 55530 open |
@@ -186,6 +189,7 @@ On top of qcom/integration-20261101 (c6dedc7baa16; qcom/lanai fast-forwards to i
 | f479eaf5c044 | feat(qti): kailua: enable the CPU clock domains through CPUCP | Tyler Baker | not submitted |  |
 | b27ac50236d7 | feat(qti): kailua: enable thermal limits management for the CPUs | Tyler Baker | not submitted |  |
 | bad012aa3b22 | docs(qti): kailua: record the QRD results and known limitations | Tyler Baker | not submitted |  |
+| ecd6802813cd | docs(qti): kailua: list the blocks that are not enabled yet | Tyler Baker | not submitted |  |
 
 ### qcom/eliza (on qcom/lanai)
 
