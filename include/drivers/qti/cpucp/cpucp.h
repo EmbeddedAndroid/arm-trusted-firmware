@@ -18,6 +18,12 @@
 /* Request to enable the clock domain owning the calling core on cold boot. */
 void cpucp_clkdom_init(void);
 
+/*
+ * Return once CPUCP controls a clock domain it has just been asked to enable.
+ * Provided by platforms that build with QTI_CPUCP_CLKDOM_WAIT.
+ */
+void cpucp_plat_clkdom_wait(unsigned int clkdom);
+
 /* Bring the CPUCP (EPSS/RISC-V MUC) microcontroller out of reset on cold boot. */
 void qti_cpucp_init(void);
 

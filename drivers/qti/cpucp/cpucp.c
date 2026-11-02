@@ -140,6 +140,9 @@ void cpucp_clkdom_init(void)
 					    clkdom_cpumasks[i].clkdom) ==
 		    SCMI_E_SUCCESS) {
 			clkdom_init_status[i] = 1U;
+#ifdef QTI_CPUCP_CLKDOM_WAIT
+			cpucp_plat_clkdom_wait(clkdom_cpumasks[i].clkdom);
+#endif
 		}
 
 		break;
