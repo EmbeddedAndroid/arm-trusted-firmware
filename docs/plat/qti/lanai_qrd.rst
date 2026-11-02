@@ -31,8 +31,9 @@ Status
   the PMIC arbiter v7. On the QRD, de-asserting PS_HOLD does not yet reset or
   power off the SoC.
 - BL31 enables the apps PDC.
-- BL31 services the secure APSS watchdog. Like PS_HOLD, a bite does not yet
-  reset the SoC on the QRD.
+- BL31 services the secure APSS watchdog and hands the non-secure one to
+  the normal world. Like PS_HOLD, a bite does not yet reset the SoC on the
+  QRD.
 - TF-A programs no XPU: whether the boot chain protects the TZ carve-out
   that holds BL32 is not yet verified.
 
