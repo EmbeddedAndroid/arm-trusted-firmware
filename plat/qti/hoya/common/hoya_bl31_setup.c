@@ -5,6 +5,7 @@
  */
 
 #include <drivers/qti/cpucp/cpucp.h>
+#include <drivers/qti/lmh/lmh.h>
 #include <drivers/qti/smmu/smmu.h>
 #include <qti_plat.h>
 #include <qtiseclib_interface.h>
@@ -29,6 +30,7 @@ void plat_qti_bl31_setup_post(void)
 {
 	qtiseclib_bl31_platform_setup();
 
+	qti_lmh_init();
 	qti_cpucp_init();
 	plat_qti_gdsc_init();
 	qti_smmu_gpu_init();

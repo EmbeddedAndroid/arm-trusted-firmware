@@ -35,6 +35,9 @@ Status
   clock domain when the first core of the domain comes up, so that the
   kernel's EPSS cpufreq driver can scale it. No request is sent at cold
   boot, while CPUCP is still initialising.
+- BL31 programs the CPU limits management (LMh) blocks of the three
+  cluster rails before that, so the clusters are throttled at 95 C and
+  105 C on their own temperature sensors.
 - BL31 services the secure APSS watchdog and hands the non-secure one to
   the normal world. Like PS_HOLD, a bite does not yet reset the SoC on the
   QRD.
