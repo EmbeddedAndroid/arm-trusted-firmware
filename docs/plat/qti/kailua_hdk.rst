@@ -34,7 +34,8 @@ The port has not run on hardware yet.
   the PMIC arbiter v7. On the SM8650 QRD that path, and a watchdog bite, do
   not yet reset the SoC; SM8550 is expected to behave the same.
 - BL31 enables the apps PDC.
-- BL31 services the secure APSS watchdog.
+- BL31 services the secure APSS watchdog and hands the non-secure one to
+  the normal world.
 - TF-A programs no XPU: whether the boot chain protects the TA area that
   holds BL32 is not verified.
 
