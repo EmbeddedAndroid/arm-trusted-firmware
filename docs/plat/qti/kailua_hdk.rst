@@ -55,6 +55,24 @@ the asymmetric tag check fault mode of the other cores, which Linux then
 requires on every core. BL31 leaves FEAT_MTE2 disabled (``SCR_EL3.ATA``
 clear), and the OS must boot with ``arm64.nomte``.
 
+Not enabled yet
+---------------
+
+This boot stack does not yet start the following blocks, and the Linux
+EL2 device tree overlay keeps them disabled:
+
+- the ADSP, CDSP and modem remote processors: the OP-TEE port has no
+  SM8550 peripheral authentication service (PAS) yet, so Linux cannot
+  load and start them. FastRPC, audio and the NPU in the CDSP depend on
+  them;
+- the GPU zap shader, which also needs the PAS;
+- the iris video codec, which needs the PAS to start its firmware and a
+  video memory protection call that neither BL31 nor the PAS offers yet.
+
+GPU rendering is not verified on this stack. BL31 does not offer the GPU
+SMMU aperture call, and upstream Linux does not program the aperture
+without it.
+
 Known limitations
 -----------------
 
