@@ -31,6 +31,10 @@ Status
   the PMIC arbiter v7. On the QRD, de-asserting PS_HOLD does not yet reset or
   power off the SoC.
 - BL31 enables the apps PDC.
+- CPUCP runs from the boot firmware; BL31 asks it over SCMI to enable each
+  clock domain when the first core of the domain comes up, so that the
+  kernel's EPSS cpufreq driver can scale it. No request is sent at cold
+  boot, while CPUCP is still initialising.
 - BL31 services the secure APSS watchdog and hands the non-secure one to
   the normal world. Like PS_HOLD, a bite does not yet reset the SoC on the
   QRD.

@@ -9,6 +9,7 @@
 
 #include <common/debug.h>
 #include <drivers/delay_timer.h>
+#include <drivers/qti/cpucp/cpucp.h>
 #include <drivers/qti/watchdog/watchdog.h>
 #include <lib/mmio.h>
 #include <lib/psci/psci.h>
@@ -274,6 +275,7 @@ void plat_qti_pwr_domain_on_finish(int core_pos, const uint8_t *states)
 
 	plat_qti_gic_pcpu_init();
 	qti_watchdog_set_target(QTI_WATCHDOG_CPU_WAKEUP);
+	cpucp_clkdom_init();
 }
 
 /* Hand the watchdog bark to an online core before this one is parked. */
