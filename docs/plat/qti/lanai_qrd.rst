@@ -44,6 +44,24 @@ Status
 - TF-A programs no XPU: whether the boot chain protects the TZ carve-out
   that holds BL32 is not yet verified.
 
+Not enabled yet
+---------------
+
+This boot stack does not yet start the following blocks, and the Linux
+EL2 device tree overlay keeps them disabled:
+
+- the ADSP, CDSP and modem remote processors: the OP-TEE port has no
+  SM8650 peripheral authentication service (PAS) yet, so Linux cannot
+  load and start them. FastRPC, audio and the NPU in the CDSP depend on
+  them;
+- the GPU zap shader, which also needs the PAS;
+- the iris video codec, which needs the PAS to start its firmware and a
+  video memory protection call that neither BL31 nor the PAS offers yet.
+
+GPU rendering is not verified on this stack. BL31 does not offer the GPU
+SMMU aperture call, and upstream Linux does not program the aperture
+without it.
+
 Known limitations
 -----------------
 
