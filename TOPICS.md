@@ -27,7 +27,7 @@ helper, SM7750 user) on qcom/eliza.
 | monaco | qcom/monaco | base | Gerrit topic qti-monaco-v2 (55528/55529/55531 PS2, 55530 PS3, 54579 PS7 Dinesh, 55765..55767 PS1); 55253 PS4; 55088 PS3 | open; 55766 and 55088 carried adapted (shikra define, base without the abandoned CNTFRQ series) |
 | lemans | qcom/lemans | kodiak | the monaco set; 53616 PS4 (Dinesh, PDC hooks); 54830 PS1 (Dinesh, SYSTEM_RESET2) + two fixes; GPU SMMU aperture | open; aperture and the two SYSTEM_RESET2 fixes not submitted |
 | talos | qcom/talos | kodiak | Talos SoC, PDC, XBL boot, PON; 54926 PS8; 55530 PS3 | Talos patches not submitted |
-| lanai | qcom/lanai | kodiak | SM8650 QRD | not submitted |
+| lanai | qcom/lanai | kodiak, then qcom/integration-20261101 | SM8650 QRD: platform, PDC, watchdogs, secondary cores, non-secure watchdog hand-over, CPUCP clock domains, LMh thermal limits; known limitations in docs/plat/qti/lanai_qrd.rst | not submitted |
 | kailua | qcom/kailua | lanai | SM8550 HDK (shares the Lanai DSU power code) | not submitted |
 | agatti | qcom/agatti | base | Igor's topic agatti-uno-q-reworked (55728..55735 PS1) + access control, TBB, aperture, PSCI fixes | topic open; fixes not submitted |
 | shikra | qcom/shikra | base | 53770 PS9 (IPCC, Nord and Shikra); shikra-enable topic merged in the base | open |
@@ -144,6 +144,15 @@ Each commit of a platform branch (from its parent: the base or the branch it bui
 | ce6dd686f515 | feat(qti): watchdog: support a write-only control register | Tyler Baker | not submitted |  |
 | 6f5cdaf17587 | feat(qti): lanai: service the secure watchdog | Tyler Baker | not submitted |  |
 
+On top of qcom/integration-20261101 (c6dedc7baa16; qcom/lanai fast-forwards to it; rewritten 2026-11-02 so every commit builds, old SHAs in the "was" notes):
+
+| commit | subject | author | submission | note |
+|---|---|---|---|---|
+| cfea81250f1f | feat(qti): lanai: give the non-secure watchdog to the normal world | Tyler Baker | not submitted | was a7cfc1f449bf |
+| 9641322553b9 | feat(qti): lanai: enable the CPU clock domains through CPUCP | Tyler Baker | not submitted | was 7ea876d23586 + 7a8189b1e202 (kailua_hdk include fix folded in) |
+| 7d45787c662e | feat(qti): lanai: enable thermal limits management for the CPUs | Tyler Baker | not submitted | was 427557b48430 |
+| e23999d5ac9d | docs(qti): lanai: list the known limitations of the QRD | Tyler Baker | not submitted | was 1b5fcefe6308 |
+
 ### qcom/shikra (on the base)
 
 | commit | subject | author | submission | note |
@@ -209,7 +218,7 @@ job cannot reach it). Jobs: https://lava.infra.foundries.io/scheduler/job/<id>.
 | lemans | public | QCDFP-261025-84 | 512687 | equal to 511912 except the same flake |
 | talos | public | QCDFP-261025-92 | 512759 | equal to 511901 except the known KVM PMU timing race (now passing) and the OSM cpufreq checks (not carried, skip) |
 | shikra | public | QCDFP-261025-91 | 512770 | U-Boot only (Shikra v4) on the stock XBL/QSEE/Gunyah health image: FP, Linux, login and the health smoke tests pass as health job 511579; no upstream TF-A/OP-TEE boot path yet |
-| lanai | public |  |  | untested: no LAVA board |
+| lanai | public | LANAIFP-261102-153432-cp8 | QRD, no LAVA board | suite run over the board console (same case list): cold boot 230 pass, 14 skip (no DMI firmware fingerprint, no PSCI CPU PM domains, KVM unit tests not applicable to this host), 1 fail = policy7-min (Cortex-X4 frequency readback, same on the vendor firmware); warm reboot not runnable: PS_HOLD does not reset the QRD, same on the vendor firmware (both in Known limitations) |
 | kailua | public |  |  | untested: no board yet (lab access pending) |
 | eliza | public | QCDFP-261031-408 | MTP, no LAVA board | BOARD-REQUEST-3: TF-A/OP-TEE/U-Boot FP, U-Boot UFS clock lines gone, UFS, fastboot, GPU, NPU, CPU hotplug pass (BOARD-REQUEST-1 on 401 passed the same steps) |
 | eliza | public | QCDFP-261031-423 | MTP, no LAVA board | BOARD-REQUEST-2: ADSP running with the Linux DT island stream and QUPv3 1 firmware-name; BOARD-REQUEST-3: eliza-mtp sound card, both speakers and DMICs (microphone loopback); BOARD-REQUEST-4 to 6: one ADSP SMMU fault per OP-TEE resource table region left out |
