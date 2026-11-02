@@ -39,6 +39,12 @@ The port has not run on hardware yet.
 - TF-A programs no XPU: whether the boot chain protects the TA area that
   holds BL32 is not verified.
 
+The cores report FEAT_MTE2, but the boot firmware sets up no allocation
+tag storage (XBL reports "MTE is DISABLED"), and the Cortex-A710 cores lack
+the asymmetric tag check fault mode of the other cores, which Linux then
+requires on every core. BL31 leaves FEAT_MTE2 disabled (``SCR_EL3.ATA``
+clear), and the OS must boot with ``arm64.nomte``.
+
 How to build
 ------------
 
