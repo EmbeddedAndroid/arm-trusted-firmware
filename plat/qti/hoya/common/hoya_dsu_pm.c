@@ -255,6 +255,16 @@ int plat_qti_pwr_domain_on(u_register_t mpidr, int core_pos)
 		return PSCI_E_SUCCESS;
 	}
 
+#ifdef QTI_CPUCP_CLKDOM_FROM_CALLER
+	/*
+	 * The caller's own clock domain is enabled before it powers up a
+	 * core: on the boot core this is the silver domain, requested once the
+	 * OS starts its first secondary, after CPUCP has initialised, and
+	 * complete before the secondary powers up.
+	 */
+	cpucp_clkdom_init();
+#endif
+
 	if (!gold_rail_power_on(core)) {
 		return PSCI_E_INTERN_FAIL;
 	}
