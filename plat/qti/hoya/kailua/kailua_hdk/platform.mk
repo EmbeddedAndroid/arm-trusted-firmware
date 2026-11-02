@@ -147,7 +147,6 @@ ENABLE_FEAT_FGT				:=	2
 ENABLE_FEAT_ECV				:=	2
 ENABLE_FEAT_AMU				:=	2
 ENABLE_FEAT_AMUv1p1			:=	2
-ENABLE_FEAT_MTE2			:=	2
 ENABLE_FEAT_CSV2_2			:=	2
 ENABLE_FEAT_TWED			:=	2
 ENABLE_TRBE_FOR_NS			:=	2
@@ -221,6 +220,14 @@ $(eval $(call add_define,QTI_MEM_ASSIGN_NOOP))
 QTI_PDC_TCS		:=	0
 QTI_PDC_IRQ_OWNER_BANKED :=	1
 include drivers/qti/pdc/pdc.mk
+include drivers/qti/cmd_db/cmd_db.mk
+include drivers/qti/lmh/lmh.mk
+include drivers/qti/cpucp/cpucp.mk
+# A silver core running while its domain is enabled dies: the boot core
+# enables it before it powers up core 1.
+$(eval $(call add_define,QTI_CPUCP_CLKDOM_FROM_CALLER))
+# CPUCP takes a domain up to 130 ms after it acknowledges the enable.
+$(eval $(call add_define,QTI_CPUCP_CLKDOM_WAIT))
 
 # Nothing completes the power-down request of a core turned off: no PCU
 # power-collapse sequence is ported.

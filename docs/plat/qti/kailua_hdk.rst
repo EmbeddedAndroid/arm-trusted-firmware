@@ -24,19 +24,62 @@ TF-A BL2 replaces the TZ image and the FIP payload replaces the UEFI image::
 Status
 ------
 
-The port has not run on hardware yet.
+Tested on the SM8550 QRD: all eight cores start at EL2 with KVM, OP-TEE
+passes xtest, and reboot comes back through the full chain.
 
 - BL31 runs the native PSCI: it powers the secondary cores on directly
   (with the complex of the second and third Cortex-A510, and the gold rail
   of cores 3 to 7) and parks cores turned off in BL31, and CPU standby
   (WFI) is the only idle state.
 - SYSTEM_RESET and SYSTEM_OFF go through PS_HOLD and the PMK8550 PON over
-  the PMIC arbiter v7. On the SM8650 QRD that path, and a watchdog bite, do
-  not yet reset the SoC; SM8550 is expected to behave the same.
+  the PMIC arbiter v7; on the QRD both work (``PM: Reset by PSHOLD``,
+  ``Hard Reset``).
 - BL31 enables the apps PDC.
-- BL31 services the secure APSS watchdog.
+- CPUCP runs from the boot firmware; BL31 programs the SAW4 SRM of both
+  APC rails so that CPUCP can set their voltages, and asks CPUCP over SCMI
+  to enable the silver clock domain from the boot core when the OS starts
+  its first secondary core, and every other domain when its first core
+  comes up, so that the kernel's EPSS cpufreq driver can scale them. No
+  request is sent at cold boot, while CPUCP may still be initialising.
+- BL31 programs the CPU limits management (LMh) blocks of the two cluster
+  rails before that, so the clusters are throttled from 95 C and at 105 C
+  on their own temperature sensors.
+- BL31 services the secure APSS watchdog and hands the non-secure one to
+  the normal world.
 - TF-A programs no XPU: whether the boot chain protects the TA area that
   holds BL32 is not verified.
+
+The cores report FEAT_MTE2, but the boot firmware sets up no allocation
+tag storage (XBL reports "MTE is DISABLED"), and the Cortex-A710 cores lack
+the asymmetric tag check fault mode of the other cores, which Linux then
+requires on every core. BL31 leaves FEAT_MTE2 disabled (``SCR_EL3.ATA``
+clear), and the OS must boot with ``arm64.nomte``.
+
+Known limitations
+-----------------
+
+- With the userspace governor, two cpufreq policies read back a frequency
+  other than the one set, the same with the vendor boot firmware on the
+  same QRD: the gold policy (policy3) reads 2707200 kHz while busy at a
+  request of 2803200 kHz, and the prime policy (policy7) reads 2092800 kHz
+  at a request of 595200 kHz. ``cpuinfo_cur_freq`` comes from the EPSS
+  domain state register.
+- The prime core does not go below about 787 MHz at its 595.2 MHz minimum
+  (the vendor firmware: 591 MHz), and the gold cores run about 10% above
+  low requests. CPUCP sets the EPSS shared rail boost on the gold and
+  prime domains, which share the APC1 rail, while a core of the other
+  domain is active, and with WFI as the only idle state no core of the
+  rail is ever inactive. The fix is a power-down idle state with the PCU
+  sequences that let CPUCP see the cores as inactive; clearing the boost
+  from BL31 restores 591 MHz but overrides CPUCP's rail management.
+- KVM guests hang on the Cortex-A710 and Cortex-X3 cores (CPUs 5 to 7)
+  and run on the others. A guest starts with its MMU off, so its first
+  instruction fetches are non-cacheable; Linux KVM relies on FEAT_S2FWB
+  and does not clean guest pages to the point of coherency, and on these
+  cores the fetch returns stale memory (an undefined instruction at the
+  guest's entry point). Cleaning the image to PoC from the VMM, or
+  starting the guest with ``SCTLR_EL1.I`` set, avoids it. This needs a
+  KVM workaround; until then run VMs on CPUs 0 to 4.
 
 How to build
 ------------
