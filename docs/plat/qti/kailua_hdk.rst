@@ -34,6 +34,12 @@ The port has not run on hardware yet.
   the PMIC arbiter v7. On the SM8650 QRD that path, and a watchdog bite, do
   not yet reset the SoC; SM8550 is expected to behave the same.
 - BL31 enables the apps PDC.
+- CPUCP runs from the boot firmware; BL31 programs the SAW4 SRM of both
+  APC rails so that CPUCP can set their voltages, and asks CPUCP over SCMI
+  to enable the silver clock domain from the boot core when the OS starts
+  its first secondary core, and every other domain when its first core
+  comes up, so that the kernel's EPSS cpufreq driver can scale them. No
+  request is sent at cold boot, while CPUCP may still be initialising.
 - BL31 services the secure APSS watchdog and hands the non-secure one to
   the normal world.
 - TF-A programs no XPU: whether the boot chain protects the TA area that
