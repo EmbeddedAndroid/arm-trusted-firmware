@@ -19,6 +19,9 @@ Added 2026-10-31: qcom/eliza (SM7750 MTP), merged on top of the
 Added 2026-11-01: the ADSP SMEM partitions at the LLCC MPU (common
 helper, SM7750 user) on qcom/eliza.
 
+Added 2026-11-02 (after tag qcom/integration-20261102): the LMh rail id
+fix on qcom/lanai.
+
 ## Platform branches
 
 | platform | branch | on | carries | upstream status |
@@ -152,6 +155,7 @@ On top of qcom/integration-20261101 (c6dedc7baa16; qcom/lanai fast-forwards to i
 | 9641322553b9 | feat(qti): lanai: enable the CPU clock domains through CPUCP | Tyler Baker | not submitted | was 7ea876d23586 + 7a8189b1e202 (kailua_hdk include fix folded in) |
 | 7d45787c662e | feat(qti): lanai: enable thermal limits management for the CPUs | Tyler Baker | not submitted | was 427557b48430 |
 | e23999d5ac9d | docs(qti): lanai: list the known limitations of the QRD | Tyler Baker | not submitted | was 1b5fcefe6308 |
+| 4602f0d57bed | fix(qti): lmh: take the LLM rail ids from the command DB aux data | Tyler Baker | not submitted | fixes 7d45787c662e |
 
 ### qcom/shikra (on the base)
 
@@ -218,7 +222,7 @@ job cannot reach it). Jobs: https://lava.infra.foundries.io/scheduler/job/<id>.
 | lemans | public | QCDFP-261025-84 | 512687 | equal to 511912 except the same flake |
 | talos | public | QCDFP-261025-92 | 512759 | equal to 511901 except the known KVM PMU timing race (now passing) and the OSM cpufreq checks (not carried, skip) |
 | shikra | public | QCDFP-261025-91 | 512770 | U-Boot only (Shikra v4) on the stock XBL/QSEE/Gunyah health image: FP, Linux, login and the health smoke tests pass as health job 511579; no upstream TF-A/OP-TEE boot path yet |
-| lanai | public | LANAIFP-261102-153432-cp8 | QRD, no LAVA board | suite run over the board console (same case list): cold boot 230 pass, 14 skip (no DMI firmware fingerprint, no PSCI CPU PM domains, KVM unit tests not applicable to this host), 1 fail = policy7-min (Cortex-X4 frequency readback, same on the vendor firmware); warm reboot not runnable: PS_HOLD does not reset the QRD, same on the vendor firmware (both in Known limitations) |
+| lanai | public | LANAIFP-261102-173421-cp9 | QRD, no LAVA board | LMh rail id fix: LLM rail ids read back equal to the vendor firmware (diagnostic build), thermal plateau held, cold spot check (fingerprints, hand-over, CPU features, cpufreq, CPU hotplug with the stress race, kernel health) 74 pass, 2 skip, 0 fail. Before the fix, LANAIFP-261102-153432-cp8, full suite run over the board console (same case list): cold boot 230 pass, 14 skip (no DMI firmware fingerprint, no PSCI CPU PM domains, KVM unit tests not applicable to this host), 1 fail = policy7-min (Cortex-X4 frequency readback, same on the vendor firmware); warm reboot not runnable: PS_HOLD does not reset the QRD, same on the vendor firmware (both in Known limitations) |
 | kailua | public |  |  | untested: no board yet (lab access pending) |
 | eliza | public | QCDFP-261031-408 | MTP, no LAVA board | BOARD-REQUEST-3: TF-A/OP-TEE/U-Boot FP, U-Boot UFS clock lines gone, UFS, fastboot, GPU, NPU, CPU hotplug pass (BOARD-REQUEST-1 on 401 passed the same steps) |
 | eliza | public | QCDFP-261031-423 | MTP, no LAVA board | BOARD-REQUEST-2: ADSP running with the Linux DT island stream and QUPv3 1 firmware-name; BOARD-REQUEST-3: eliza-mtp sound card, both speakers and DMICs (microphone loopback); BOARD-REQUEST-4 to 6: one ADSP SMMU fault per OP-TEE resource table region left out |
