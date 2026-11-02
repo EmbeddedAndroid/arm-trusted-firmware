@@ -25,6 +25,9 @@ fix on qcom/lanai.
 Added 2026-11-02 (after tag qcom/integration-20261102a): the Lanai list
 of blocks that are not enabled yet.
 
+Added 2026-11-02 (after tag qcom/integration-20261102d): the SM8550 QRD
+bring-up on qcom/kailua, now on qcom/lanai 8184b7991157.
+
 ## Platform branches
 
 | platform | branch | on | carries | upstream status |
@@ -34,7 +37,7 @@ of blocks that are not enabled yet.
 | lemans | qcom/lemans | kodiak | the monaco set; 53616 PS4 (Dinesh, PDC hooks); 54830 PS1 (Dinesh, SYSTEM_RESET2) + two fixes; GPU SMMU aperture | open; aperture and the two SYSTEM_RESET2 fixes not submitted |
 | talos | qcom/talos | kodiak | Talos SoC, PDC, XBL boot, PON; 54926 PS8; 55530 PS3 | Talos patches not submitted |
 | lanai | qcom/lanai | kodiak, then qcom/integration-20261101 | SM8650 QRD: platform, PDC, watchdogs, secondary cores, non-secure watchdog hand-over, CPUCP clock domains, LMh thermal limits; known limitations in docs/plat/qti/lanai_qrd.rst; NOT ENABLED YET: ADSP, CDSP and modem (no SM8650 PAS in OP-TEE), so no FastRPC, audio or CDSP NPU; GPU zap shader and iris video (PAS); GPU rendering not verified (no GPU SMMU aperture call) | not submitted |
-| kailua | qcom/kailua | lanai | SM8550 HDK (shares the Lanai DSU power code) | not submitted |
+| kailua | qcom/kailua | lanai (8184b7991157) | SM8550 HDK and QRD (shares the Lanai DSU power code): platform, PDC, non-secure watchdog hand-over, FEAT_MTE2 off, CPUCP clock domains with the SAW4 SRM, LMh thermal limits; known limitations in docs/plat/qti/kailua_hdk.rst | not submitted |
 | agatti | qcom/agatti | base | Igor's topic agatti-uno-q-reworked (55728..55735 PS1) + access control, TBB, aperture, PSCI fixes | topic open; fixes not submitted |
 | shikra | qcom/shikra | base | 53770 PS9 (IPCC, Nord and Shikra); shikra-enable topic merged in the base | open |
 | eliza | qcom/eliza | lanai | SM7750 MTP: platform, PDC, watchdogs, secondary cores, PSCI State ID decode and BL31 suspend hold, SMMUs, LPASS IMEM, RPMh TZ client, GPU GX power-up, ADSP SMEM at the LLCC MPU; 55530 PS3 | not submitted; 55530 open |
@@ -168,7 +171,7 @@ On top of qcom/integration-20261101 (c6dedc7baa16; qcom/lanai fast-forwards to i
 | dc6def90397f | feat(qti): add IPCC driver with Nord and Shikra support | pradeep-kondoju | Gerrit 53770 PS9 (ded6567822, open) |  |
 
 
-### qcom/kailua (on qcom/lanai)
+### qcom/kailua (on qcom/lanai 8184b7991157)
 
 | commit | subject | author | submission | note |
 |---|---|---|---|---|
@@ -176,6 +179,13 @@ On top of qcom/integration-20261101 (c6dedc7baa16; qcom/lanai fast-forwards to i
 | b203ab8c5ee1 | feat(qti): hoya: power up silver complexes before their cores | Tyler Baker | not submitted |  |
 | ad8fc4429740 | feat(qti): add the SM8550 (Kailua) HDK platform | Tyler Baker | not submitted |  |
 | 7b67e893061f | feat(qti): kailua: enable the apps PDC | Tyler Baker | not submitted |  |
+| 8284ef543416 | feat(qti): kailua: give the non-secure watchdog to the normal world | Tyler Baker | not submitted |  |
+| dfd852ff9d84 | fix(qti): kailua: leave FEAT_MTE2 disabled | Tyler Baker | not submitted |  |
+| f69e8bacd586 | feat(qti): cpucp: let a platform wait for CPUCP to take a domain | Tyler Baker | not submitted | common hook, kailua_hdk only |
+| c263c3ce8134 | feat(qti): hoya: let a platform enable the caller's clock domain first | Tyler Baker | not submitted | common hook, kailua_hdk only |
+| f479eaf5c044 | feat(qti): kailua: enable the CPU clock domains through CPUCP | Tyler Baker | not submitted |  |
+| b27ac50236d7 | feat(qti): kailua: enable thermal limits management for the CPUs | Tyler Baker | not submitted |  |
+| bad012aa3b22 | docs(qti): kailua: record the QRD results and known limitations | Tyler Baker | not submitted |  |
 
 ### qcom/eliza (on qcom/lanai)
 
@@ -227,6 +237,6 @@ job cannot reach it). Jobs: https://lava.infra.foundries.io/scheduler/job/<id>.
 | talos | public | QCDFP-261025-92 | 512759 | equal to 511901 except the known KVM PMU timing race (now passing) and the OSM cpufreq checks (not carried, skip) |
 | shikra | public | QCDFP-261025-91 | 512770 | U-Boot only (Shikra v4) on the stock XBL/QSEE/Gunyah health image: FP, Linux, login and the health smoke tests pass as health job 511579; no upstream TF-A/OP-TEE boot path yet |
 | lanai | public | LANAIFP-261102-173421-cp9 | QRD, no LAVA board | LMh rail id fix: LLM rail ids read back equal to the vendor firmware (diagnostic build), thermal plateau held, cold spot check (fingerprints, hand-over, CPU features, cpufreq, CPU hotplug with the stress race, kernel health) 74 pass, 2 skip, 0 fail. Before the fix, LANAIFP-261102-153432-cp8, full suite run over the board console (same case list): cold boot 230 pass, 14 skip (no DMI firmware fingerprint, no PSCI CPU PM domains, KVM unit tests not applicable to this host), 1 fail = policy7-min (Cortex-X4 frequency readback, same on the vendor firmware); warm reboot not runnable: PS_HOLD does not reset the QRD, same on the vendor firmware (both in Known limitations) |
-| kailua | public |  |  | untested: no board yet (lab access pending) |
+| kailua | public | KAILUAFP-261102-183057-fin1 | QRD, no LAVA board | suite run over the board console (same case list), kailua-qrd, built from this merge's code (TF-A tree equal to it except docs, U-Boot integration cae8e0b2535c plus the two qcom/kailua U-Boot commits, OP-TEE d1470ab9f4fc), suite KAILUASUITE-261102-183149-s7: cold boot 222 pass, 2 fail, 17 skip (fails = gold max and prime min cpufreq readbacks, same on the vendor firmware, Known limitations; skips = no DMI firmware fingerprint, no PSCI CPU PM domains, KVM unit tests not applicable to this host), KVM pinned to cpus 3-4; warm reboot through PS_HOLD back into the chain, 14 pass, 0 fail, 2 skip; power off works |
 | eliza | public | QCDFP-261031-408 | MTP, no LAVA board | BOARD-REQUEST-3: TF-A/OP-TEE/U-Boot FP, U-Boot UFS clock lines gone, UFS, fastboot, GPU, NPU, CPU hotplug pass (BOARD-REQUEST-1 on 401 passed the same steps) |
 | eliza | public | QCDFP-261031-423 | MTP, no LAVA board | BOARD-REQUEST-2: ADSP running with the Linux DT island stream and QUPv3 1 firmware-name; BOARD-REQUEST-3: eliza-mtp sound card, both speakers and DMICs (microphone loopback); BOARD-REQUEST-4 to 6: one ADSP SMMU fault per OP-TEE resource table region left out |
