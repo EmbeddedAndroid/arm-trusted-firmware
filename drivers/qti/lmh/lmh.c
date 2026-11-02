@@ -20,18 +20,20 @@
 
 /*
  * The voltage limit messages an LLM sends carry the RPMh id of the CPU rail
- * (CLX_RX_CFG_1_0) and of MX (CLX_RX_CFG_1_1): bits [15:8] of the resource
- * address in the command DB.
+ * (CLX_RX_CFG_1_0) and of MX (CLX_RX_CFG_1_1): byte 1 of the resource's aux
+ * data in the command DB, not part of its address.
  */
 static uint32_t llm_rpid(const char *res)
 {
-	uint32_t addr = cmd_db_query_addr(res);
+	uint8_t data[4] = { 0U };
+	uint8_t len = (uint8_t)sizeof(data);
 
-	if (addr == 0U) {
-		WARN("LMh: no %s in the command DB\n", res);
+	if ((cmd_db_query_aux_data(res, &len, data) != 0) || (len < 2U)) {
+		WARN("LMh: no %s aux data in the command DB\n", res);
+		return 0U;
 	}
 
-	return ((addr >> 8) & 0xffU) << LLM_CLX_RX_MSG_RPID_SHIFT;
+	return (uint32_t)data[1] << LLM_CLX_RX_MSG_RPID_SHIFT;
 }
 
 static uint32_t llm_value(uintptr_t addr, uint32_t val)
