@@ -126,6 +126,7 @@ QTI_BL31_SOURCES	:=	$(QTI_PLAT_PATH)/common/src/$(ARCH)/wildcat_helpers.S	\
 				$(QTI_PLAT_PATH)/common/src/wildcat_rng.c		\
 				$(QTI_PLAT_PATH)/common/src/wildcat_plat_helpers.c \
 				$(QTI_PLAT_PATH)/common/src/wildcat_bl31_setup.c \
+				$(QTI_PLAT_PATH)/${CHIPSET}/src/plat_cpuss_config.c \
 				drivers/qti/accesscontrol/access_control_stub.c \
 				drivers/qti/sec_core/sec_core_stub.c \
 				drivers/qti/crypto/rng.c
