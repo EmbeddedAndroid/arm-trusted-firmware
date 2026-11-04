@@ -41,7 +41,8 @@ Status
   the PMIC arbiter v7. On the MTP, SYSTEM_RESET does not reset the board:
   PS_HOLD drops with the PON reset configured, the PMIC does not act, and
   BL31 panics a second later.
-- BL31 services the secure APSS watchdog (TMR2).
+- BL31 services the secure APSS watchdog (TMR2) and hands the other one
+  (TMR1) to the normal world.
 - The apps PDC is not set up by BL31.
 - TF-A programs no XPU: whether the boot chain protects the carve-outs that
   hold BL31 and BL32 is not verified. The QTI SiP MEM_ASSIGN call is
