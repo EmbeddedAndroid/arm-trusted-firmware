@@ -149,6 +149,12 @@
 #define QTI_CPU_OFF_SEQ			{}
 #endif
 
+/* Gold cores run the same sequence unless the chipset gives them their own. */
+#ifndef QTI_GOLD_CPU_OFF_SEQ
+#define QTI_GOLD_CPU_OFF_SEQ_START	QTI_CPU_OFF_SEQ_START
+#define QTI_GOLD_CPU_OFF_SEQ		{}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* GIC-600 constants */
 /*----------------------------------------------------------------------------*/
