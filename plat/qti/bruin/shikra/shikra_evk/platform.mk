@@ -1,4 +1,4 @@
-#
+﻿#
 # Copyright (c) 2026, Qualcomm Technologies, Inc. and/or its subsidiaries.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -9,6 +9,7 @@
 PLAT_PATH				:=	plat/qti
 CHIPSET					:=	shikra
 
+QTI_PMIC_ARB_VERSION			:=	pmicarb5
 # Turn On Separate code & data.
 SEPARATE_CODE_AND_RODATA		:=	1
 USE_COHERENT_MEM			:=	0
@@ -66,6 +67,7 @@ PLAT_INCLUDES		:=	-Iinclude/plat/common/					\
 				-I${PLAT_PATH}/bruin/common/inc			\
 				-I${PLAT_PATH}/common/inc				\
 				-I${PLAT_PATH}/common/inc/$(ARCH)
+include drivers/qti/pmic/pmic.mk
 
 include lib/xlat_tables_v2/xlat_tables.mk
 PLAT_BL_COMMON_SOURCES	+=	common/desc_image_load.c				\
@@ -85,7 +87,6 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 				plat/common/plat_gicv3.c				\
 				${GICV3_SOURCES}					\
 				plat/common/plat_psci_common.c				\
-				$(PLAT_PATH)/common/src/pm_ps_hold.c			\
 				$(PLAT_PATH)/common/src/qti_bl31_setup.c		\
 				$(PLAT_PATH)/common/src/qti_gic_v3.c			\
 				$(PLAT_PATH)/common/src/qti_gicv3_platform.c		\
@@ -93,7 +94,6 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 				$(PLAT_PATH)/common/src/qti_interrupt_svc_el3.c		\
 				$(PLAT_PATH)/common/src/qti_syscall.c			\
 				$(PLAT_PATH)/common/src/qti_pm.c			\
-				$(PLAT_PATH)/common/src/spmi_arb.c			\
 				$(PLAT_PATH)/bruin/common/$(ARCH)/bruin_helpers.S	\
 				$(PLAT_PATH)/bruin/common/bruin_bl31_setup.c		\
 				$(PLAT_PATH)/bruin/common/bruin_topology.c		\

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2026, Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -48,10 +48,11 @@
 #define QTI_DEVICE_SIZE				(0x14000000 - QTI_DEVICE_BASE)
 
 /*----------------------------------------------------------------------------*/
-/* LC PON register offsets */
+/* PMIC SPMI arbiter */
 /*----------------------------------------------------------------------------*/
-#define PON_PS_HOLD_RESET_CTL			0x852
-#define PON_PS_HOLD_RESET_CTL2			0x853
+#define SPMI_ARB_BASE				0x01C00000UL
+#define SPMI_ARB_NUM_CHANNELS			256U
+
 /*----------------------------------------------------------------------------*/
 /* APSS HM registers */
 /*----------------------------------------------------------------------------*/
