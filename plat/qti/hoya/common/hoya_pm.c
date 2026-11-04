@@ -16,6 +16,7 @@
 #include <lib/utils_def.h>
 #include <plat/common/platform.h>
 
+#include <hoya_cpu_pwr.h>
 #include <platform_def.h>
 #include <qti_plat.h>
 
@@ -34,9 +35,6 @@
 #define APSS_CPU_IPM_REG(core)			(APSS_CPU_IPM_REG_BASE + \
 						 ((core) * APSS_CPU_IPM_REG_OFFSET))
 
-#define CPU_HEAD_SWITCH_CTL(core)		(APSS_CPU_IPM_REG(core) + 0x08U)
-#define CPU_SEQ_FORCE_PWR_CTL_EN(core)		(APSS_CPU_IPM_REG(core) + 0x1cU)
-#define CPU_SEQ_FORCE_PWR_CTL_VAL(core)		(APSS_CPU_IPM_REG(core) + 0x20U)
 #define CPU_SEQ_CTL(core)			(APSS_CPU_IPM_REG(core) + 0x24U)
 #define CPU_PCHANNEL_FSM_CTL(core)		(APSS_CPU_IPM_REG(core) + 0x44U)
 #define CPU_PCHANNEL_CTLER_STATUS(core)		(APSS_CPU_IPM_REG(core) + 0x4cU)
@@ -80,31 +78,8 @@ static const uint32_t cpu_off_seq[] = QTI_CPU_OFF_SEQ;
 /* Upper bound for the memory-repair "done" handshake. */
 #define MEM_REPAIR_TIMEOUT_US			10000U
 
-/*
- * Gold-cluster (APC1) SAW4 AVS rail. The SAW4 instance for the gold rail is
- * at 0x18101000, with the AVS register region at +0x800 and the status
- * region at +0xc00.
- */
+/* Gold-cluster (APC1) SAW4 rail controller. */
 #define GOLD_SAW4_BASE				0x18101000U
-#define GOLD_SAW4_VCTL				(GOLD_SAW4_BASE + 0x900U)
-#define GOLD_SAW4_AVS_CTL			(GOLD_SAW4_BASE + 0x904U)
-#define GOLD_SAW4_PMIC_STS			(GOLD_SAW4_BASE + 0xc18U)
-
-#define SAW4_AVS_CTL_EN				0x1U
-#define SAW4_AVS_CTL_CTL_SEL			0x10U
-
-#define SAW4_PMIC_STS_STATE_MASK		0x30000U
-#define SAW4_PMIC_STS_CURR_DATA_MASK		0xffffU
-
-/*
- * SAW4_VCTL encodes SIZE[20], ADR_IDX[18:16] and PMIC_DATA[15:0]. The enable
- * write uses the 8-bit EN address index (3) with data 0x80; the voltage write
- * uses the 16-bit VCTL address index (0) with the boot voltage as data.
- */
-#define SAW4_VCTL_ENABLE			0x30080U
-#define SAW4_VCTL_SET_VOLTAGE			(0x100000U | QTI_GOLD_RAIL_BOOT_MV)
-
-#define SAW4_PMIC_WRITE_RETRY			200U
 
 /*
  * State of the one-time gold domain bring-up, also reported by each of its
@@ -215,60 +190,14 @@ static enum gold_domain_state cpu_memory_repair(void)
 }
 
 /*
- * Wait for the gold-cluster SAW4 PMIC write to complete. Returns true when the
- * PMIC is idle (and, if requested, matches @expect_data), false on timeout.
- */
-static bool saw4_pmic_wait(uint32_t expect_data, bool check_data)
-{
-	unsigned int retry = SAW4_PMIC_WRITE_RETRY;
-
-	while (retry-- > 0U) {
-		uint32_t sts = mmio_read_32(GOLD_SAW4_PMIC_STS);
-
-		if (((sts & SAW4_PMIC_STS_STATE_MASK) == 0U) &&
-		    (!check_data ||
-		     ((sts & SAW4_PMIC_STS_CURR_DATA_MASK) == expect_data))) {
-			return true;
-		}
-
-		udelay(2);
-	}
-
-	return false;
-}
-
-/*
  * Enable the gold-cluster (APC1) SAW4 AVS rail and drive it to its boot
  * voltage; without it the gold cluster has no supply and its cores never
  * come out of reset.
  */
 static enum gold_domain_state set_gold_cluster_voltage(void)
 {
-	uint32_t val;
-
-	/* Let the SAW hardware adjust the rail voltage. */
-	val = mmio_read_32(GOLD_SAW4_AVS_CTL);
-	mmio_write_32(GOLD_SAW4_AVS_CTL, val | SAW4_AVS_CTL_EN);
-
-	val = mmio_read_32(GOLD_SAW4_AVS_CTL);
-	mmio_write_32(GOLD_SAW4_AVS_CTL, val | SAW4_AVS_CTL_CTL_SEL);
-
-	/* Enable the PMIC rail and wait for warm-up. */
-	mmio_write_32(GOLD_SAW4_VCTL, SAW4_VCTL_ENABLE);
-	if (!saw4_pmic_wait(0U, false)) {
-		ERROR("gold SAW4 PMIC enable timed out\n");
-		return GOLD_DOMAIN_FAIL;
-	}
-	udelay(90);
-
-	/* Restore the rail to its boot voltage. */
-	mmio_write_32(GOLD_SAW4_VCTL, SAW4_VCTL_SET_VOLTAGE);
-	if (!saw4_pmic_wait(QTI_GOLD_RAIL_BOOT_MV, true)) {
-		ERROR("gold SAW4 PMIC voltage set timed out\n");
-		return GOLD_DOMAIN_FAIL;
-	}
-
-	return GOLD_DOMAIN_ON;
+	return hoya_saw4_rail_on(GOLD_SAW4_BASE, QTI_GOLD_RAIL_BOOT_MV) ?
+	       GOLD_DOMAIN_ON : GOLD_DOMAIN_FAIL;
 }
 
 /*
@@ -367,48 +296,7 @@ int plat_qti_pwr_domain_on(u_register_t mpidr, int core_pos)
 		return PSCI_E_INTERN_FAIL;
 	}
 
-	/* Program skew between en_few and en_rest. */
-	mmio_write_32(CPU_HEAD_SWITCH_CTL(core_pos), 0x28U);
-
-	/* Clear power-control enables. */
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_EN(core_pos), 0x0U);
-
-	/* Close the core logic head switch. */
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core_pos), 0x642U);
-	udelay(2);
-
-	/* Deassert core memory and logic clamp. */
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core_pos), 0x402U);
-
-	/* Deassert core memory slp_nret_n and slp_ret_n. */
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core_pos), 0x40aU);
-	udelay(4);
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core_pos), 0x40eU);
-	udelay(4);
-
-	/* Assert and deassert wl_en_clk. */
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core_pos), 0x50eU);
-	udelay(2);
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core_pos), 0x40eU);
-
-	/* Deassert clock off. */
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core_pos), 0x40cU);
-	udelay(2);
-
-	/* Assert the core P-channel power-up request. */
-	mmio_write_32(CPU_PCHANNEL_FSM_CTL(core_pos), 0x1U);
-
-	/* Deassert core reset. */
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core_pos), 0x43cU);
-
-	/* Deassert the core P-channel power-up request. */
-	mmio_write_32(CPU_PCHANNEL_FSM_CTL(core_pos), 0x0U);
-
-	/* Assert OSM core active. */
-	mmio_write_32(CPU_SEQ_FORCE_PWR_CTL_VAL(core_pos), 0x443cU);
-
-	/* Assert CPU_PWRDUP. */
-	mmio_write_32(CPU_HEAD_SWITCH_CTL(core_pos), 0x428U);
+	hoya_ipm_power_up(APSS_CPU_IPM_REG(core_pos), true);
 
 	return PSCI_E_SUCCESS;
 }
