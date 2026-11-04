@@ -17,7 +17,8 @@
 
 #define CLOCK_HAL_DELAY_US		1U
 #define CLOCK_HAL_PLL_LOCK_TIMEOUT_US	500U
-#define CLOCK_HAL_GDSC_TIMEOUT_US	500U
+/* GPU CX takes about 1.7 ms to power up on Kodiak. */
+#define CLOCK_HAL_GDSC_TIMEOUT_US	10000U
 #define CLOCK_HAL_BRANCH_TIMEOUT_US	100U
 
 void clock_hal_set_clock(struct clock_desc *clock, bool enable)
@@ -166,6 +167,11 @@ static int clock_hal_is_power_domain_on(const struct clock_power_domain_desc *po
 		return -EAGAIN;
 	}
 
+	if (power_domain->poll_pwr_on) {
+		return ((mmio_read_32(power_domain->gdscr_addr) &
+			 HAL_CLK_GDSCR_PWR_ON_FMSK) != 0U) ? 0 : -EAGAIN;
+	}
+
 	/* Non-votable GDSCR: poll GDSC_POWER_UP_COMPLETE in CFG_GDSCR. */
 	return ((mmio_read_32(power_domain->gdscr_addr +
 			       HAL_CLK_CFG_GDSCR_OFFSET) &
@@ -209,6 +215,15 @@ int clock_hal_wait_for_power_domain_off(const struct clock_power_domain_desc *po
 	}
 
 	udelay(CLOCK_HAL_DELAY_US);
+
+	if (power_domain->poll_pwr_on) {
+		while (((mmio_read_32(power_domain->gdscr_addr) &
+			 HAL_CLK_GDSCR_PWR_ON_FMSK) != 0U) && (--retry > 0U)) {
+			udelay(CLOCK_HAL_DELAY_US);
+		}
+
+		return (retry == 0U) ? -ETIMEDOUT : 0;
+	}
 
 	while (((mmio_read_32(power_domain->gdscr_addr +
 				HAL_CLK_CFG_GDSCR_OFFSET) &
