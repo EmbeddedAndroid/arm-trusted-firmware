@@ -47,6 +47,11 @@ Status
 - BL31 leaves the secure GPU CX and GX GDSC controls to the voting logic
   with register retention, clears SACR.CACHE_LOCK in both SMMUs and points
   GPU SMMU aperture slot 0 at context bank 0.
+- BL31 releases the LPASS boot IMEM at cold boot, as the ADSP expects, and
+  opens the SMEM partitions shared with the ADSP, except one shared with TZ,
+  to the apps non-secure access domain at the LLCC MPU: the ADSP's traffic
+  carries that domain, which the boot firmware leaves out. HLOS uses the
+  same domain and gains access to those partitions too.
 - The apps PDC is not set up by BL31.
 - TF-A programs no XPU for its own carve-outs: whether the boot chain
   protects the carve-outs that hold BL31 and BL32 is not verified. The QTI
