@@ -7,15 +7,12 @@
  * retention vote, and GPU CX for the GPU SMMU setup.
  */
 
-#include <errno.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
-#include <common/debug.h>
-#include <drivers/delay_timer.h>
 #include <drivers/qti/chipinfo/chipinfo.h>
 #include <drivers/qti/clock/clock_driver.h>
+#include "hoya_clock.h"
 #include <lib/mmio.h>
 #include <lib/utils_def.h>
 
@@ -30,107 +27,29 @@
 #define GPU_CC_TZ_VOTE_GPU_SMMU_GDS	0x03d93004U
 #define GPU_CC_TZ_GDSC_CTRL_GPU_CX	0x03d94004U
 
-#define CBCR_CLK_ENABLE			BIT_32(0)
-#define CBCR_CLK_OFF			BIT_32(31)
-#define TZ_VOTE_GDS_SW_COLLAPSE		BIT_32(0)
-#define TZ_VOTE_GDS_PWR_ON		BIT_32(31)
-#define TZ_GDSC_CTRL_RETAIN_FF_ENABLE	BIT_32(11)
-
-/* GPU CX takes about 1.7 ms to power up. */
-#define GPU_CX_TIMEOUT_US		10000U
-
-/*
- * Branches the GPU SMMU registers need: the GPU config interface, then,
- * with CX on, the GPU SMMU clock vote and the CX GMU and hub clocks.
- */
-static const uintptr_t gpu_cx_cbcrs[] = {
-	GCC_GPU_CFG_AHB_CBCR,
-	GPU_CC_TZ_VOTE_GPU_SMMU_CLK,
-	GPU_CC_CX_GMU_CBCR,
-	GPU_CC_HUB_CX_INT_CBCR,
+static struct clock_desc gpu_cfg_ahb = {
+	.cbcr_addr = GCC_GPU_CFG_AHB_CBCR,
 };
 
-/* What clock_init_image() turned on, for clock_post_init_image() to undo. */
-static bool gpu_cx_voted;
-static bool gpu_cbcr_enabled[ARRAY_SIZE(gpu_cx_cbcrs)];
+static struct clock_power_domain_desc gpu_cx = {
+	.gdscr_addr = GPU_CC_TZ_VOTE_GPU_SMMU_GDS,
+	.poll_pwr_on = true,
+};
 
-static bool wait_bits(uintptr_t addr, uint32_t mask, uint32_t want)
-{
-	uint64_t timeout = timeout_init_us(GPU_CX_TIMEOUT_US);
+/* The TZ vote registers have the CBCR CLK_ENABLE and CLK_OFF fields. */
+static struct clock_desc gpu_cx_clks[] = {
+	{ .cbcr_addr = GPU_CC_TZ_VOTE_GPU_SMMU_CLK },
+	{ .cbcr_addr = GPU_CC_CX_GMU_CBCR },
+	{ .cbcr_addr = GPU_CC_HUB_CX_INT_CBCR },
+};
 
-	while ((mmio_read_32(addr) & mask) != want) {
-		if (timeout_elapsed(timeout)) {
-			return (mmio_read_32(addr) & mask) == want;
-		}
-	}
-
-	return true;
-}
-
-static int gpu_branch_on(size_t i)
-{
-	if ((mmio_read_32(gpu_cx_cbcrs[i]) & CBCR_CLK_ENABLE) == 0U) {
-		mmio_setbits_32(gpu_cx_cbcrs[i], CBCR_CLK_ENABLE);
-		gpu_cbcr_enabled[i] = true;
-	}
-	if (!wait_bits(gpu_cx_cbcrs[i], CBCR_CLK_OFF, 0U)) {
-		ERROR("Clock: GPU branch 0x%lx stays off\n", gpu_cx_cbcrs[i]);
-		return -ETIMEDOUT;
-	}
-
-	return 0;
-}
-
-/*
- * XBL leaves GPU CX collapsed with its clocks off. Turn CX and the branches
- * its SMMU needs on for qti_smmu_clocked_init(), with register retention, so
- * that the registers it writes survive the CX collapses that follow.
- */
-static int gpu_cx_on(void)
-{
-	int ret = gpu_branch_on(0U);
-
-	if (ret != 0) {
-		return ret;
-	}
-
-	if ((mmio_read_32(GPU_CC_TZ_VOTE_GPU_SMMU_GDS) &
-	     TZ_VOTE_GDS_SW_COLLAPSE) != 0U) {
-		mmio_clrbits_32(GPU_CC_TZ_VOTE_GPU_SMMU_GDS,
-				TZ_VOTE_GDS_SW_COLLAPSE);
-		gpu_cx_voted = true;
-	}
-	if (!wait_bits(GPU_CC_TZ_VOTE_GPU_SMMU_GDS, TZ_VOTE_GDS_PWR_ON,
-		       TZ_VOTE_GDS_PWR_ON)) {
-		ERROR("Clock: GPU CX stays off\n");
-		return -ETIMEDOUT;
-	}
-
-	for (size_t i = 1U; (ret == 0) && (i < ARRAY_SIZE(gpu_cx_cbcrs)); i++) {
-		ret = gpu_branch_on(i);
-	}
-	mmio_setbits_32(GPU_CC_TZ_GDSC_CTRL_GPU_CX,
-			TZ_GDSC_CTRL_RETAIN_FF_ENABLE);
-
-	return ret;
-}
-
-/* Give back every vote and branch that gpu_cx_on() turned on. */
-static void gpu_cx_restore(void)
-{
-	for (size_t i = ARRAY_SIZE(gpu_cx_cbcrs) - 1U; i > 0U; i--) {
-		if (gpu_cbcr_enabled[i]) {
-			mmio_clrbits_32(gpu_cx_cbcrs[i], CBCR_CLK_ENABLE);
-		}
-	}
-	if (gpu_cx_voted) {
-		mmio_setbits_32(GPU_CC_TZ_VOTE_GPU_SMMU_GDS,
-				TZ_VOTE_GDS_SW_COLLAPSE);
-	}
-	if (gpu_cbcr_enabled[0]) {
-		mmio_clrbits_32(gpu_cx_cbcrs[0], CBCR_CLK_ENABLE);
-	}
-}
+static const struct hoya_gpu_cx gpu = {
+	.cfg_ahb = &gpu_cfg_ahb,
+	.cx = &gpu_cx,
+	.clks = gpu_cx_clks,
+	.num_clks = ARRAY_SIZE(gpu_cx_clks),
+	.retain_ctl = GPU_CC_TZ_GDSC_CTRL_GPU_CX,
+};
 
 int clock_init_image(struct clock_drv_ctxt *drv_ctxt)
 {
@@ -148,14 +67,14 @@ int clock_init_image(struct clock_drv_ctxt *drv_ctxt)
 		return 0;
 	}
 
-	return gpu_cx_on();
+	return hoya_clock_gpu_cx_on(&gpu);
 }
 
 int clock_post_init_image(struct clock_drv_ctxt *drv_ctxt)
 {
 	(void)drv_ctxt;
 
-	gpu_cx_restore();
+	hoya_clock_gpu_cx_off(&gpu);
 
 	return 0;
 }
