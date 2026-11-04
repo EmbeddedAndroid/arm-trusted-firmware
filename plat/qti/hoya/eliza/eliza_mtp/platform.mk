@@ -142,3 +142,5 @@ PLAT_INCLUDES		+=	-Iinclude/drivers/qti/sec_core/${CHIPSET}		\
 
 QTI_PMIC_ARB_VERSION	:=	pmicarb7
 include drivers/qti/pmic/pmic.mk
+include drivers/qti/clock/clock.mk
+include drivers/qti/smmu/smmu.mk
