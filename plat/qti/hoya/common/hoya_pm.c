@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <arch_helpers.h>
@@ -52,6 +53,14 @@
 #define APSS_SEQ_COMMON_INSTR(n)		(0x180c0000U + ((n) * 4U))
 
 static const uint32_t cpu_off_seq[] = QTI_CPU_OFF_SEQ;
+static const uint32_t gold_cpu_off_seq[] = QTI_GOLD_CPU_OFF_SEQ;
+
+static void cpu_off_seq_load(const uint32_t *seq, size_t len, uint32_t start)
+{
+	for (size_t i = 0U; i < len; i++) {
+		mmio_write_32(APSS_SEQ_COMMON_INSTR(start / 4U + i), seq[i]);
+	}
+}
 
 /*
  * APSS cluster (L3/DSU) IPM alias register block (APSS_ALIAS_1). Used for the
@@ -248,10 +257,10 @@ int plat_qti_pwr_psci_init(uintptr_t warmboot_entry)
 {
 	(void)warmboot_entry;
 
-	for (unsigned int i = 0U; i < ARRAY_SIZE(cpu_off_seq); i++) {
-		mmio_write_32(APSS_SEQ_COMMON_INSTR(QTI_CPU_OFF_SEQ_START / 4U + i),
-			      cpu_off_seq[i]);
-	}
+	cpu_off_seq_load(cpu_off_seq, ARRAY_SIZE(cpu_off_seq),
+			 QTI_CPU_OFF_SEQ_START);
+	cpu_off_seq_load(gold_cpu_off_seq, ARRAY_SIZE(gold_cpu_off_seq),
+			 QTI_GOLD_CPU_OFF_SEQ_START);
 
 	return PSCI_E_SUCCESS;
 }
@@ -327,6 +336,7 @@ void plat_qti_pwr_domain_on_finish(int core_pos, const uint8_t *states)
 void plat_qti_pwr_domain_off(const uint8_t *states)
 {
 	unsigned int core;
+	uint32_t start = QTI_CPU_OFF_SEQ_START;
 
 	(void)states;
 
@@ -335,8 +345,12 @@ void plat_qti_pwr_domain_off(const uint8_t *states)
 	}
 
 	core = plat_my_core_pos();
+	if ((ARRAY_SIZE(gold_cpu_off_seq) != 0U) &&
+	    (core >= QTI_FIRST_GOLD_CORE)) {
+		start = QTI_GOLD_CPU_OFF_SEQ_START;
+	}
 	mmio_write_32(CPU_SEQ_CTL(core),
-		      CPU_SEQ_CTL_START_ADDR(QTI_CPU_OFF_SEQ_START) |
+		      CPU_SEQ_CTL_START_ADDR(start) |
 		      CPU_SEQ_CTL_PWR_STATE_IDX(QTI_LOCAL_STATE_DEEPOFF) |
 		      CPU_SEQ_CTL_EN);
 	mmio_setbits_32(CPU_PCHANNEL_FSM_CTL(core), PCHANNEL_MASK_WAKEUP);
