@@ -12,6 +12,7 @@ Qualcomm Platforms
    monza
    uno_q
    qcs615_ride
+   eliza_mtp
 
 --------------
 
