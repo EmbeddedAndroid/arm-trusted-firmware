@@ -13,9 +13,28 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <drivers/qti/clock/clock_descriptors.h>
+
 void hoya_clock_tz_gdsc_init(uintptr_t sgdscr);
 void hoya_clock_gdsc_retain(uintptr_t gdsc_ctl);
 void hoya_clock_retention_votes(const uintptr_t *votes, size_t num);
+
+/*
+ * hoya_clock_gpu_cx.c: GPU CX voted through GPU_CC for the GPU SMMU setup.
+ * cfg_ahb is the GCC branch of the GPU config interface, cx the TZ vote for
+ * the GPU SMMU power domain, clks the branches needed with CX on and
+ * retain_ctl the register holding the CX RETAIN_FF_ENABLE control.
+ */
+struct hoya_gpu_cx {
+	struct clock_desc *cfg_ahb;
+	struct clock_power_domain_desc *cx;
+	struct clock_desc *clks;
+	size_t num_clks;
+	uintptr_t retain_ctl;
+};
+
+int hoya_clock_gpu_cx_on(const struct hoya_gpu_cx *gpu);
+void hoya_clock_gpu_cx_off(const struct hoya_gpu_cx *gpu);
 
 /* hoya_clock_gpu.c, for the chipsets that build it. */
 int hoya_clock_gpu_init(void);
