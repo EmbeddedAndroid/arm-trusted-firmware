@@ -73,10 +73,10 @@
 #define QTI_SMEM_SIZE				0x00200000
 
 /*----------------------------------------------------------------------------*/
-/* LC PON register offsets */
+/* PMIC SPMI arbiter */
 /*----------------------------------------------------------------------------*/
-#define PON_PS_HOLD_RESET_CTL			0x85a
-#define PON_PS_HOLD_RESET_CTL2			0x85b
+#define SPMI_ARB_BASE				0x0C400000UL
+#define SPMI_ARB_NUM_CHANNELS			512U
 
 /*----------------------------------------------------------------------------*/
 /* Chipset specific NOC error interrupt IDs. */

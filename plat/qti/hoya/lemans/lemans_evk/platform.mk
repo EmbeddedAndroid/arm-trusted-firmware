@@ -8,6 +8,7 @@
 
 PLAT_PATH				:=	plat/qti
 CHIPSET					:=	lemans
+QTI_PMIC_ARB_VERSION			:=	pmicarb5
 
 RESET_TO_BL2				:=	1
 
@@ -58,6 +59,7 @@ PLAT_INCLUDES		:=	-Iinclude/plat/common/					\
 				-I${PLAT_PATH}/common/inc/$(ARCH)			\
 				-I${PLAT_PATH}/hoya/qtiseclib/inc
 
+include drivers/qti/pmic/pmic.mk
 include lib/xlat_tables_v2/xlat_tables.mk
 PLAT_BL_COMMON_SOURCES	+=	common/desc_image_load.c				\
 				drivers/qti/crypto/rng.c				\
@@ -84,7 +86,6 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 				${GICV3_SOURCES}					\
 				plat/common/plat_psci_common.c				\
 				$(PLAT_PATH)/common/src/$(ARCH)/qti_ringbuf_console.S	\
-				$(PLAT_PATH)/common/src/pm_ps_hold.c			\
 				$(PLAT_PATH)/common/src/qti_bl31_setup.c		\
 				$(PLAT_PATH)/common/src/qti_gic_v3.c			\
 				$(PLAT_PATH)/common/src/qti_gicv3_platform.c		\
@@ -93,7 +94,6 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 				$(PLAT_PATH)/common/src/qti_ringbuf_console_helper.c	\
 				$(PLAT_PATH)/common/src/qti_syscall.c			\
 				$(PLAT_PATH)/common/src/qti_topology.c			\
-				$(PLAT_PATH)/common/src/spmi_arb.c			\
 				$(PLAT_PATH)/hoya/common/$(ARCH)/hoya_helpers.S		\
 				$(PLAT_PATH)/hoya/common/hoya_bl31_setup.c		\
 				$(PLAT_PATH)/hoya/qtiseclib/src/qtiseclib_cb_interface.c
