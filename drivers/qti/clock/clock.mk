@@ -34,12 +34,18 @@ BL31_SOURCES += \
 endif
 
 # GPU CX voted through GPU_CC for the GPU SMMU setup.
-ifneq ($(filter kodiak talos,$(CHIPSET)),)
+ifneq ($(filter kodiak talos eliza,$(CHIPSET)),)
 PLAT_INCLUDES += \
 	-I$(CLOCK_DRV_PATH)/hoya
 
 BL31_SOURCES += \
 	$(CLOCK_DRV_PATH)/hoya/hoya_clock_gpu_cx.c
+endif
+
+# The secure GDSC controls of SM7750 take hoya_clock.c without clock_hwio.h.
+ifeq ($(CHIPSET),eliza)
+BL31_SOURCES += \
+	$(CLOCK_DRV_PATH)/hoya/hoya_clock.c
 endif
 
 # Rail voltage voting (RPMh/BCM back-end). Platforms that scale rails during
