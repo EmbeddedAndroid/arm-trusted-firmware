@@ -43,6 +43,9 @@ Status
   BL31 panics a second later.
 - BL31 services the secure APSS watchdog (TMR2) and hands the other one
   (TMR1) to the normal world.
+- BL31 leaves the secure GPU CX and GX GDSC controls to the voting logic
+  with register retention, clears SACR.CACHE_LOCK in both SMMUs and points
+  GPU SMMU aperture slot 0 at context bank 0.
 - The apps PDC is not set up by BL31.
 - TF-A programs no XPU: whether the boot chain protects the carve-outs that
   hold BL31 and BL32 is not verified. The QTI SiP MEM_ASSIGN call is
