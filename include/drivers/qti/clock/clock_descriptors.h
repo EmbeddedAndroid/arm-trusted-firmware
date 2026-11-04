@@ -22,6 +22,7 @@
 
 /* GDSCR (power domain) register fields. */
 #define HAL_CLK_GDSCR_SW_COLLAPSE_FMSK		0x00000001U
+#define HAL_CLK_GDSCR_PWR_ON_FMSK		0x80000000U
 
 /*
  * CFG_GDSCR fields — architecturally fixed at GDSCR+4 across all GDSCs.
@@ -66,6 +67,7 @@ struct clock_desc {
 struct clock_power_domain_desc {
 	uintptr_t			gdscr_addr; /* SW_COLLAPSE GDSCR; CFG_GDSCR is at +4 */
 	struct clock_register_mask	vote_reg;   /* if set, vote-based enable (GDS_HW) */
+	bool				poll_pwr_on; /* no CFG_GDSCR: poll GDSCR PWR_ON */
 	bool				tfa_enabled;
 	enum chipinfo_part		part;
 	uint32_t			part_idx;
