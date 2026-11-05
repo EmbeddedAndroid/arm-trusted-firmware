@@ -9,6 +9,7 @@
 
 #include <common/debug.h>
 #include <drivers/delay_timer.h>
+#include <drivers/qti/cpucp/cpucp.h>
 #include <lib/mmio.h>
 #include <lib/psci/psci.h>
 #include <lib/spinlock.h>
@@ -147,6 +148,8 @@ int plat_qti_pwr_psci_init(uintptr_t warmboot_entry)
 {
 	(void)warmboot_entry;
 
+	qti_cpucp_init();
+
 	return PSCI_E_SUCCESS;
 }
 
@@ -185,6 +188,7 @@ void plat_qti_pwr_domain_on_finish(int core_pos, const uint8_t *states)
 	(void)states;
 
 	plat_qti_gic_pcpu_init();
+	cpucp_clkdom_init();
 }
 
 void plat_qti_pwr_domain_off(const uint8_t *states)

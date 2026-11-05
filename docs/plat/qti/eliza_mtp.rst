@@ -32,6 +32,11 @@ partitions::
 Status
 ------
 
+- CPUCP runs from the boot firmware; BL31 asks it over SCMI to enable each
+  CPU clock domain when the first core of the domain comes up, so that the
+  kernel's EPSS cpufreq driver can scale it. No request is sent at cold
+  boot: the Cortex-A520 domain of the boot core is enabled when core 1 or 2
+  first comes up, so with the boot core alone online it is not scaled.
 - BL31 runs the native PSCI: it powers the secondary cores on directly. No
   core power-collapse sequence is ported: a core turned off with CPU_OFF
   stays in WFI and CPU_ON of it fails. Only CPU standby (WFI) is offered as an
