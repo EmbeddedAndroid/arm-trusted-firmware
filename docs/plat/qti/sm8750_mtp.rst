@@ -50,6 +50,10 @@ Status
   where the AOSS halts the SoC for the system debug image, which ends in RAM
   dump mode. BL31 makes them plain resets; build with ``QTI_RAMDUMP=1`` to
   keep the RAM dumps.
+- BL31 opens the SMEM partitions shared with the ADSP to the apps non-secure
+  access domain at the LLCC MPU: the ADSP's traffic carries that domain,
+  which the boot firmware leaves out. HLOS uses the same domain and gains
+  access to those partitions too.
 - The apps PDC, the SMMUs and the GPU are not set up by BL31.
 - TF-A programs no XPU: whether the boot chain protects the carve-outs that
   hold BL31 and BL32 is not verified. The QTI SiP MEM_ASSIGN call is

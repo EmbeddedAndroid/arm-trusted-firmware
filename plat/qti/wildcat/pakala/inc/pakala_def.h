@@ -67,6 +67,10 @@
 #define QTI_SMEM_BASE				0x81d00000
 #define QTI_SMEM_SIZE				0x00200000
 
+/* LLCC MPU, AND broadcast instance: programs the MPUs of all LLCC channels. */
+#define QTI_LLCC_MPU_BASE			0x26C60000
+#define QTI_LLCC_MPU_SIZE			0x00003000
+
 /* PMIC arbiter v7 */
 #define QTI_PMIC_ARB_BASE			0x0B000000UL
 #define SPMI_ARB_NUM_CHANNELS			896U
