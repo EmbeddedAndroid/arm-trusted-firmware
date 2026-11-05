@@ -122,7 +122,6 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 				$(PLAT_PATH)/common/src/qti_bl31_setup.c		\
 				$(PLAT_PATH)/common/src/qti_gic_v3.c			\
 				$(PLAT_PATH)/common/src/qti_interrupt_svc.c		\
-				$(PLAT_PATH)/common/src/qti_interrupt_svc_el3.c	\
 				$(PLAT_PATH)/common/src/qti_llcc_mpu.c			\
 				$(PLAT_PATH)/common/src/qti_syscall.c			\
 				$(PLAT_PATH)/common/src/qti_topology.c			\
@@ -170,3 +169,5 @@ PLAT_INCLUDES		+=	-Iinclude/drivers/qti/sec_core/${CHIPSET}		\
 BL31_SOURCES		+=	drivers/qti/sec_core/sec_core.c				\
 				drivers/qti/sec_core/${CHIPSET}/sec_core_cfg.c		\
 				drivers/qti/watchdog/watchdog.c
+
+include $(PLAT_PATH)/common/qti_spmd.mk
