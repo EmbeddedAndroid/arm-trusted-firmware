@@ -19,6 +19,8 @@
 #include <lib/mmio.h>
 #include <lib/utils_def.h>
 
+#include <qti_xpu4.h>
+
 #define GCC_GPU_CFG_AHB_CBCR			0x00171004U
 #define GPU_CC_TZ_GDSC_CTRL_GPU_GX		0x03d94000U
 #define GPU_CC_TZ_GDSC_CTRL_GPU_CX		0x03d94004U
@@ -53,6 +55,15 @@
 #define LPASS_AON_CC_LPI_NOC_HS_CBCR		0x06e21008U
 #define LPASS_TOP_CC_AGGNOC_LS_CBCR		0x07e06000U
 #define TCSR_BOOT_IMEM_DISABLE			0x01fd3300U
+
+/* LPASS LPI AON master port MPU, on the LPASS path to DDR */
+#define LPASS_LPIAON_MPU_BASE			0x07e30000U
+#define LPIAON_MPU_LLCC_LPI_RG			1U
+#define XPU4_QAD_LPASS_Q6			BIT_32(2)
+
+/* LLCC LPI region (llcc-lpi@ff800000 in the X1E80100 DT), end exclusive */
+#define LLCC_LPI_BASE				0xff800000ULL
+#define LLCC_LPI_END				0xffe00000ULL
 
 #define SGDSCR_SW_OVERRIDE			BIT_32(0)
 #define SGDSCR_RETAIN_FF_ENABLE			BIT_32(1)
@@ -143,6 +154,34 @@ static void lpass_clk_on(struct clock_desc *clk)
 }
 
 /*
+ * Open the LLCC LPI region to the LPASS Q6 and the apps non-secure domain at
+ * the LPI AON MPU, which denies client accesses outside its enabled
+ * resource groups.
+ */
+static void lpass_lpiaon_mpu_init(void)
+{
+	const uintptr_t b = LPASS_LPIAON_MPU_BASE;
+	const unsigned int rg = LPIAON_MPU_LLCC_LPI_RG;
+	const uint32_t qads = XPU4_QAD_APPS | XPU4_QAD_NS | XPU4_QAD_LPASS_Q6;
+
+	/* XBL leaves the group unused; never take one over. */
+	if ((mmio_read_32(b + XPU4_RGCR1(rg)) & XPU4_RGCR1_RGE) != 0U) {
+		WARN("LPASS: LPI AON MPU RG%u in use, LLCC LPI left closed\n",
+		     rg);
+		return;
+	}
+
+	mmio_write_32(b + XPU4_RGCSAR0(rg), (uint32_t)LLCC_LPI_BASE);
+	mmio_write_32(b + XPU4_RGCEAR0(rg), (uint32_t)LLCC_LPI_END);
+	mmio_write_32(b + XPU4_RGCSAR1(rg), (uint32_t)(LLCC_LPI_BASE >> 32));
+	mmio_write_32(b + XPU4_RGCEAR1(rg), (uint32_t)(LLCC_LPI_END >> 32));
+	mmio_write_32(b + XPU4_RGRDR(rg), qads);
+	mmio_write_32(b + XPU4_RGWRR(rg), qads);
+	mmio_setbits_32(b + XPU4_RGCR1(rg), XPU4_RGCR1_RGE);
+	dsbsy();
+}
+
+/*
  * The ADSP expects, at cold boot, the LPASS retention votes of the SSC,
  * PDC_HM and AUDIO_HM domains taken from hardware control and made secure
  * with the LPASS QTB, audio and PDC hardware modules powered, the LPASS QTB
@@ -186,6 +225,8 @@ static void lpass_init(void)
 	for (i = 0U; i < LPASS_VOTES_MADE; i++) {
 		mmio_setbits_32(lpass_votes[i], RETENTION_VOTE_SECURE);
 	}
+
+	lpass_lpiaon_mpu_init();
 
 	mmio_write_32(TCSR_BOOT_IMEM_DISABLE, 1U);
 	dsbsy();

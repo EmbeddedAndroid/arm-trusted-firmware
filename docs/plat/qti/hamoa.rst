@@ -60,7 +60,8 @@ Status
 - BL31 does the secure LPASS setup the ADSP expects at cold boot: it releases
   the LPASS boot IMEM, which XBL leaves connected, makes the SSC, PDC_HM and
   AUDIO_HM retention votes secure and leaves the LPASS QTB GDSC to the voting
-  logic with retention, with the AXIS2 clock left off.
+  logic with retention, with the AXIS2 clock left off. It opens the LLCC LPI
+  region to the LPASS Q6 at the LPASS LPI AON MPU.
 - The apps PDC is not set up by BL31.
 - TF-A programs no XPU: whether the boot chain protects the carve-outs that
   hold BL31 and BL32 is not verified. The QTI SiP MEM_ASSIGN call is
