@@ -6,6 +6,8 @@
  * This is parsed by BL31/SPMD at runtime (passed as TOS_FW_CONFIG in the FIP).
  */
 
+#include <platform_def.h>
+
 /dts-v1/;
 
 / {
@@ -18,8 +20,8 @@
 		maj_ver = <0x1>;
 		min_ver = <0x1>;
 		exec_state = <0x0>;        /* AArch64 */
-		load_address = <0x0 0x1c300000>;
-		entrypoint = <0x0 0x1c300000>;
-		binary_size = <0x200000>;
+		load_address = <0x0 BL32_BASE>;
+		entrypoint = <0x0 BL32_BASE>;
+		binary_size = <BL32_SIZE>;
 	};
 };
