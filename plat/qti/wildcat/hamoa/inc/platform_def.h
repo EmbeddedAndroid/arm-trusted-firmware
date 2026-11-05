@@ -143,15 +143,10 @@
 #define QTI_SMEM_BASE ULL(0xFFE00000)
 #define QTI_SMEM_SIZE ULL(0x00200000)
 /*----------------------------------------------------------------------------*/
-/* LC PON register offsets */
-/*----------------------------------------------------------------------------*/
-#define PON_PS_HOLD_RESET_CTL 0x852
-#define PON_PS_HOLD_RESET_CTL2 0x853
-
-/*----------------------------------------------------------------------------*/
 /* PMIC SPMI arbiter base address                                             */
 /*----------------------------------------------------------------------------*/
 #define QTI_PMIC_ARB_BASE               0x0C400000
+#define SPMI_ARB_NUM_CHANNELS           512U
 
 /*
  * The Qualcomm QGIC2 implementation seems to have PIDR0-4 and PIDR4-7
