@@ -7,6 +7,7 @@
 QTI_PLAT_PATH	:= plat/qti/wildcat
 QTI_COMMON_PATH	:= plat/qti/common
 CHIPSET		:= hamoa
+QTI_PMIC_ARB_VERSION	:= pmicarb5
 PLATFORM	:= hamoa
 
 ARM_ARCH_MAJOR := 9
@@ -88,7 +89,6 @@ QTI_BL31_SOURCES :=						\
 	$(QTI_COMMON_PATH)/src/qti_ringbuf_console_helper.c \
 	$(QTI_PLAT_PATH)/common/src/$(ARCH)/wildcat_pauth.c	\
 	$(QTI_PLAT_PATH)/common/src/$(ARCH)/wildcat_unhandled_exception_asm.S \
-	$(QTI_COMMON_PATH)/src/pm_ps_hold.c			\
 	$(QTI_COMMON_PATH)/src/qti_stack_protector.c		\
 	$(QTI_COMMON_PATH)/src/qti_common.c			\
 	$(QTI_PLAT_PATH)/common/src/wildcat_bl31qtiblob_setup.c	\
@@ -101,7 +101,6 @@ QTI_BL31_SOURCES :=						\
 	$(QTI_PLAT_PATH)/common/src/wildcat_bl31qtilib_pm.c	\
 	$(QTI_PLAT_PATH)/common/src/wildcat_rng.c		\
 	drivers/qti/crypto/rng.c				\
-	$(QTI_COMMON_PATH)/src/spmi_arb.c			\
 	$(QTI_PLAT_PATH)/bl31qtilib/src/bl31qtilib_cb_interface.c \
 	$(QTI_PLAT_PATH)/common/src/wildcat_plat_helpers.c
 
@@ -114,6 +113,7 @@ PLAT_INCLUDES := -Iinclude/plat/common/
 PLAT_INCLUDES += ${QTI_EXTERNAL_INCLUDES}
 
 include lib/xlat_tables_v2/xlat_tables.mk
+include drivers/qti/pmic/pmic.mk
 include drivers/qti/smem/smem.mk
 include drivers/qti/chipinfo/chipinfo.mk
 PLAT_BL_COMMON_SOURCES +=					\
