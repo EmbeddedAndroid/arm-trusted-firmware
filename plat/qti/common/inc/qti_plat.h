@@ -14,6 +14,7 @@
 #include <drivers/arm/gicv3.h>
 #include <lib/cassert.h>
 #include <lib/el3_runtime/cpu_data.h>
+#include <lib/psci/psci.h>
 #include <lib/xlat_tables/xlat_tables_v2.h>
 
 int qti_mmap_add_dynamic_region(uintptr_t base_pa, size_t size,
@@ -51,6 +52,13 @@ void plat_qti_pwr_domain_suspend_finish(const uint8_t *states);
 int  plat_qti_pwr_psci_init(uintptr_t warmboot_entry);
 
 void plat_qti_bl31_setup_post(void);
+
+/*
+ * CPU_OFF ends here instead of in the generic WFI where the platform defines
+ * PLAT_QTI_CPU_OFF_WFI: for cores whose power controller wakes them where
+ * they stopped rather than from reset.
+ */
+void __dead2 plat_qti_cpu_off_wfi(const psci_power_state_t *target_state);
 void plat_qti_invoke_unhandled_isr(uint32_t id, void *handle);
 
 /*
