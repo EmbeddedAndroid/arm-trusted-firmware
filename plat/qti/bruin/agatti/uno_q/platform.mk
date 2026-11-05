@@ -7,6 +7,9 @@
 PLAT_PATH				:=	plat/qti
 CHIPSET					:=	agatti
 
+QTI_PMIC_ARB_VERSION			:=	pmicarb5
+QTI_PON_PBS_VERSION			:=	pon5
+
 RESET_TO_BL2				:=	1
 COLD_BOOT_SINGLE_CPU			:=	1
 PROGRAMMABLE_RESET_ADDRESS		:=	1
@@ -35,6 +38,8 @@ PLAT_INCLUDES		:=	-Iinclude/plat/common/					\
 				-I${PLAT_PATH}/common/inc/$(ARCH)			\
 				-Iinclude/drivers/qti/qtimer/bruin			\
 				-Iinclude/drivers/qti/sec_core/${CHIPSET}
+
+include drivers/qti/pmic/pmic.mk
 
 include lib/xlat_tables_v2/xlat_tables.mk
 
@@ -67,7 +72,6 @@ BL31_SOURCES		+=	drivers/delay_timer/delay_timer.c			\
 				plat/common/plat_gicv3.c				\
 				${GICV3_SOURCES}					\
 				plat/common/plat_psci_common.c				\
-				$(PLAT_PATH)/common/src/pm_ps_hold.c			\
 				$(PLAT_PATH)/common/src/qti_bl31_setup.c		\
 				$(PLAT_PATH)/common/src/qti_gic_v3.c			\
 				$(PLAT_PATH)/common/src/qti_gicv3_platform.c		\
@@ -76,7 +80,6 @@ BL31_SOURCES		+=	drivers/delay_timer/delay_timer.c			\
 				$(PLAT_PATH)/common/src/qti_pm.c			\
 				$(PLAT_PATH)/common/src/qti_syscall.c			\
 				$(PLAT_PATH)/common/src/qti_sip_platform.c		\
-				$(PLAT_PATH)/common/src/spmi_arb.c			\
 				$(PLAT_PATH)/bruin/common/bruin_bl31_setup.c		\
 				$(PLAT_PATH)/bruin/common/bruin_topology.c		\
 				$(PLAT_PATH)/bruin/common/bruin_pm.c			\
