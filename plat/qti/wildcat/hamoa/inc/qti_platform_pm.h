@@ -35,6 +35,9 @@
 #define PLAT_MAX_RET_STATE			QTI_LOCAL_STATE_PDC_RET
 #define PLAT_MAX_OFF_STATE			QTI_LOCAL_STATE_DEEPOFF
 
+/* CPU_OFF ends in plat_qti_cpu_off_wfi(). */
+#define PLAT_QTI_CPU_OFF_WFI
+
 /*
  * PDC, RSC, then Oryon clusters of four cores: three on X1E80100, the first
  * two on X1P42100 (HAMOA_CLUSTER_COUNT). MPIDR Aff2 is the cluster and Aff1

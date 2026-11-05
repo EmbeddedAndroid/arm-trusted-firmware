@@ -39,8 +39,9 @@ Status
   secondary core with an MPIDR-addressed SCMI POWER_STATE_SET on the secure
   CPUCP channel, after programming each cluster's NCC_RVBAR with the warm
   boot entry point. CPU_ON of a core that is fused off on the part (SMEM
-  platform information) returns INVALID_PARAMETERS. No core power-down is
-  ported: CPU_ON of a core turned off with CPU_OFF fails.
+  platform information) returns INVALID_PARAMETERS.
+- CPU_OFF has the cluster's NCC power the core down in C4 once it is in WFI;
+  CPU_ON of such a core wakes it with its wake-up SGI.
 - The idle states of the X1E80100 device tree (CPU C4, cluster CL4 and CL5
   and the system state, all retention) are entered with a WFI; no deeper
   hardware state is programmed. In OS-initiated mode PSCI refuses CL5 and
