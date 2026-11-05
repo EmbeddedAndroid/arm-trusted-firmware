@@ -18,6 +18,12 @@ USE_COHERENT_MEM			:=	0
 WARMBOOT_ENABLE_DCACHE_EARLY		:=	1
 HW_ASSISTED_COHERENCY			:=	1
 
+# 1: keep secure watchdog, thermal and PMIC RESIN resets on the debug path
+# XBL leaves them on, so that they end in RAM dump mode instead of a reboot.
+QTI_RAMDUMP				?=	0
+$(eval $(call assert_boolean,QTI_RAMDUMP))
+$(eval $(call add_define,QTI_RAMDUMP))
+
 # Enable PSCI v1.0 extended state ID format
 PSCI_EXTENDED_STATE_ID			:=	1
 ARM_RECOM_STATE_ID_ENC			:=	1
@@ -103,6 +109,7 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 				$(PLAT_PATH)/wildcat/common/src/wildcat_bl31_setup.c	\
 				$(PLAT_PATH)/wildcat/common/src/wildcat_plat_helpers.c \
 				$(PLAT_PATH)/wildcat/common/src/wildcat_topology.c	\
+				$(PLAT_PATH)/wildcat/${CHIPSET}/src/pakala_bl31_setup.c	\
 				$(PLAT_PATH)/wildcat/${CHIPSET}/src/pakala_pm.c		\
 				drivers/qti/accesscontrol/access_control_stub.c		\
 				drivers/qti/qtimer/qtimer.c				\

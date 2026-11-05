@@ -43,6 +43,10 @@ Status
 - SYSTEM_RESET and SYSTEM_OFF go through PS_HOLD and the PMK8550 PON over
   the PMIC arbiter v7.
 - BL31 services the secure APSS watchdog, which XBL leaves running.
+- XBL puts secure watchdog, thermal and PMIC RESIN resets on the debug path,
+  where the AOSS halts the SoC for the system debug image, which ends in RAM
+  dump mode. BL31 makes them plain resets; build with ``QTI_RAMDUMP=1`` to
+  keep the RAM dumps.
 - The apps PDC, the SMMUs and the GPU are not set up by BL31.
 - TF-A programs no XPU: whether the boot chain protects the carve-outs that
   hold BL31 and BL32 is not verified. The QTI SiP MEM_ASSIGN call is
