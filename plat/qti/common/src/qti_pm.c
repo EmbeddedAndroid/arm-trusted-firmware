@@ -248,7 +248,7 @@ static bool qti_sys_suspend_supported(void)
 
 	qti_get_sys_suspend_power_state(&state);
 
-	return state.pwr_domain_state[PLAT_MAX_PWR_LVL] != PSCI_LOCAL_STATE_RUN;
+	return state.pwr_domain_state[PLAT_MAX_PWR_LVL] > PLAT_MAX_RET_STATE;
 }
 
 /*
