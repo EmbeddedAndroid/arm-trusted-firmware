@@ -26,6 +26,10 @@
  * fit there and runs from the region the device tree reserves for a
  * Gunyah VM (oem-vm, 0xf7c00000 + 0x4c00000), unused with Linux at EL2.
  *
+ * With SPD=spmd, BL2 also loads the SPMC core manifest (TOS_FW_CONFIG) right
+ * after BL32 in oem-vm. BL31 maps none of oem-vm, so the SPMD can map the
+ * manifest page while it parses it.
+ *
  * XBL loads the FIP as the APPSBL (uefi partition) at 0xa7000000 and BL2
  * reads it from there. BL33 runs from non-secure
  * DRAM above the FIP window.
@@ -44,6 +48,9 @@
 #define BL32_BASE			0xf7c00000
 #define BL32_SIZE			0x01e00000
 #define BL32_LIMIT			(BL32_BASE + BL32_SIZE)
+
+#define TOS_FW_CONFIG_BASE		BL32_LIMIT
+#define TOS_FW_CONFIG_SIZE		0x00002000
 
 #define BL33_BASE			0xa7800000
 #define BL33_SIZE			0x00800000
