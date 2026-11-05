@@ -7,6 +7,10 @@
 #ifndef QTI_CPUCP_H
 #define QTI_CPUCP_H
 
+#include <stdbool.h>
+
+#include <arch_helpers.h>
+
 /*
  * Lean CPUCP host interface for TF-A. Only the clock-domain enable path that
  * is required during secondary-core cold boot is implemented natively. The
@@ -20,6 +24,13 @@ void cpucp_clkdom_init(void);
 
 /* Bring the CPUCP (EPSS/RISC-V MUC) microcontroller out of reset on cold boot. */
 void qti_cpucp_init(void);
+
+/*
+ * Ask a CPUCP that powers the cores itself (CPUCP_SCMI_PD_MPIDR in the
+ * chipset's cpucp_hwio.h) to power the core with affinity @mpidr on or off.
+ * Returns the SCMI status.
+ */
+int cpucp_core_power_set(u_register_t mpidr, bool power_on);
 
 #else
 
