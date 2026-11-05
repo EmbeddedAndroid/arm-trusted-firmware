@@ -15,9 +15,12 @@ PLAT_INCLUDES += \
 	-Iinclude/drivers/qti/cpucp/$(CHIPSET)		\
 	-Idrivers/arm/css/scmi
 
-# Kodiak runs the version 3 host interface, with its own start sequence.
+# Kodiak runs the version 3 host interface and Eliza version 1, each with its
+# own start sequence.
 ifeq ($(CHIPSET),kodiak)
 CPUCP_START_SOURCES := $(CPUCP_DRV_PATH)/kodiak/cpucp_start.c
+else ifeq ($(CHIPSET),eliza)
+CPUCP_START_SOURCES := $(CPUCP_DRV_PATH)/eliza/cpucp_start.c
 else
 CPUCP_START_SOURCES := $(CPUCP_DRV_PATH)/$(CHIPSET)/cpucp_config.c	\
 		       $(CPUCP_DRV_PATH)/hoya/cpucp_start.c
