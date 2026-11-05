@@ -7,6 +7,7 @@
 #include <lib/mmio.h>
 #include <lib/utils_def.h>
 
+#include <pakala_plat.h>
 #include <platform_def.h>
 #include <qti_plat.h>
 
@@ -27,4 +28,6 @@ void plat_qti_bl31_setup_post(void)
 			SECURE_WDOG_RESET_DEBUG_EN | MSM_TSENSE_RESET_DEBUG_EN |
 			PMIC_RESIN_RESET_DEBUG_EN);
 #endif
+
+	pakala_pdp_calcomp();
 }

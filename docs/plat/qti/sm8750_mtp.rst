@@ -37,6 +37,9 @@ Status
   the cluster's NCC power the core down in C4 once it is in WFI, and CPU_ON
   wakes it with an SGI. The NCC resumes the core after that WFI, from where
   BL31 enters its warm boot path.
+- BL31 reports DVFS calibration complete to the PDP of each cluster at cold
+  boot (QCOM SCMI vendor protocol, "calcomp"), after which CPUCP serves the
+  SCMI performance fastchannels the kernel's cpufreq driver writes.
 - The idle states of the SM8750 device tree (CPU C4, cluster CL5 and the
   system state, all retention) are accepted, in OS-initiated mode too, and
   entered with a WFI. No deeper hardware state is programmed.
