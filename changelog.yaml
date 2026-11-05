@@ -603,6 +603,9 @@ subsections:
             scope: wildcat
 
             subsections:
+              - title: Eliza
+                scope: eliza
+
               - title: Hamoa
                 scope: hamoa
 
