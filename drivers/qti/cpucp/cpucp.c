@@ -179,3 +179,46 @@ void cpucp_clkdom_init(void)
 
 	spin_unlock(&cpucp_clkdom_init_spinlock);
 }
+
+#ifdef CPUCP_SCMI_PD_MPIDR
+/*
+ * POWER_STATE_SET of the CPUCP firmwares that address a core by its MPIDR:
+ * the payload is the 64-bit affinity followed by the power state, in place
+ * of the SCMI {flags, domain_id, power_state}.
+ */
+#define CPUCP_CORE_POWER_ON			1U
+#define CPUCP_CORE_POWER_OFF			0U
+
+int cpucp_core_power_set(u_register_t mpidr, bool power_on)
+{
+	uint64_t aff = mpidr & MPIDR_AFFINITY_MASK;
+	mailbox_mem_t *mbx_mem;
+	int ret;
+
+	spin_lock(&cpucp_clkdom_init_spinlock);
+	if (cpucp_scmi_handle == NULL) {
+		cpucp_scmi_handle = scmi_init(&cpucp_scmi_channel, NULL);
+		assert(cpucp_scmi_handle != NULL);
+	}
+	spin_unlock(&cpucp_clkdom_init_spinlock);
+
+	scmi_get_channel(&cpucp_scmi_channel);
+
+	mbx_mem = (mailbox_mem_t *)(cpucp_scmi_plat_info.scmi_mbx_mem);
+	mbx_mem->msg_header = SCMI_MSG_CREATE(SCMI_PWR_DMN_PROTO_ID,
+					     SCMI_PWR_STATE_SET_MSG, 0U);
+	mbx_mem->len = SCMI_PWR_STATE_SET_MSG_LEN;
+	mbx_mem->flags = SCMI_FLAG_RESP_POLL;
+	SCMI_PAYLOAD_ARG3(mbx_mem->payload, (uint32_t)aff,
+			  (uint32_t)(aff >> 32),
+			  power_on ? CPUCP_CORE_POWER_ON : CPUCP_CORE_POWER_OFF);
+
+	scmi_send_sync_command(&cpucp_scmi_channel);
+
+	SCMI_PAYLOAD_RET_VAL1(mbx_mem->payload, ret);
+
+	scmi_put_channel(&cpucp_scmi_channel);
+
+	return ret;
+}
+#endif /* CPUCP_SCMI_PD_MPIDR */
