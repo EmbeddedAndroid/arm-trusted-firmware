@@ -1,8 +1,12 @@
-Hamoa (X1E80100)
-================
+Hamoa (X1E80100) and Purwa (X1P42100)
+=====================================
 
 Trusted Firmware-A (TF-A) platform port for the X1E80100 (Hamoa): three
 clusters of four Qualcomm Oryon cores, with a GIC-700.
+
+``PLAT=purwa`` builds the same native BL2 and BL31 for the X1P42100 (Purwa),
+an X1E80100 with its first two clusters, booted by the same boot firmware
+into the same memory map.
 
 ``PLAT=hamoa`` builds one of two BL31s:
 
@@ -78,6 +82,8 @@ Steps to build TF-A BL2 and the FIP payload::
 
         $ ./tools/qti/generate_fip_elf.sh build/hamoa/release/fip.bin \
             0xa7000000
+
+For Purwa, use ``PLAT=purwa`` and ``build/purwa/release/fip.bin``.
 
 The bl2.elf generated here has to be signed for the ``tz`` partition with QTI
 signing involved. The fip.elf is signed with
