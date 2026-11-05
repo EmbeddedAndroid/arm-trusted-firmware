@@ -53,7 +53,10 @@ Status
 - BL31 services the secure APSS watchdog, which XBL leaves running.
 - BL31 leaves the secure GPU CX and GX GDSC controls to the voting logic
   with register retention.
-- The apps PDC, the SMMUs and LPASS are not set up by BL31.
+- BL31 leaves a bypass stream mapping for stream ID 0x3 in the last stream
+  match group of the GPU SMMU, through which the GPU CP fetches its trusted
+  (zap shader) microcode.
+- The apps PDC and LPASS are not set up by BL31.
 - TF-A programs no XPU: whether the boot chain protects the carve-outs that
   hold BL31 and BL32 is not verified. The QTI SiP MEM_ASSIGN call is
   accepted without effect, as on the other platforms without an access
