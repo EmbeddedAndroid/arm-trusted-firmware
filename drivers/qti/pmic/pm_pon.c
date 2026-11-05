@@ -35,3 +35,15 @@ void qti_pmic_prepare_shutdown(void)
 {
 	pm_app_ps_hold_cfg(RESET_TYPE_SHUTDOWN);
 }
+
+/*
+ * On some platforms the boot loader leaves the PON interrupts (power key,
+ * RESIN) sent to an SPMI master other than the apps PMIC arbiter, so the OS
+ * never sees them.
+ */
+void qti_pmic_route_pon_irqs(void)
+{
+#ifdef PON_INT_MID_SEL
+	(void)spmi_arb_write8(PON_INT_MID_SEL, PON_INT_MID_APPS);
+#endif
+}

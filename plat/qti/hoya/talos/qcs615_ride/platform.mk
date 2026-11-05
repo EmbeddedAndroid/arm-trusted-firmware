@@ -9,6 +9,9 @@
 PLAT_PATH				:=	plat/qti
 CHIPSET					:=	talos
 
+QTI_PMIC_ARB_VERSION			:=	pmicarb5
+QTI_PON_PBS_VERSION			:=	pon5
+
 RESET_TO_BL2				:=	1
 
 # Turn On Separate code & data.
@@ -93,7 +96,6 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 				plat/common/plat_gicv3.c				\
 				${GICV3_SOURCES}					\
 				plat/common/plat_psci_common.c				\
-				$(PLAT_PATH)/common/src/pm_ps_hold.c			\
 				$(PLAT_PATH)/common/src/qti_bl31_setup.c		\
 				$(PLAT_PATH)/common/src/qti_gic_v3.c			\
 				$(PLAT_PATH)/common/src/qti_gicv3_platform.c		\
@@ -103,7 +105,6 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 				$(PLAT_PATH)/common/src/qti_sip_platform.c		\
 				$(PLAT_PATH)/common/src/qti_topology.c			\
 				$(PLAT_PATH)/common/src/qti_pm.c			\
-				$(PLAT_PATH)/common/src/spmi_arb.c			\
 				$(PLAT_PATH)/hoya/common/$(ARCH)/hoya_helpers.S		\
 				$(PLAT_PATH)/hoya/common/hoya_bl31_setup.c		\
 				$(PLAT_PATH)/hoya/common/hoya_pm.c			\
@@ -119,6 +120,7 @@ PLAT_INCLUDES		+=	-Iinclude/drivers/qti/cpucp				\
 				-Iinclude/drivers/qti/qtimer/hoya			\
 				-Iinclude/drivers/qti/watchdog/hoya
 
+include drivers/qti/pmic/pmic.mk
 include drivers/qti/smem/smem.mk
 include drivers/qti/chipinfo/chipinfo.mk
 include drivers/qti/cmd_db/cmd_db.mk
