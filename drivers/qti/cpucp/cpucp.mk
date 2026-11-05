@@ -16,11 +16,13 @@ PLAT_INCLUDES += \
 	-Idrivers/arm/css/scmi
 
 # Kodiak runs the version 3 host interface and Eliza version 1, each with its
-# own start sequence.
+# own start sequence. On Pakala, XBL starts CPUCP.
 ifeq ($(CHIPSET),kodiak)
 CPUCP_START_SOURCES := $(CPUCP_DRV_PATH)/kodiak/cpucp_start.c
 else ifeq ($(CHIPSET),eliza)
 CPUCP_START_SOURCES := $(CPUCP_DRV_PATH)/eliza/cpucp_start.c
+else ifeq ($(CHIPSET),pakala)
+CPUCP_START_SOURCES :=
 else
 CPUCP_START_SOURCES := $(CPUCP_DRV_PATH)/$(CHIPSET)/cpucp_config.c	\
 		       $(CPUCP_DRV_PATH)/hoya/cpucp_start.c
