@@ -36,11 +36,12 @@ Status
   CPU clock domain when the first core of the domain comes up, so that the
   kernel's EPSS cpufreq driver can scale it. No request is sent at cold
   boot.
-- BL31 runs the native PSCI: it powers the secondary cores on directly. No
-  core power-collapse sequence is ported: a core turned off with CPU_OFF
-  stays in WFI and CPU_ON of it fails. Only CPU standby (WFI) is offered as an
-  idle state, so the core and cluster idle states of the SM7750 device tree
-  are refused.
+- BL31 runs the native PSCI: it powers the secondary cores on directly. It
+  loads the core and Cortex-A520 complex power-control programs into the
+  IPM sequencer memory and arms the complex sequencers; at CPU_OFF the
+  core's sequencer collapses the core (a complex goes down with its last
+  core), and CPU_ON wakes it with an SGI. Only CPU standby (WFI) is offered as an idle state, so the core and
+  cluster idle states of the SM7750 device tree are refused.
 - SYSTEM_RESET and SYSTEM_OFF go through PS_HOLD and the PMK8550 PON over
   the PMIC arbiter v7. On the MTP, SYSTEM_RESET does not reset the board:
   PS_HOLD drops with the PON reset configured, the PMIC does not act, and
