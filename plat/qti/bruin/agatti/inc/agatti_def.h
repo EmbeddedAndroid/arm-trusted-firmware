@@ -23,10 +23,6 @@
 /* Debug UART: QUPv3 wrap 0, serial engine 4 */
 #define PLAT_QTI_UART_BASE			0x04A90000
 
-/* PM4125 PON registers behind the SPMI arbiter */
-#define PON_PS_HOLD_RESET_CTL			0x85A
-#define PON_PS_HOLD_RESET_CTL2			0x85B
-
 /* Memory map */
 #define QTI_DEVICE_SIZE				(0x10000000 - QTI_DEVICE_BASE)
 
