@@ -82,4 +82,11 @@
 	}
 #endif
 
+/*
+ * With BL31QTILIB, the panic handler of wildcat_helpers.S enters the
+ * library panic, which runs the debug flow and resets the system.
+ */
+EXTERN(bl31qtilib_panic)
+PROVIDE(qti_panic = bl31qtilib_panic);
+
 #endif /* PLAT_LD_S */
