@@ -30,6 +30,9 @@
 #define PLAT_MAX_RET_STATE			QTI_LOCAL_STATE_PDC_RET
 #define PLAT_MAX_OFF_STATE			QTI_LOCAL_STATE_DEEPOFF
 
+/* The NCC resumes a core after its CPU_OFF WFI: plat_qti_cpu_off_wfi(). */
+#define PLAT_QTI_CPU_OFF_WFI
+
 /*
  * PDC, RSC, two Oryon clusters of six and two cores. MPIDR Aff2 is the
  * cluster and Aff1 the core; the core position strides by six per cluster.

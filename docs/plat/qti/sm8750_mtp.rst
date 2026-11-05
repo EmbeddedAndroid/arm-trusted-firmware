@@ -33,8 +33,10 @@ Status
   secondary core with an MPIDR-addressed SCMI POWER_STATE_SET on the secure
   CPUCP channel, after programming each cluster's NCC_RVBAR with the warm
   boot entry point. CPU_ON of a core that is fused off on the part (SMEM
-  platform information) returns INVALID_PARAMETERS. No core power-down is
-  ported: CPU_ON of a core turned off with CPU_OFF fails.
+  platform information) returns INVALID_PARAMETERS. At CPU_OFF BL31 lets
+  the cluster's NCC power the core down in C4 once it is in WFI, and CPU_ON
+  wakes it with an SGI. The NCC resumes the core after that WFI, from where
+  BL31 enters its warm boot path.
 - The idle states of the SM8750 device tree (CPU C4, cluster CL5 and the
   system state, all retention) are accepted, in OS-initiated mode too, and
   entered with a WFI. No deeper hardware state is programmed.
