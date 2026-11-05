@@ -55,7 +55,8 @@ Status
   with register retention.
 - BL31 leaves a bypass stream mapping for stream ID 0x3 in the last stream
   match group of the GPU SMMU, through which the GPU CP fetches its trusted
-  (zap shader) microcode.
+  (zap shader) microcode, and points GPU SMMU aperture slot 0 at context
+  bank 0.
 - The apps PDC and LPASS are not set up by BL31.
 - TF-A programs no XPU: whether the boot chain protects the carve-outs that
   hold BL31 and BL32 is not verified. The QTI SiP MEM_ASSIGN call is
