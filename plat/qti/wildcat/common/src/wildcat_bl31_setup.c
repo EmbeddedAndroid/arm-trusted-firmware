@@ -18,6 +18,8 @@ void plat_qti_cpu_boot_setup(void)
 	write_icc_igrpen0_el1(IGRPEN1_EL1_ENABLE_G0_BIT);
 }
 
+/* Platforms with cold boot setup of their own after the common one. */
+#pragma weak plat_qti_bl31_setup_post
 void plat_qti_bl31_setup_post(void)
 {
 }
