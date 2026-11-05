@@ -151,20 +151,8 @@ BL31_SOURCES +=			\
 
 LIB_QTI_PATH := ${QTI_PLAT_PATH}/bl31qtilib/lib/${CHIPSET}
 
-# Override this on the command line to point to the bl31qtilib library
-BL31QTILIB_PATH ?=
-ifeq ($(BL31QTILIB_PATH),)
-# if No lib then use stub implementation for bl31qtilib interface
-$(warning BL31QTILIB_PATH is not provided while building, using stub \
-	implementation. THIS FIRMWARE WILL NOT BOOT!)
-BL31_SOURCES +=							\
-	${QTI_PLAT_PATH}/bl31qtilib/src/bl31qtilib_interface_stub.c \
-	${QTI_PLAT_PATH}/bl31qtilib/src/bl31qtilib_version_strings_stub.c
-else
-# use library provided by BL31QTILIB_PATH
+# The library BL31QTILIB_PATH points at (platform.mk).
 LDFLAGS += -L $(dir $(BL31QTILIB_PATH))
 LDLIBS += -l$(patsubst lib%.a,%,$(notdir $(BL31QTILIB_PATH)))
-
-endif
 
 include $(QTI_PLAT_PATH)/common/wildcat_common.mk

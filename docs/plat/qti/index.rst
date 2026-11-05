@@ -13,6 +13,7 @@ Qualcomm Platforms
    uno_q
    qcs615_ride
    eliza_mtp
+   hamoa
 
 --------------
 
