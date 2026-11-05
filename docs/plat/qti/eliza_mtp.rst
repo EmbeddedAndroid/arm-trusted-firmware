@@ -74,6 +74,11 @@ Steps to build TF-A BL2 and the FIP payload::
         $ ./tools/qti/generate_fip_elf.sh build/eliza_mtp/release/fip.bin \
             0xa7000000
 
+For FF-A with OP-TEE as the S-EL1 SPMC, build with ``SPD=spmd
+SPMD_SPM_AT_SEL2=0`` and OP-TEE with ``CFG_CORE_SEL1_SPMC=y``. The FIP then
+also carries the SPMC core manifest, built from BL32_BASE and BL32_SIZE,
+which BL2 loads at the end of BL32's region for the SPMD.
+
 The bl2.elf generated here has to be signed for the ``tz`` partition with QTI
 signing involved. The fip.elf is signed with
 `qtestsign <https://github.com/msm8916-mainline/qtestsign>`__, which only
