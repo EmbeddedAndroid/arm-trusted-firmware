@@ -5,12 +5,15 @@
  */
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdint.h>
 
+#include <common/debug.h>
 #include <cpu_config.h>
 #include <cpucp.h>
 #include <cpucp_hwio.h>
 #include <drivers/arm/css/scmi.h>
+#include <drivers/delay_timer.h>
 #include <lib/mmio.h>
 #include <lib/spinlock.h>
 #include <plat/common/platform.h>
@@ -44,6 +47,9 @@
 /* CPUCP SCMI channel poll interval and command timeout, in micro-seconds. */
 #define CPUCP_SCMI_POLL_DELAY_US		1U
 #define CPUCP_SCMI_TIMEOUT_US			(500U * 1000U)
+
+/* Time CPUCP takes to bring a clock domain up after it answers, in us. */
+#define CPUCP_CLKDOM_UP_TIMEOUT_US		(200U * 1000U)
 
 static scmi_lock_t cpucp_scmi_lock;
 static spinlock_t cpucp_clkdom_init_spinlock;
@@ -105,6 +111,31 @@ static int cpucp_scmi_clock_enable(void *p, uint32_t clock_id)
 }
 
 /*
+ * CPUCP answers the enable before the clock domain is up, and a request that
+ * reaches it before then leaves the requested domain disabled. Where the
+ * chipset describes an up indication, wait for it.
+ */
+static bool cpucp_clkdom_wait_up(unsigned int clkdom)
+{
+	uint64_t timeout;
+
+	if (cpucp_clkdom_up(clkdom) < 0) {
+		return true;
+	}
+
+	timeout = timeout_init_us(CPUCP_CLKDOM_UP_TIMEOUT_US);
+	while (cpucp_clkdom_up(clkdom) == 0) {
+		if (timeout_elapsed(timeout)) {
+			ERROR("CPUCP: clock domain %u did not come up\n",
+			      clkdom);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/*
  * cpucp_clkdom_init - request CPUCP to enable the clock domain owning the
  * calling core during cold boot.
  *
@@ -136,9 +167,10 @@ void cpucp_clkdom_init(void)
 			continue;
 		}
 
-		if (cpucp_scmi_clock_enable(cpucp_scmi_handle,
-					    clkdom_cpumasks[i].clkdom) ==
-		    SCMI_E_SUCCESS) {
+		if ((cpucp_scmi_clock_enable(cpucp_scmi_handle,
+					     clkdom_cpumasks[i].clkdom) ==
+		     SCMI_E_SUCCESS) &&
+		    cpucp_clkdom_wait_up(clkdom_cpumasks[i].clkdom)) {
 			clkdom_init_status[i] = 1U;
 		}
 
