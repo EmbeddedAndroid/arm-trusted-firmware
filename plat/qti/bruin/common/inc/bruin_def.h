@@ -156,9 +156,10 @@
 #define QTI_SOC_REVISION_MASK			0xFFFF
 
 /*----------------------------------------------------------------------------*/
-/* PMIC SPMI arbitrator base address                                          */
+/* PMIC SPMI arbiter base address, common across the bruin family            */
 /*----------------------------------------------------------------------------*/
-#define QTI_PMIC_ARB_BASE			0x01C00000
+#define QTI_PMIC_ARB_BASE			0x01C00000UL
+#define SPMI_ARB_NUM_CHANNELS			256U
 
 /*----------------------------------------------------------------------------*/
 /* SMEM size                                                                  */

@@ -151,9 +151,10 @@
 #define QTI_PS_HOLD_REG				0x0C264000
 
 /*----------------------------------------------------------------------------*/
-/* PMIC SPMI arbiter base address                                             */
+/* PMIC SPMI arbiter base address, common across the hoya family             */
 /*----------------------------------------------------------------------------*/
-#define QTI_PMIC_ARB_BASE				0x0C400000
+#define QTI_PMIC_ARB_BASE			0x0C400000UL
+#define SPMI_ARB_NUM_CHANNELS			512U
 
 /*----------------------------------------------------------------------------*/
 /* SOC hw version register */
