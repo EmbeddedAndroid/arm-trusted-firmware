@@ -125,3 +125,4 @@ include drivers/qti/watchdog/watchdog.mk
 QTI_PMIC_ARB_VERSION			:=	pmicarb7
 include drivers/qti/pmic/pmic.mk
 include drivers/qti/pdc/pdc.mk
+include drivers/qti/smmu/smmu.mk
