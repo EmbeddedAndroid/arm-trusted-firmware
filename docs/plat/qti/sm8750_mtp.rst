@@ -54,6 +54,10 @@ Status
   access domain at the LLCC MPU: the ADSP's traffic carries that domain,
   which the boot firmware leaves out. HLOS uses the same domain and gains
   access to those partitions too.
+- BL31 cleans and invalidates the data cache at the end of its platform
+  setup, before the runtime services and BL32 are initialised: with the lines
+  left there before that point U-Boot hangs before its UFS probe. Which boot
+  stage leaves them is not known (not BL2's own region).
 - The apps PDC, the SMMUs and the GPU are not set up by BL31.
 - TF-A programs no XPU: whether the boot chain protects the carve-outs that
   hold BL31 and BL32 is not verified. The QTI SiP MEM_ASSIGN call is

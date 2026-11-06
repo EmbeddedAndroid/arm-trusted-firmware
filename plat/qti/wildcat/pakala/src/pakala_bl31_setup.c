@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <arch_helpers.h>
 #include <lib/mmio.h>
 #include <lib/utils_def.h>
 
@@ -30,4 +31,10 @@ void plat_qti_bl31_setup_post(void)
 #endif
 
 	pakala_pdp_calcomp();
+
+	/*
+	 * Lines left in the data cache before this point (from which stage is
+	 * not known; not BL2's) hang U-Boot before its UFS probe.
+	 */
+	dcsw_op_all(DCCISW);
 }
