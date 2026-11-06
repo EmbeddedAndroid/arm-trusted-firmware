@@ -36,6 +36,10 @@ PLAT_INCLUDES		:=	-Iinclude/plat/common/					\
 				-Iinclude/drivers/qti/qtimer/bruin			\
 				-Iinclude/drivers/qti/sec_core/${CHIPSET}
 
+QTI_PMIC_ARB_VERSION			:=	pmicarb5
+QTI_PON_PBS_VERSION			:=	pon5
+include drivers/qti/pmic/pmic.mk
+
 include lib/xlat_tables_v2/xlat_tables.mk
 
 PLAT_BL_COMMON_SOURCES	+=	common/desc_image_load.c				\
@@ -67,7 +71,6 @@ BL31_SOURCES		+=	drivers/delay_timer/delay_timer.c			\
 				plat/common/plat_gicv3.c				\
 				${GICV3_SOURCES}					\
 				plat/common/plat_psci_common.c				\
-				$(PLAT_PATH)/common/src/pm_ps_hold.c			\
 				$(PLAT_PATH)/common/src/qti_bl31_setup.c		\
 				$(PLAT_PATH)/common/src/qti_gic_v3.c			\
 				$(PLAT_PATH)/common/src/qti_gicv3_platform.c		\
@@ -76,7 +79,6 @@ BL31_SOURCES		+=	drivers/delay_timer/delay_timer.c			\
 				$(PLAT_PATH)/common/src/qti_pm.c			\
 				$(PLAT_PATH)/common/src/qti_syscall.c			\
 				$(PLAT_PATH)/common/src/qti_sip_platform.c		\
-				$(PLAT_PATH)/common/src/spmi_arb.c			\
 				$(PLAT_PATH)/bruin/common/bruin_bl31_setup.c		\
 				$(PLAT_PATH)/bruin/common/bruin_topology.c		\
 				$(PLAT_PATH)/bruin/common/bruin_pm.c			\
