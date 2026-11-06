@@ -49,10 +49,8 @@
 #define QTI_SMEM_SIZE				0x00200000
 
 /*----------------------------------------------------------------------------*/
-/* LC PON register offsets */
+/* PMIC PON reset type */
 /*----------------------------------------------------------------------------*/
-#define PON_PS_HOLD_RESET_CTL			0x85a
-#define PON_PS_HOLD_RESET_CTL2			0x85b
 /* PMIC reset type for PSCI SYSTEM_RESET */
 #define PON_PS_HOLD_SYSTEM_RESET_TYPE		PON_RESET_TYPE_WARM_RESET
 #define PON_INT_MID_SEL				0x81a

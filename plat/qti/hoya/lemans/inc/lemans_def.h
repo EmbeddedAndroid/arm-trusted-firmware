@@ -66,10 +66,8 @@
 #define QTI_AOP_CMD_DB_BASE			0x90860000
 #define QTI_AOP_CMD_DB_SIZE			0x00020000
 /*----------------------------------------------------------------------------*/
-/* LC PON register offsets */
+/* PMIC PON reset type */
 /*----------------------------------------------------------------------------*/
-#define PON_PS_HOLD_RESET_CTL			0x852
-#define PON_PS_HOLD_RESET_CTL2			0x853
 /* PMIC reset type for PSCI SYSTEM_RESET */
 #define PON_PS_HOLD_SYSTEM_RESET_TYPE		PON_RESET_TYPE_WARM_RESET
 /*----------------------------------------------------------------------------*/

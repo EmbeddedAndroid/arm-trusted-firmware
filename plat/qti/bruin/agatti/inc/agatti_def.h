@@ -74,11 +74,10 @@
 
 #define GENI_M_CMD_TX				(0x08000000)
 
-/* PS_HOLD and the PM4125 PON registers behind the SPMI arbiter */
+/* PS_HOLD, the SPMI arbiter and the PM4125 PON reset type */
 #define QTI_PS_HOLD_REG				0x0440B000
-#define PMIC_ARB_BASE				0x01C00000
-#define PON_PS_HOLD_RESET_CTL			0x85A
-#define PON_PS_HOLD_RESET_CTL2			0x85B
+#define QTI_PMIC_ARB_BASE			0x01C00000UL
+#define SPMI_ARB_NUM_CHANNELS			256U
 /* PMIC reset type for PSCI SYSTEM_RESET */
 #define PON_PS_HOLD_SYSTEM_RESET_TYPE		PON_RESET_TYPE_WARM_RESET
 
