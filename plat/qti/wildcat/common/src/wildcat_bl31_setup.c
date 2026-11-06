@@ -22,9 +22,12 @@ void plat_qti_bl31_setup_post(void)
 {
 }
 
+/* panic() ends in plat_panic_handler(), which calls this: stop here. */
 void __dead2 qti_panic(void)
 {
-	panic();
+	for (;;) {
+		wfi();
+	}
 }
 
 int sysdbg_reset_check(void)
