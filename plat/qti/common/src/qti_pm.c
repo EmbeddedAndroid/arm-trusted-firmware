@@ -22,9 +22,16 @@
 #define QTI_LOCAL_PSTATE_MASK		((1 << QTI_LOCAL_PSTATE_WIDTH) - 1)
 
 #if PSCI_OS_INIT_MODE
+/*
+ * The last-at-level field of an OS-initiated State ID follows the local
+ * states, unless the platform's State IDs keep it elsewhere.
+ */
+#ifndef QTI_LAST_AT_PLVL_SHIFT
+#define QTI_LAST_AT_PLVL_SHIFT		(QTI_LOCAL_PSTATE_WIDTH *	\
+					 (PLAT_MAX_PWR_LVL + 1))
+#endif
 #define QTI_LAST_AT_PLVL_MASK		(QTI_LOCAL_PSTATE_MASK <<	\
-					 (QTI_LOCAL_PSTATE_WIDTH *	\
-					  (PLAT_MAX_PWR_LVL + 1)))
+					 QTI_LAST_AT_PLVL_SHIFT)
 #endif
 
 /*******************************************************************************
@@ -70,7 +77,9 @@ int qti_validate_power_state(unsigned int power_state,
 		state_id >>= QTI_LOCAL_PSTATE_WIDTH;
 	}
 #if PSCI_OS_INIT_MODE
-	req_state->last_at_pwrlvl = state_id & QTI_LOCAL_PSTATE_MASK;
+	req_state->last_at_pwrlvl = (psci_get_pstate_id(power_state) >>
+				     QTI_LAST_AT_PLVL_SHIFT) &
+				    QTI_LOCAL_PSTATE_MASK;
 #endif
 
 	return PSCI_E_SUCCESS;
