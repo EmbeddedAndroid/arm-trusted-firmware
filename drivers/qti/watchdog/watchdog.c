@@ -12,6 +12,7 @@
 #include <drivers/arm/gicv3.h>
 #include <drivers/qti/qtimer/qtimer.h>
 #include <drivers/qti/watchdog/watchdog.h>
+#include <lib/cassert.h>
 #include <lib/mmio.h>
 #include <lib/spinlock.h>
 #include <lib/utils_def.h>
@@ -31,6 +32,9 @@ uint64_t qti_watchdog_pet_ticks __section("tzfw_coherent_mem");
 static u_register_t mpidr[PLATFORM_CORE_COUNT] = {
 	[0 ... PLATFORM_CORE_COUNT - 1] = MPIDR_INVALID
 };
+
+/* qti_watchdog_set_target() keeps one bit per core position. */
+CASSERT(PLATFORM_CORE_COUNT <= 32, assert_watchdog_core_masks);
 
 /* WDOG_CTL is write-only on some watchdogs: track what was written. */
 static uint32_t wdog_ctl;
@@ -100,8 +104,8 @@ void qti_watchdog_set_target(qti_watchdog_cpu_state_t state)
 {
 	static struct {
 		struct {
-			uint8_t interruptible;
-			uint8_t on;
+			uint32_t interruptible;
+			uint32_t on;
 		} state;
 		uint8_t watchdog;
 		spinlock_t lock;
@@ -116,44 +120,44 @@ void qti_watchdog_set_target(qti_watchdog_cpu_state_t state)
 	spin_lock(&cpu.lock);
 	switch (state) {
 	case QTI_WATCHDOG_CPU_WAKEUP:
-		cpu.state.interruptible |= (1 << core);
-		cpu.state.on |= (1 << core);
+		cpu.state.interruptible |= (1U << core);
+		cpu.state.on |= (1U << core);
 
 		/* wdog currently in sleep, move it to this core */
-		if (!(cpu.state.on & (1 << cpu.watchdog))) {
+		if (!(cpu.state.on & (1U << cpu.watchdog))) {
 			tgt = core;
 		}
 		break;
 	case QTI_WATCHDOG_CPU_HOTPLUG:
-		cpu.state.interruptible &= ~(1 << core);
+		cpu.state.interruptible &= ~(1U << core);
 		if (cpu.watchdog != core) {
-			cpu.state.on &= ~(1 << core);
+			cpu.state.on &= ~(1U << core);
 			break;
 		}
 
 		/* if more than one cpu online */
 		if (cpu.state.on & (cpu.state.on - 1)) {
-			cpu.state.on &= ~(1 << core);
+			cpu.state.on &= ~(1U << core);
 			tgt = __builtin_ctz((uintptr_t)cpu.state.on);
 		} else {
 			assert(cpu.state.interruptible != 0);
-			cpu.state.on &= ~(1 << core);
+			cpu.state.on &= ~(1U << core);
 			tgt = __builtin_ctz((uintptr_t)cpu.state.interruptible);
 		}
 		break;
 	case QTI_WATCHDOG_CPU_SUSPEND:
 		if (cpu.watchdog != core) {
-			cpu.state.on &= ~(1 << core);
+			cpu.state.on &= ~(1U << core);
 			break;
 		}
 
 		/* if more than one cpu online */
 		if (cpu.state.on & (cpu.state.on - 1)) {
-			cpu.state.on &= ~(1 << core);
+			cpu.state.on &= ~(1U << core);
 			tgt = __builtin_ctz((uintptr_t)cpu.state.on);
 		} else {
 			assert(core == cpu.watchdog);
-			cpu.state.on &= ~(1 << core);
+			cpu.state.on &= ~(1U << core);
 		}
 		break;
 	default:
