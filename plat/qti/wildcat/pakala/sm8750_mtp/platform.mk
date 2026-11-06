@@ -123,4 +123,6 @@ PLAT_INCLUDES		+=	-Iinclude/drivers/qti/watchdog/${CHIPSET}
 
 QTI_PMIC_ARB_VERSION	:=	pmicarb7
 include drivers/qti/pmic/pmic.mk
+include drivers/qti/clock/clock.mk
+include drivers/qti/smmu/smmu.mk
 include drivers/qti/cpucp/cpucp.mk

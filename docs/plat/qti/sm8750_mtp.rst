@@ -62,7 +62,16 @@ Status
   apps non-secure access domain at the LPASS LPI AON MPU, in the first
   resource group the boot firmware leaves disabled: the ADSP does not come
   up without it.
-- The apps PDC, the SMMUs and the GPU are not set up by BL31.
+- BL31 programs the Adreno 830 registers only the secure world may write at
+  cold boot, with GPU CX voted on and its register retention enabled: the
+  software feature fuses (``CX_MISC_SW_FUSE_VALUE``: fast blend, LPAC, ray
+  tracing) and GPU SMMU aperture slot 0, which points at context bank 0 so
+  that the Adreno CP can switch it to per-process page tables. BL31 offers
+  no SiP call for the GPU: Linux has to take the GPU register setup through
+  its PAS interface, which the OP-TEE PAS backend leaves to the boot
+  firmware, and reads the fuses back. If GPU CX does not come up, BL31
+  stops the boot (panic), as on the other chipsets that vote GPU CX.
+- The apps PDC and the apps SMMU are not set up by BL31.
 - TF-A programs no XPU to protect its own or BL32's carve-outs: whether the
   boot chain protects them is not verified. The QTI SiP MEM_ASSIGN call is
   accepted without effect, as on the other platforms without an access

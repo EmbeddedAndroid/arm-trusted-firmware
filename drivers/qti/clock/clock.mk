@@ -34,7 +34,7 @@ BL31_SOURCES += \
 endif
 
 # GPU CX voted through GPU_CC for the GPU SMMU setup.
-ifneq ($(filter kodiak talos eliza,$(CHIPSET)),)
+ifneq ($(filter kodiak talos eliza pakala,$(CHIPSET)),)
 PLAT_INCLUDES += \
 	-I$(CLOCK_DRV_PATH)/hoya
 
