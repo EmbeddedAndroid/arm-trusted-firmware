@@ -7,6 +7,7 @@
 #ifndef PAKALA_PLAT_H
 #define PAKALA_PLAT_H
 
+void pakala_lpass_lpi_mpu_open(void);
 void pakala_pdp_calcomp(void);
 
 #endif /* PAKALA_PLAT_H */

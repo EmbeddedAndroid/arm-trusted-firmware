@@ -30,6 +30,7 @@ void plat_qti_bl31_setup_post(void)
 			PMIC_RESIN_RESET_DEBUG_EN);
 #endif
 
+	pakala_lpass_lpi_mpu_open();
 	pakala_pdp_calcomp();
 
 	/*

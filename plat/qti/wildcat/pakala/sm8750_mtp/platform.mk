@@ -111,6 +111,7 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 				$(PLAT_PATH)/wildcat/common/src/wildcat_plat_helpers.c \
 				$(PLAT_PATH)/wildcat/common/src/wildcat_topology.c	\
 				$(PLAT_PATH)/wildcat/${CHIPSET}/src/pakala_bl31_setup.c	\
+				$(PLAT_PATH)/wildcat/${CHIPSET}/src/pakala_lpass.c	\
 				$(PLAT_PATH)/wildcat/${CHIPSET}/src/pakala_pdp.c	\
 				$(PLAT_PATH)/wildcat/${CHIPSET}/src/pakala_pm.c		\
 				drivers/qti/accesscontrol/access_control_stub.c		\

@@ -58,9 +58,13 @@ Status
   setup, before the runtime services and BL32 are initialised: with the lines
   left there before that point U-Boot hangs before its UFS probe. Which boot
   stage leaves them is not known (not BL2's own region).
+- BL31 opens the LLCC LPI region (0xff800000, 8 MB) to the LPASS Q6 and the
+  apps non-secure access domain at the LPASS LPI AON MPU, in the first
+  resource group the boot firmware leaves disabled: the ADSP does not come
+  up without it.
 - The apps PDC, the SMMUs and the GPU are not set up by BL31.
-- TF-A programs no XPU: whether the boot chain protects the carve-outs that
-  hold BL31 and BL32 is not verified. The QTI SiP MEM_ASSIGN call is
+- TF-A programs no XPU to protect its own or BL32's carve-outs: whether the
+  boot chain protects them is not verified. The QTI SiP MEM_ASSIGN call is
   accepted without effect, as on the other platforms without an access
   control back-end.
 
