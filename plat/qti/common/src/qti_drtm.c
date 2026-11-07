@@ -1,0 +1,144 @@
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * DRTM (Arm DEN0113) platform hooks for QTI platforms.
+ */
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <event_measure.h>
+#include <plat/common/platform.h>
+#include <services/drtm_svc.h>
+
+#include <platform_def.h>
+
+/*
+ * Non-secure DRAM a DLME, its data and the DRTM parameters may live in:
+ * DDR above the firmware carveouts at its base (SAIL, hypervisor, XBL,
+ * AOP, SMEM, ...), up to the 64 GiB the platform decodes.
+ */
+#define QTI_DRTM_NS_DRAM_BASE	ULL(0xa0000000)
+#define QTI_DRTM_NS_DRAM_END	ULL(0x1000000000)
+
+/*
+ * Bus masters on the SoC (DSPs, GPU, camera, video, display, PCIe and
+ * USB controllers) sit behind SMMU-500 instances or behind their own
+ * MMUs, and the DRTM service only drives SMMUv3 for DMA protection: the
+ * platform cannot provide complete DMA protection yet, so the DRTM
+ * service reports itself unavailable instead of launching unprotected.
+ */
+bool plat_has_non_host_platforms(void)
+{
+	return true;
+}
+
+bool plat_has_unmanaged_dma_peripherals(void)
+{
+	return true;
+}
+
+unsigned int plat_get_total_smmus(void)
+{
+	return 0;
+}
+
+void plat_enumerate_smmus(const uintptr_t **smmus_out, size_t *smmu_count_out)
+{
+	*smmus_out = NULL;
+	*smmu_count_out = 0;
+}
+
+static const plat_drtm_dma_prot_features_t qti_dma_prot_features = {
+	.max_num_mem_prot_regions = 0,
+	.dma_protection_support = ARM_DRTM_DMA_PROT_FEATURES_DMA_SUPPORT_COMPLETE
+};
+
+const plat_drtm_dma_prot_features_t *plat_drtm_get_dma_prot_features(void)
+{
+	return &qti_dma_prot_features;
+}
+
+uint64_t plat_drtm_dma_prot_get_max_table_bytes(void)
+{
+	return 0ULL;
+}
+
+/*
+ * The TPM is a discrete chip owned by OP-TEE: BL31 records the DRTM
+ * measurements in the event log; their extension into PCR 17/18 at
+ * locality 4 is done by OP-TEE (not wired yet).
+ */
+static const plat_drtm_tpm_features_t qti_tpm_features = {
+	.tpm_based_hash_support = false,
+	.firmware_hash_algorithm = TPM_ALG_ID
+};
+
+const plat_drtm_tpm_features_t *plat_drtm_get_tpm_features(void)
+{
+	return &qti_tpm_features;
+}
+
+int plat_drtm_validate_ns_region(uintptr_t region_start, size_t region_size)
+{
+	uint64_t start = region_start;
+	uint64_t end = start + region_size;
+
+	if (!region_size || end < start)
+		return -1;
+
+	if (start < QTI_DRTM_NS_DRAM_BASE || end > QTI_DRTM_NS_DRAM_END)
+		return -1;
+
+	return 0;
+}
+
+/* No persistent storage for the DRTM error code is wired yet */
+static uint64_t qti_drtm_error;
+
+int plat_set_drtm_error(uint64_t error_code)
+{
+	qti_drtm_error = error_code;
+
+	return 0;
+}
+
+int plat_get_drtm_error(uint64_t *error_code)
+{
+	*error_code = qti_drtm_error;
+
+	return 0;
+}
+
+uint64_t plat_drtm_get_min_size_normal_world_dce(void)
+{
+	return 0ULL;
+}
+
+uint64_t plat_drtm_get_imp_def_dlme_region_size(void)
+{
+	return 0ULL;
+}
+
+uint64_t plat_drtm_get_tcb_hash_features(void)
+{
+	return 0ULL;
+}
+
+uint64_t plat_drtm_get_tcb_hash_table_size(void)
+{
+	return 0ULL;
+}
+
+uint64_t plat_drtm_get_acpi_tables_region_size(void)
+{
+	return 0ULL;
+}
+
+uint64_t plat_drtm_get_dlme_img_auth_features(void)
+{
+	return 0ULL;
+}
