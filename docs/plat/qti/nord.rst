@@ -57,6 +57,11 @@ Steps to build TF-A BL2 and the FIP payload::
         $ make CROSS_COMPILE=aarch64-none-elf- PLAT=nord SPD=opteed \
             BL32=<path-to-optee-bin> BL33=<path-to-os-bootloader-bin> fip all
 
+For FF-A with OP-TEE as the S-EL1 SPMC, build with ``SPD=spmd
+SPMD_SPM_AT_SEL2=0`` and OP-TEE with ``CFG_CORE_SEL1_SPMC=y``. The FIP then
+also carries the SPMC core manifest, built from BL32_BASE and BL32_SIZE,
+which BL2 loads into the last 8 KB of the BL31 slot for the SPMD.
+
 bl2.elf has to be signed for the ``tz`` partition with QTI signing involved.
 The FIP goes into the ``uefi`` partition as an ELF with one loadable segment
 at 0xd8d00000, padded to a multiple of 4 KB (XBL reads it from UFS in whole

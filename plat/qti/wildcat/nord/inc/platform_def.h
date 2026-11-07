@@ -100,6 +100,11 @@
  * BL31 and BL32 take the QTEE region of the DARE-TZ carve-out
  * (0xbc180000, 6.5 MB): BL31 the first 1 MB, OP-TEE the remaining 5.5 MB.
  * BL33 runs from non-secure DRAM below the carve-out.
+ *
+ * With SPD=spmd, BL2 also loads the SPMC core manifest (TOS_FW_CONFIG) into
+ * the last 8 KB of the 1 MB BL31 slot: BL31_SIZE excludes them, so BL2 maps
+ * the two images separately, and BL31 maps only its own image, so the SPMD
+ * can map the manifest page while it parses it.
  */
 #define BL2_BASE				0x14694000
 #define BL2_SIZE				0x40000
@@ -109,8 +114,11 @@
 #define PLAT_QTI_FIP_MAXSIZE			0x01000000
 
 #define BL31_BASE				0xbc180000
-#define BL31_SIZE				0x00100000
+#define BL31_SIZE				0x000fe000
 #define BL31_LIMIT				(BL31_BASE + BL31_SIZE)
+
+#define TOS_FW_CONFIG_BASE			BL31_LIMIT
+#define TOS_FW_CONFIG_SIZE			0x00002000
 
 #define BL32_BASE				0xbc280000
 #define BL32_SIZE				0x00580000

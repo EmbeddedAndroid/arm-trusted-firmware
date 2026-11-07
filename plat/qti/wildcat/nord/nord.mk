@@ -97,7 +97,6 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 				$(PLAT_PATH)/common/src/qti_bl31_setup.c		\
 				$(PLAT_PATH)/common/src/qti_gic_v3.c			\
 				$(PLAT_PATH)/common/src/qti_interrupt_svc.c		\
-				$(PLAT_PATH)/common/src/qti_interrupt_svc_el3.c	\
 				$(PLAT_PATH)/common/src/qti_syscall.c			\
 				$(PLAT_PATH)/common/src/qti_sip_platform.c		\
 				$(PLAT_PATH)/common/src/qti_pm.c			\
@@ -127,3 +126,5 @@ include drivers/qti/pmic/pmic.mk
 include drivers/qti/pdc/pdc.mk
 include drivers/qti/sail_comm/sail_comm.mk
 include drivers/qti/smmu/smmu.mk
+
+include $(PLAT_PATH)/common/qti_spmd.mk
