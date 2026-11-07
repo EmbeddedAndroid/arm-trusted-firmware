@@ -80,6 +80,8 @@
 
 #define QTI_PS_HOLD_REG				0x0C264000
 
+#define QTI_CORE_TOP_CSR_BASE			0x01f00000
+
 /* NCC_ARCH block of cluster 0; the others follow one stride apart. */
 #define PLAT_NCC_ARCH_BASE			0x19880000U
 #define PLAT_NCC_CLUSTER_STRIDE			0x1000000U
