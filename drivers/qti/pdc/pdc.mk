@@ -10,20 +10,16 @@ $(eval $(call add_define,QTI_PDC_ENABLED))
 
 PDC_DRV_PATH := drivers/qti/pdc
 
-# Every supported apps PDC has the hoya register map. Talos has its own
-# interrupt, GPIO and TCS tables; the other chipsets use the hoya tables.
-# The sequences differ per chipset.
+# Every supported apps PDC has the hoya register map. A chipset directory
+# with its own interrupt table holds all of its tables; the other chipsets
+# use the hoya tables. The sequences differ per chipset.
 PDC_COMMON := $(PDC_DRV_PATH)/hoya
 ifneq ($(filter lemans monaco,$(CHIPSET)),)
 PDC_SEQ_CFG := $(PDC_COMMON)/pdc_seq_cfg.c
 else
 PDC_SEQ_CFG := $(PDC_DRV_PATH)/$(CHIPSET)/pdc_seq_cfg.c
 endif
-ifneq ($(filter talos,$(CHIPSET)),)
-PDC_TABLES := $(PDC_DRV_PATH)/$(CHIPSET)
-else
-PDC_TABLES := $(PDC_COMMON)
-endif
+PDC_TABLES := $(if $(wildcard $(PDC_DRV_PATH)/$(CHIPSET)/interrupt_table.c),$(PDC_DRV_PATH)/$(CHIPSET),$(PDC_COMMON))
 
 # A chipset whose PDC departs from the defaults below says so in the
 # pdc_config.mk of its tables.

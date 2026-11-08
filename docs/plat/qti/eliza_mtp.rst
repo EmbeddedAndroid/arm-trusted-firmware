@@ -59,7 +59,8 @@ Status
   to the apps non-secure access domain at the LLCC MPU: the ADSP's traffic
   carries that domain, which the boot firmware leaves out. HLOS uses the
   same domain and gains access to those partitions too.
-- The apps PDC is not set up by BL31.
+- BL31 gives the apps PDC inputs to the HLOS DRV; the AOP owns the PDC
+  sequences.
 - TF-A programs no XPU for its own carve-outs: whether the boot chain
   protects the carve-outs that hold BL31 and BL32 is not verified. The QTI
   SiP MEM_ASSIGN call is accepted without effect, as on the other platforms

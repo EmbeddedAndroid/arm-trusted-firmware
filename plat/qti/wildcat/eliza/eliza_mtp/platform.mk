@@ -145,3 +145,4 @@ include drivers/qti/pmic/pmic.mk
 include drivers/qti/clock/clock.mk
 include drivers/qti/cpucp/cpucp.mk
 include drivers/qti/smmu/smmu.mk
+include drivers/qti/pdc/pdc.mk
