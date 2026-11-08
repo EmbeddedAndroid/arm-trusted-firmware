@@ -145,3 +145,8 @@ include drivers/qti/pmic/pmic.mk
 include drivers/qti/clock/clock.mk
 include drivers/qti/cpucp/cpucp.mk
 include drivers/qti/smmu/smmu.mk
+
+# The AOP programs the apps PDC sleep and wake TCSes.
+QTI_PDC_TCS		:=	0
+QTI_PDC_IRQ_OWNER_BANKED :=	1
+include drivers/qti/pdc/pdc.mk
