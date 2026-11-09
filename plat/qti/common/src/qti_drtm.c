@@ -10,7 +10,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <common/debug.h>
 #include <event_measure.h>
+#include <lib/mmio.h>
 #include <lib/utils_def.h>
 #include <plat/common/plat_drtm.h>
 #include <plat/common/platform.h>
@@ -50,18 +52,45 @@ bool plat_has_unmanaged_dma_peripherals(void)
 }
 
 static const uintptr_t qti_drtm_smmus[] = {
-	QTI_DRTM_SMMU_BASES
+	QTI_DRTM_SMMU_BASES,
+#ifdef QTI_DRTM_GPU_SMMU_BASE
+	QTI_DRTM_GPU_SMMU_BASE,
+#endif
 };
+
+#define QTI_GDSCR_PWR_ON	BIT_32(31)
+
+/*
+ * The GPU SMMU registers read as zero and ignore writes while the GPU CX
+ * domain is collapsed, and the GPU behind it cannot reach DRAM then either:
+ * engage the GPU SMMU only when GPU CX is up. The DLME owns the GPU power
+ * after the launch.
+ */
+static size_t qti_drtm_num_smmus(void)
+{
+	size_t n = ARRAY_SIZE(qti_drtm_smmus);
+
+#ifdef QTI_DRTM_GPU_SMMU_BASE
+	uint32_t gdscr = mmio_read_32(QTI_DRTM_GPU_CX_GDSCR);
+
+	if ((gdscr & QTI_GDSCR_PWR_ON) == 0U) {
+		INFO("DRTM: GPU CX off (GDSCR 0x%x), GPU SMMU not engaged\n",
+		     gdscr);
+		n--;
+	}
+#endif
+	return n;
+}
 
 unsigned int plat_get_total_smmus(void)
 {
-	return ARRAY_SIZE(qti_drtm_smmus);
+	return (unsigned int)qti_drtm_num_smmus();
 }
 
 void plat_enumerate_smmus(const uintptr_t **smmus_out, size_t *smmu_count_out)
 {
 	*smmus_out = qti_drtm_smmus;
-	*smmu_count_out = ARRAY_SIZE(qti_drtm_smmus);
+	*smmu_count_out = qti_drtm_num_smmus();
 }
 
 static const plat_drtm_dma_prot_features_t qti_dma_prot_features = {

@@ -21,8 +21,13 @@
 #define GPU_SMMU_BASE			0x03DA0000
 #define PCIE_SMMU_BASE			0x15200000
 
-/* SMMU-500 instances the DRTM service engages for DMA protection */
-#define QTI_DRTM_SMMU_BASES		APPS_SMMU_BASE, PCIE_SMMU_BASE, GPU_SMMU_BASE
+/*
+ * SMMU-500 instances the DRTM service engages for DMA protection; the GPU
+ * SMMU sits in the GPU CX power domain with the GPU it serves.
+ */
+#define QTI_DRTM_SMMU_BASES		APPS_SMMU_BASE, PCIE_SMMU_BASE
+#define QTI_DRTM_GPU_SMMU_BASE		GPU_SMMU_BASE
+#define QTI_DRTM_GPU_CX_GDSCR		0x03d99108
 
 /*----------------------------------------------------------------------------*/
 /* IP protected memory (TA execution area)                                    */
