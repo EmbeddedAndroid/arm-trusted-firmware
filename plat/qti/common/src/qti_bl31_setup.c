@@ -6,6 +6,7 @@
  */
 
 #include <assert.h>
+#include <string.h>
 
 #include <bl31/bl31.h>
 #include <common/debug.h>
@@ -57,6 +58,32 @@ static console_t g_qti_console_uart;
 static entry_point_info_t bl32_image_ep_info;
 static entry_point_info_t bl33_image_ep_info;
 
+#ifdef QTI_SPMC_MANIFEST_IN_BL31
+extern const uint8_t qti_spmc_manifest[];
+extern const uint8_t qti_spmc_manifest_end[];
+
+/*
+ * A loader other than TF-A BL2 (U-Boot SPL) loads BL31 and BL32 but not
+ * TOS_FW_CONFIG, so BL32 arrives without the SPMC core manifest the SPMD
+ * needs. Place the copy built into BL31 where BL2 would have loaded it.
+ * This runs before the MMU and the data cache are enabled, so the copy is
+ * in memory when the SPMD maps it.
+ */
+static void qti_spmc_manifest_fixup(void)
+{
+	size_t size = (size_t)(qti_spmc_manifest_end - qti_spmc_manifest);
+
+	if ((bl32_image_ep_info.pc == 0U) ||
+	    (bl32_image_ep_info.args.arg0 != 0U)) {
+		return;
+	}
+
+	assert(size <= TOS_FW_CONFIG_SIZE);
+	memcpy((void *)TOS_FW_CONFIG_BASE, qti_spmc_manifest, size);
+	bl32_image_ep_info.args.arg0 = TOS_FW_CONFIG_BASE;
+}
+#endif
+
 /*******************************************************************************
  * Perform any BL31 early platform setup common to ARM standard platforms.
  * Here is an opportunity to copy parameters passed by the calling EL (S-EL1
@@ -90,6 +117,10 @@ void bl31_early_platform_setup(u_register_t from_bl2,
 	 * is located and the entry state information
 	 */
 	bl31_params_parse_helper(from_bl2, &bl32_image_ep_info, &bl33_image_ep_info);
+
+#ifdef QTI_SPMC_MANIFEST_IN_BL31
+	qti_spmc_manifest_fixup();
+#endif
 }
 
 void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,

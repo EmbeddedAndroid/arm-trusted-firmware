@@ -33,6 +33,23 @@ the OEM test signature to allow it to work on devices in non-secure mode. In
 secure mode, it is required to be signed using
 `sectools v2 <https://docs.qualcomm.com/bundle/publicresource/topics/80-70020-11/tools.html>`__
 
+FF-A with OP-TEE as the S-EL1 SPMC
+----------------------------------
+
+With ``SPD=spmd`` (``SPMD_SPM_AT_SEL2=0``) BL31 starts OP-TEE as the S-EL1
+SPMC from the SPMC core manifest ``fdts/spmc_manifest.dts``, so that the
+normal world and a hypervisor such as Xen reach OP-TEE over FF-A. OP-TEE is
+built with ``CFG_CORE_SEL1_SPMC=y``.
+
+TF-A BL2 loads the manifest from the FIP as TOS_FW_CONFIG. When BL31 and
+OP-TEE are loaded by U-Boot SPL from a FIT instead, nothing loads the
+manifest; with ``QTI_SPMC_MANIFEST_IN_BL31=1`` (the default with
+``SPD=spmd``) BL31 carries a copy and places it at ``TOS_FW_CONFIG_BASE``
+when the BL32 entry point arrives without one::
+
+	$ make CROSS_COMPILE=aarch64-none-elf- PLAT=lemans_evk SPD=spmd \
+	    SPMD_SPM_AT_SEL2=0 bl31
+
 How to flash
 ------------
 

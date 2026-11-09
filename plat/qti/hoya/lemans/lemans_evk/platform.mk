@@ -158,6 +158,17 @@ FDT_SOURCES           += ${ARM_SPMC_MANIFEST_DTS}
 LEMANS_TOS_FW_CONFIG  := ${BUILD_PLAT}/fdts/$(notdir $(basename ${ARM_SPMC_MANIFEST_DTS})).dtb
 $(eval $(call TOOL_ADD_PAYLOAD,${LEMANS_TOS_FW_CONFIG},--tos-fw-config,${LEMANS_TOS_FW_CONFIG}))
 
+# U-Boot SPL loads BL31 and BL32 from a FIT without TOS_FW_CONFIG: BL31
+# carries a copy of the manifest and places it at TOS_FW_CONFIG_BASE.
+QTI_SPMC_MANIFEST_IN_BL31 ?= 1
+$(eval $(call assert_boolean,QTI_SPMC_MANIFEST_IN_BL31))
+ifeq (${QTI_SPMC_MANIFEST_IN_BL31},1)
+$(eval $(call add_define,QTI_SPMC_MANIFEST_IN_BL31))
+BL31_SOURCES		+=	$(PLAT_PATH)/common/src/$(ARCH)/qti_spmc_manifest.S
+$(BUILD_PLAT)/bl31/qti_spmc_manifest.o: ${LEMANS_TOS_FW_CONFIG}
+$(BUILD_PLAT)/bl31/qti_spmc_manifest.o: ASFLAGS += -DQTI_SPMC_MANIFEST_DTB=\"${LEMANS_TOS_FW_CONFIG}\"
+endif
+
 # Common manifest parser + FDT helpers required by SPMD
 include lib/libfdt/libfdt.mk
 include common/fdt_wrappers.mk
