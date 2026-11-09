@@ -12,10 +12,12 @@
 
 #include <event_measure.h>
 #include <lib/utils_def.h>
+#include <plat/common/plat_drtm.h>
 #include <plat/common/platform.h>
 #include <services/drtm_svc.h>
 
 #include <platform_def.h>
+#include <qti_plat.h>
 
 /*
  * Non-secure DRAM a DLME, its data and the DRTM parameters may live in:
@@ -151,4 +153,15 @@ uint64_t plat_drtm_get_acpi_tables_region_size(void)
 uint64_t plat_drtm_get_dlme_img_auth_features(void)
 {
 	return 0ULL;
+}
+
+/* The DLME address map is the BL31 memory map */
+const mmap_region_t *plat_get_addr_mmap(void)
+{
+	return plat_qti_mmap;
+}
+
+int plat_get_mbedtls_heap(void **heap_addr, size_t *heap_size)
+{
+	return get_mbedtls_heap_helper(heap_addr, heap_size);
 }

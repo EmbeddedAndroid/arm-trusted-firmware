@@ -18,6 +18,8 @@
 #include <lib/psci/psci.h>
 #include <lib/xlat_tables/xlat_tables_v2.h>
 
+extern const mmap_region_t plat_qti_mmap[];
+
 int qti_mmap_add_dynamic_region(uintptr_t base_pa, size_t size,
 				unsigned int attr);
 int qti_mmap_remove_dynamic_region(uintptr_t base_va, size_t size);
