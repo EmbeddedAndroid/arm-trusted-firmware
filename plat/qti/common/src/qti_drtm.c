@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 #include <event_measure.h>
+#include <lib/utils_def.h>
 #include <plat/common/platform.h>
 #include <services/drtm_svc.h>
 
@@ -18,38 +19,47 @@
 
 /*
  * Non-secure DRAM a DLME, its data and the DRTM parameters may live in:
- * DDR above the firmware carveouts at its base (SAIL, hypervisor, XBL,
- * AOP, SMEM, ...), up to the 64 GiB the platform decodes.
+ * the DDR above the last firmware carveout (QTEE, trusted applications,
+ * TZ statistics and CPUCP firmware end at 0xdb300000), up to the 64 GiB
+ * the platform decodes.
  */
-#define QTI_DRTM_NS_DRAM_BASE	ULL(0xa0000000)
+#define QTI_DRTM_NS_DRAM_BASE	ULL(0xdb300000)
 #define QTI_DRTM_NS_DRAM_END	ULL(0x1000000000)
 
 /*
- * Bus masters on the SoC (DSPs, GPU, camera, video, display, PCIe and
- * USB controllers) sit behind SMMU-500 instances or behind their own
- * MMUs, and the DRTM service only drives SMMUv3 for DMA protection: the
- * platform cannot provide complete DMA protection yet, so the DRTM
- * service reports itself unavailable instead of launching unprotected.
+ * AOP, SAIL, CPUCP and the other always-running subsystem processors reach
+ * DRAM outside the SMMUs. They run trusted firmware whose DRAM access is
+ * fenced by the xPU/MPU configuration, so they are non-host platforms in the
+ * DRTM sense.
  */
 bool plat_has_non_host_platforms(void)
 {
 	return true;
 }
 
+/*
+ * Every other bus master on the SoC (DSPs, camera, video, display, PCIe and
+ * USB controllers, the GPU) reaches DRAM through one of the SMMU-500
+ * instances below.
+ */
 bool plat_has_unmanaged_dma_peripherals(void)
 {
-	return true;
+	return false;
 }
+
+static const uintptr_t qti_drtm_smmus[] = {
+	QTI_DRTM_SMMU_BASES
+};
 
 unsigned int plat_get_total_smmus(void)
 {
-	return 0;
+	return ARRAY_SIZE(qti_drtm_smmus);
 }
 
 void plat_enumerate_smmus(const uintptr_t **smmus_out, size_t *smmu_count_out)
 {
-	*smmus_out = NULL;
-	*smmu_count_out = 0;
+	*smmus_out = qti_drtm_smmus;
+	*smmu_count_out = ARRAY_SIZE(qti_drtm_smmus);
 }
 
 static const plat_drtm_dma_prot_features_t qti_dma_prot_features = {
