@@ -122,6 +122,11 @@ static inline bool plat_qti_cpu_hold_release(unsigned int core_pos)
 #endif
 
 void plat_qti_bl31_setup_post(void);
+/*
+ * Called before the MMU is on, with the BL32 entry point the loader passed:
+ * qti_spmd.c with SPD=spmd, qti_interrupt_svc_el3.c otherwise.
+ */
+void qti_bl32_ep_setup(entry_point_info_t *bl32_ep);
 void plat_qti_lpass_init(void);
 void plat_qti_gdsc_init(void);
 void plat_qti_clocked_boot_init(void);

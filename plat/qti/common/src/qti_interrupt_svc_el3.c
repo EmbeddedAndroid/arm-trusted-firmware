@@ -12,6 +12,7 @@
 
 #include <platform.h>
 #include <qti_interrupt_svc.h>
+#include <qti_plat.h>
 
 /*
  * Top-level EL3 interrupt handler.
@@ -46,4 +47,10 @@ void qti_interrupt_svc_register_el3_owner(uint64_t flags)
 		ERROR("Failed to register EL3 interrupt handler\n");
 		panic();
 	}
+}
+
+/* Without the SPMD, the secure payload dispatcher takes BL32 as loaded. */
+void qti_bl32_ep_setup(entry_point_info_t *bl32_ep)
+{
+	(void)bl32_ep;
 }

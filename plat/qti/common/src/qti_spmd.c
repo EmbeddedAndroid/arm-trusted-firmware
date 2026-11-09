@@ -5,8 +5,13 @@
  */
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
+#include <common/bl_common.h>
+
+#include <platform_def.h>
 #include <qti_interrupt_svc.h>
+#include <qti_plat.h>
 
 /*
  * SPMD group-0 interrupt handler. SPMD calls this when a Group0 (EL3)
@@ -29,4 +34,31 @@ int plat_spmd_handle_group0_interrupt(uint32_t intid)
 void qti_interrupt_svc_register_el3_owner(uint64_t flags)
 {
 	(void)flags;
+}
+
+#ifdef QTI_SPMC_MANIFEST_IN_BL31
+extern const uint8_t qti_spmc_manifest[];
+extern const uint8_t qti_spmc_manifest_end[];
+#endif
+
+/*
+ * A loader other than TF-A BL2 (U-Boot SPL) loads BL31 and BL32 but not
+ * TOS_FW_CONFIG, so BL32 arrives without the SPMC core manifest the SPMD
+ * needs. Place the copy built into BL31 where BL2 would have loaded it.
+ * The copy is made with the data cache off, so it is in memory when the
+ * SPMD and the SPMC map it.
+ */
+void qti_bl32_ep_setup(entry_point_info_t *bl32_ep)
+{
+#ifdef QTI_SPMC_MANIFEST_IN_BL31
+	if ((bl32_ep->pc == 0U) || (bl32_ep->args.arg0 != 0U)) {
+		return;
+	}
+
+	memcpy((void *)TOS_FW_CONFIG_BASE, qti_spmc_manifest,
+	       (size_t)(qti_spmc_manifest_end - qti_spmc_manifest));
+	bl32_ep->args.arg0 = TOS_FW_CONFIG_BASE;
+#else
+	(void)bl32_ep;
+#endif
 }

@@ -90,6 +90,8 @@ void bl31_early_platform_setup(u_register_t from_bl2,
 	 * is located and the entry state information
 	 */
 	bl31_params_parse_helper(from_bl2, &bl32_image_ep_info, &bl33_image_ep_info);
+
+	qti_bl32_ep_setup(&bl32_image_ep_info);
 }
 
 void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
