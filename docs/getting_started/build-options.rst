@@ -1582,6 +1582,13 @@ Common build options
    be used and for the platforms which use ``RESET_TO_BL31`` platform owners
    should have mechanism to authenticate BL31. This option defaults to 0.
 
+-  ``DRTM_SMMUV2``: Boolean flag for ``DRTM_SUPPORT``. When set, the SMMUs the
+   platform reports with ``plat_enumerate_smmus()`` are SMMUv2 implementations
+   with the Security Extensions (for example MMU-500), and DRTM DMA protection
+   engages them with ``smmuv2_ns_set_abort_all()`` instead of the SMMUv3
+   helper. The platform adds ``drivers/arm/smmu/smmu_v2.c`` to BL31. This
+   option defaults to 0.
+
 -  ``ENABLE_RMM``: Boolean flag to enable the Realm-EL2 payload (RMM).
    This will take care of loading and initialising an image in Realm-EL2, and
    will at runtime dispatch calls from non-secure world to the RMM, if

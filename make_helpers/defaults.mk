@@ -411,6 +411,9 @@ endif
 # Dynamic Root of Trust for Measurement support
 DRTM_SUPPORT			:= 0
 
+# DRTM DMA protection drives SMMUv2 rather than SMMUv3 instances
+DRTM_SMMUV2			:= 0
+
 # Check platform if cache management operations should be performed.
 # Disabled by default.
 CONDITIONAL_CMO			:= 0
