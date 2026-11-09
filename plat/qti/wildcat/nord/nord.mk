@@ -28,6 +28,13 @@ GICV3_SUPPORT_GIC600			:=	1
 GIC_ENABLE_V4_EXTN			:=	1
 GIC_EXT_INTID				:=	1
 
+# Oryon clusters of six cores.
+PLAT_CLUSTER_COUNT			?=	3
+ifneq ($(filter-out 1 2 3,$(PLAT_CLUSTER_COUNT)),)
+$(error PLAT_CLUSTER_COUNT must be 1, 2 or 3)
+endif
+$(eval $(call add_define,PLAT_CLUSTER_COUNT))
+
 COLD_BOOT_SINGLE_CPU			:=	1
 PROGRAMMABLE_RESET_ADDRESS		:=	1
 

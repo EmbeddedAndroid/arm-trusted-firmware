@@ -42,22 +42,19 @@
 #define QTI_LAST_AT_PLVL_SHIFT			24
 
 /*
- * CX rail, then three Oryon clusters of six cores. MPIDR Aff2 is the
- * cluster and Aff1 the core.
+ * CX rail, then PLAT_CLUSTER_COUNT Oryon clusters of six cores. MPIDR Aff2
+ * is the cluster and Aff1 the core.
  */
-#define PLAT_CLUSTER_COUNT			3
 #define PLAT_CORE_COUNT_PER_CLUSTER		6
 #define PLATFORM_CORE_COUNT			(PLAT_CLUSTER_COUNT * \
 						 PLAT_CORE_COUNT_PER_CLUSTER)
 #define PLAT_MAX_PWR_LVL			2
 
-#define PLAT_TREE_DESC				\
-{						\
-	1, /* CX rail */			\
-	PLAT_CLUSTER_COUNT,			\
-	PLAT_CORE_COUNT_PER_CLUSTER,		\
-	PLAT_CORE_COUNT_PER_CLUSTER,		\
-	PLAT_CORE_COUNT_PER_CLUSTER,		\
+#define PLAT_TREE_DESC							\
+{									\
+	[0] = 1, /* CX rail */						\
+	[1] = PLAT_CLUSTER_COUNT,					\
+	[2 ... (PLAT_CLUSTER_COUNT + 1)] = PLAT_CORE_COUNT_PER_CLUSTER,	\
 }
 
 #define PLAT_RAIL_COUNT_IDX			(0U)
