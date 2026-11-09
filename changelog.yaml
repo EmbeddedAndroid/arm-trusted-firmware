@@ -600,6 +600,9 @@ subsections:
               - title: Nord
                 scope: nord
 
+              - title: SecaAU
+                scope: seca
+
       - title: Raspberry Pi
         scope: rpi
 

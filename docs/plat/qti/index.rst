@@ -11,6 +11,7 @@ Qualcomm Platforms
    lemans_evk
    monza
    nord
+   seca
    uno_q
 
 --------------

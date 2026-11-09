@@ -28,8 +28,17 @@ GICV3_SUPPORT_GIC600			:=	1
 GIC_ENABLE_V4_EXTN			:=	1
 GIC_EXT_INTID				:=	1
 
+# NORD_SECA=1 builds the SecaAU variant: two clusters and one GPU.
+NORD_SECA				?=	0
+$(eval $(call assert_boolean,NORD_SECA))
+$(eval $(call add_define,NORD_SECA))
+
 # Oryon clusters of six cores.
+ifeq ($(NORD_SECA),1)
+PLAT_CLUSTER_COUNT			:=	2
+else
 PLAT_CLUSTER_COUNT			?=	3
+endif
 ifneq ($(filter-out 1 2 3,$(PLAT_CLUSTER_COUNT)),)
 $(error PLAT_CLUSTER_COUNT must be 1, 2 or 3)
 endif
