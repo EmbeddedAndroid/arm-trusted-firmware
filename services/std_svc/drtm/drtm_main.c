@@ -317,6 +317,9 @@ static enum drtm_retc drtm_dl_prepare_dlme_data(const struct_drtm_dl_args *args)
 	 */
 	dlme_data_hdr->dlme_data_size = dlme_data_cursor - (uint8_t *)dlme_data_hdr;
 
+	/* The DLME starts with its MMU off and reads the data from memory. */
+	flush_dcache_range(dlme_data_mapping, dlme_data_hdr->dlme_data_size);
+
 	/* Unmap the DLME data region. */
 	rc = mmap_remove_dynamic_region(dlme_data_mapping, dlme_data_mapping_bytes);
 	if (rc != 0) {
