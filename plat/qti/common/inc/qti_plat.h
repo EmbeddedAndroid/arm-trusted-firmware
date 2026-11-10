@@ -14,6 +14,7 @@
 #include <drivers/arm/gicv3.h>
 #include <lib/cassert.h>
 #include <lib/el3_runtime/cpu_data.h>
+#include <lib/psci/psci.h>
 #include <lib/xlat_tables/xlat_tables_v2.h>
 
 int qti_mmap_add_dynamic_region(uintptr_t base_pa, size_t size,
@@ -51,6 +52,12 @@ void qti_pmic_prepare_shutdown(void);
 int plat_qti_pwr_domain_on(u_register_t mpidr, int core_pos);
 void plat_qti_pwr_domain_on_finish(int core_pos, const uint8_t *states);
 void plat_qti_pwr_domain_off(const uint8_t *states);
+#ifndef PLAT_QTI_CPU_PARK
+#define PLAT_QTI_CPU_PARK	0
+#endif
+#if PLAT_QTI_CPU_PARK
+void __dead2 plat_qti_cpu_park(const psci_power_state_t *target_state);
+#endif
 /*
  * SYSTEM_SUSPEND enters the deepest idle state of the platform as a power
  * down state; a platform without one sets PLAT_QTI_SYSTEM_SUSPEND to 0.

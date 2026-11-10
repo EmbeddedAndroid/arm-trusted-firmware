@@ -249,6 +249,9 @@ const plat_psci_ops_t plat_qti_psci_pm_ops = {
 	.pwr_domain_on_finish = qti_cpu_power_on_finish,
 	.cpu_standby = qti_cpu_standby,
 	.pwr_domain_off = qti_node_power_off,
+#if PLAT_QTI_CPU_PARK
+	.pwr_domain_pwr_down = plat_qti_cpu_park,
+#endif
 	.pwr_domain_suspend = qti_node_suspend,
 	.pwr_domain_suspend_finish = qti_node_suspend_finish,
 	.system_off = qti_system_off,
