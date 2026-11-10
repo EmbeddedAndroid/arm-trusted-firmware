@@ -9,6 +9,7 @@
 
 #include <arch_helpers.h>
 #include <bl31/bl31.h>
+#include <common/debug.h>
 #include <drivers/arm/gicv3.h>
 #include <lib/mmio.h>
 #include <lib/psci/psci.h>
@@ -46,6 +47,18 @@
 #define APSS_CPUSS_LPM_CTL			0x188a0088U
 
 static uintptr_t warm_entry;
+
+/*
+ * Per core: started is set once the core has run (it is only written and
+ * read by CPU_ON callers, with caches on); release is set by CPU_ON for a
+ * core parked by CPU_OFF and read by that core with its MMU off.
+ */
+struct nord_cpu_slot {
+	uint32_t started;
+	uint32_t release;
+} __aligned(CACHE_WRITEBACK_GRANULE);
+
+static struct nord_cpu_slot nord_cpu[PLATFORM_CORE_COUNT];
 
 static uintptr_t ncc_base(unsigned int cluster)
 {
@@ -130,6 +143,7 @@ static int ncc_power_on_core(unsigned int cluster, unsigned int core)
 int plat_qti_pwr_psci_init(uintptr_t warmboot_entry)
 {
 	warm_entry = warmboot_entry;
+	nord_cpu[plat_my_core_pos()].started = 1U;
 
 	return PSCI_E_SUCCESS;
 }
@@ -137,6 +151,7 @@ int plat_qti_pwr_psci_init(uintptr_t warmboot_entry)
 int plat_qti_pwr_domain_on(u_register_t mpidr, int core_pos)
 {
 	static bool lpm_init_done;
+	int ret;
 	unsigned int core = (unsigned int)MPIDR_AFFLVL1_VAL(mpidr);
 	unsigned int cluster = (unsigned int)MPIDR_AFFLVL2_VAL(mpidr);
 
@@ -156,7 +171,25 @@ int plat_qti_pwr_domain_on(u_register_t mpidr, int core_pos)
 	 */
 	gicv3_rdistif_on((unsigned int)core_pos);
 
-	return ncc_power_on_core(cluster, core);
+	/*
+	 * The NCC power-up request only vectors a core that is powered down;
+	 * a core parked by CPU_OFF is still on and is released instead.
+	 */
+	if (nord_cpu[core_pos].started != 0U) {
+		nord_cpu[core_pos].release = 1U;
+		flush_dcache_range((uintptr_t)&nord_cpu[core_pos],
+				   sizeof(nord_cpu[core_pos]));
+		dsbsy();
+		sev();
+		return PSCI_E_SUCCESS;
+	}
+
+	ret = ncc_power_on_core(cluster, core);
+	if (ret == PSCI_E_SUCCESS) {
+		nord_cpu[core_pos].started = 1U;
+	}
+
+	return ret;
 }
 
 void plat_qti_pwr_domain_on_finish(int core_pos, const uint8_t *states)
@@ -181,6 +214,32 @@ const unsigned int *plat_qti_pm_idle_states(void)
 void plat_qti_pwr_domain_off(const uint8_t *states)
 {
 	(void)states;
+}
+
+/*
+ * The NCC does not collapse a core that executes WFI after CPU_OFF, and
+ * powering it up again does not reset it, so the core is parked in BL31:
+ * PSCI has already disabled its GIC CPU interface and, with hardware
+ * assisted coherency, leaves its caches to the hardware. It waits with the
+ * MMU off for CPU_ON to release it and then takes the warm boot path as if
+ * it had been powered up. The release flag is read and cleared with the
+ * data cache off, so the releasing core cleans it to the PoC.
+ */
+void __dead2 plat_qti_cpu_park(const psci_power_state_t *target_state)
+{
+	struct nord_cpu_slot *slot = &nord_cpu[plat_my_core_pos()];
+
+	(void)target_state;
+
+	disable_mmu_icache_el3();
+	while (mmio_read_32((uintptr_t)&slot->release) == 0U) {
+		wfe();
+	}
+	mmio_write_32((uintptr_t)&slot->release, 0U);
+	dsbsy();
+
+	bl31_warm_entrypoint();
+	panic();
 }
 
 void plat_qti_pwr_domain_suspend(const uint8_t *states)
