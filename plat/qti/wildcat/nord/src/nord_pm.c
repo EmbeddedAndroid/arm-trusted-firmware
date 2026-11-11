@@ -98,7 +98,9 @@ static void ncc_lpm_init(void)
 /*
  * Power a core up through its cluster's NCC and let it fetch from NCC_RVBAR.
  * The wake-received mask is set and cleared around the power-up request:
- * its 1 to 0 transition is what vectors a cold core to RVBAR.
+ * its 1 to 0 transition is what vectors a cold core to RVBAR. The forced
+ * RVBAR vectoring is dropped once the core runs, so that a core woken from
+ * a low power state resumes where it stopped.
  */
 static int ncc_power_on_core(unsigned int cluster, unsigned int core)
 {
@@ -134,6 +136,8 @@ static int ncc_power_on_core(unsigned int cluster, unsigned int core)
 	}
 
 	ncc_clrbits_64(base + NCC_BOOT_CFG1, NCC_BOOT_CFG1_CPUFETCHFWBLOCK(core));
+	/* Wake-ups from the low power states resume the core after its WFI. */
+	ncc_clrbits_64(base + NCC_PWR_CTL3, NCC_PWR_CTL3_CORFRCCPURVBAR(core));
 	dsbsy();
 	isb();
 
