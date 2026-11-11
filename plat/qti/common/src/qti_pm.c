@@ -255,7 +255,9 @@ const plat_psci_ops_t plat_qti_psci_pm_ops = {
 	.system_reset = qti_system_reset,
 	.get_node_hw_state = NULL,
 	.translate_power_state_by_mpidr = NULL,
+#if PLAT_QTI_SYSTEM_SUSPEND
 	.get_sys_suspend_power_state = qti_get_sys_suspend_power_state,
+#endif
 	.validate_power_state = qti_validate_power_state,
 };
 

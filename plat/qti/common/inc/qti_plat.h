@@ -51,6 +51,13 @@ void qti_pmic_prepare_shutdown(void);
 int plat_qti_pwr_domain_on(u_register_t mpidr, int core_pos);
 void plat_qti_pwr_domain_on_finish(int core_pos, const uint8_t *states);
 void plat_qti_pwr_domain_off(const uint8_t *states);
+/*
+ * SYSTEM_SUSPEND enters the deepest idle state of the platform as a power
+ * down state; a platform without one sets PLAT_QTI_SYSTEM_SUSPEND to 0.
+ */
+#ifndef PLAT_QTI_SYSTEM_SUSPEND
+#define PLAT_QTI_SYSTEM_SUSPEND	1
+#endif
 void plat_qti_pwr_domain_suspend(const uint8_t *states);
 void plat_qti_pwr_domain_suspend_finish(const uint8_t *states);
 int  plat_qti_pwr_psci_init(uintptr_t warmboot_entry);
