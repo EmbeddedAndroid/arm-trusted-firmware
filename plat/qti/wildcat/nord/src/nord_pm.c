@@ -89,7 +89,7 @@
 
 /*
  * Cluster LPM controller: the CL5 sequencer trigger and debug power-up wake
- * of each cluster, which the cluster LPM depends on, and the APSS power
+ * of each cluster, set up once before the first CPU_ON, and the APSS power
  * control bits.
  */
 #define APSS_CL_LPM_BASE			0x18878000U
