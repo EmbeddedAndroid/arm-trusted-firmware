@@ -7,7 +7,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <arch_helpers.h>
 #include <common/debug.h>
+#include <drivers/arm/gicv3.h>
 #include <drivers/delay_timer.h>
 #include <drivers/qti/cpucp/cpucp.h>
 #include <lib/cassert.h>
@@ -341,12 +343,43 @@ void plat_qti_pwr_domain_suspend(const uint8_t *states)
 	(void)states;
 }
 
+/*
+ * A suspend to a power-down state does not power the core down: with the
+ * core collapsed by its sequencer as at CPU_OFF, Linux stalls once it uses
+ * the device tree idle states, which do not stop the CPU timers. Hold the
+ * core in WFI instead, with its CPU interface enabled, and resume it on its
+ * first interrupt through the warm boot path, as after a power-down. Nothing
+ * above the core is powered down. At CPU_OFF the WFI of the PSCI library lets
+ * the sequencer collapse the core.
+ */
+void plat_qti_pwr_domain_pwr_down(const psci_power_state_t *target_state)
+{
+	(void)target_state;
+
+	if (cpu_turned_off[plat_my_core_pos()]) {
+		return;
+	}
+
+	/*
+	 * The CPU interface was turned off for the suspend, with the
+	 * non-secure Group 1 interrupts the OS waits for: turn both back on.
+	 */
+	plat_qti_gic_cpuif_enable();
+	write_icc_igrpen1_el3(read_icc_igrpen1_el3() |
+			      IGRPEN1_EL3_ENABLE_G1NS_BIT);
+	isb();
+	eliza_cpu_hold_wait();
+}
+
 void plat_qti_pwr_domain_suspend_finish(const uint8_t *states)
 {
 	(void)states;
 }
 
-/* Only CPU standby (WFI) is offered as an idle state. */
+/*
+ * The states qti_get_sys_suspend_power_state() picks the SYSTEM_SUSPEND state
+ * from: none powers a system level down, so SYSTEM_SUSPEND is not offered.
+ */
 const unsigned int *plat_qti_pm_idle_states(void)
 {
 	static const unsigned int idle_states[] = {
@@ -356,4 +389,52 @@ const unsigned int *plat_qti_pm_idle_states(void)
 	};
 
 	return idle_states;
+}
+
+/*
+ * The idle states of the SM7750 device tree carry the State IDs of its boot
+ * firmware: core state in bits [3:0], cluster (L3) state in [7:4], RSC, PDC
+ * and system cache requests in [15:8] and bit 24 for the last core of the
+ * cluster. CPU standby keeps the per-level QTI encoding.
+ */
+#define ELIZA_PSTATE_CPU_STANDBY	qti_make_pwrstate_lvl0(	\
+						QTI_LOCAL_STATE_STB,	\
+						PSTATE_TYPE_STANDBY)
+#define ELIZA_PSTATE_CPU_PWRDN		0x40000004U	/* cpu-sleep-N */
+#define ELIZA_PSTATE_CLUSTER_PWRDN0	0x41000044U	/* cluster-sleep-0 */
+#define ELIZA_PSTATE_CLUSTER_PWRDN1	0x4100b344U	/* cluster-sleep-1 */
+
+#define ELIZA_PSTATE_ID_CPU(id)		((id) & 0xfU)
+#define ELIZA_PSTATE_ID_CLUSTER(id)	(((id) >> 4) & 0xfU)
+#define ELIZA_PSTATE_ID_LAST_CPU	BIT_32(24)
+
+int plat_qti_validate_power_state(unsigned int power_state,
+				  psci_power_state_t *req_state)
+{
+	unsigned int id = psci_get_pstate_id(power_state);
+	unsigned int lvl;
+
+	switch (power_state) {
+	case ELIZA_PSTATE_CPU_STANDBY:
+	case ELIZA_PSTATE_CPU_PWRDN:
+	case ELIZA_PSTATE_CLUSTER_PWRDN0:
+	case ELIZA_PSTATE_CLUSTER_PWRDN1:
+		break;
+	default:
+		return PSCI_E_INVALID_PARAMS;
+	}
+
+	for (lvl = QTI_PWR_LVL0; lvl <= PLAT_MAX_PWR_LVL; lvl++) {
+		req_state->pwr_domain_state[lvl] = PSCI_LOCAL_STATE_RUN;
+	}
+	req_state->pwr_domain_state[QTI_PWR_LVL0] =
+		(plat_local_state_t)ELIZA_PSTATE_ID_CPU(id);
+	req_state->pwr_domain_state[QTI_PWR_LVL1] =
+		(plat_local_state_t)ELIZA_PSTATE_ID_CLUSTER(id);
+#if PSCI_OS_INIT_MODE
+	req_state->last_at_pwrlvl = ((id & ELIZA_PSTATE_ID_LAST_CPU) != 0U) ?
+				    QTI_PWR_LVL1 : QTI_PWR_LVL0;
+#endif
+
+	return PSCI_E_SUCCESS;
 }

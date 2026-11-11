@@ -131,6 +131,7 @@ BL31_SOURCES		+=	drivers/delay_timer/generic_delay_timer.c		\
 				$(PLAT_PATH)/wildcat/common/src/wildcat_plat_helpers.c \
 				$(PLAT_PATH)/wildcat/common/src/wildcat_topology.c	\
 				$(PLAT_PATH)/wildcat/${CHIPSET}/src/eliza_pm.c		\
+				$(PLAT_PATH)/wildcat/${CHIPSET}/src/$(ARCH)/eliza_cpu_hold.S \
 				drivers/qti/accesscontrol/access_control_stub.c		\
 				drivers/qti/qtimer/qtimer.c				\
 				drivers/qti/sec_core/sec_core.c				\

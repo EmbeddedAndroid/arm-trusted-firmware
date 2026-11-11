@@ -10,6 +10,18 @@
 #include <arch.h>
 
 #define QTI_PWR_LVL0				MPIDR_AFFLVL0
+#define QTI_PWR_LVL1				MPIDR_AFFLVL1
+
+/* The device tree idle states use the State IDs of the boot firmware. */
+#define PLAT_QTI_VALIDATE_POWER_STATE		plat_qti_validate_power_state
+/* Suspended cores are held in BL31 instead of being powered down. */
+#define PLAT_QTI_PWR_DOMAIN_PWR_DOWN		plat_qti_pwr_domain_pwr_down
+
+#ifndef __ASSEMBLER__
+#include <cdefs.h>
+
+void __dead2 eliza_cpu_hold_wait(void);
+#endif
 
 /* Local power states, in the State-ID encoding of the SM7750 device tree. */
 #define QTI_LOCAL_STATE_STB			1
