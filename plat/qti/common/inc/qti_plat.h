@@ -72,6 +72,17 @@ void __dead2 plat_qti_cpu_park(const psci_power_state_t *target_state);
 void plat_qti_cpu_retention_enter(plat_local_state_t cpu_state);
 void plat_qti_cpu_retention_exit(plat_local_state_t cpu_state);
 #endif
+/*
+ * A platform whose device tree encodes local states that do not order as
+ * PSCI requires (a parent state no deeper than the states of its children)
+ * sets PLAT_QTI_PSTATE_MAP and maps them in plat_qti_map_pwr_state().
+ */
+#ifndef PLAT_QTI_PSTATE_MAP
+#define PLAT_QTI_PSTATE_MAP	0
+#endif
+#if PLAT_QTI_PSTATE_MAP
+void plat_qti_map_pwr_state(psci_power_state_t *req_state);
+#endif
 void plat_qti_pwr_domain_suspend(const uint8_t *states);
 void plat_qti_pwr_domain_suspend_finish(const uint8_t *states);
 int  plat_qti_pwr_psci_init(uintptr_t warmboot_entry);

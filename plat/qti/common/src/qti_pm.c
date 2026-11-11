@@ -23,9 +23,18 @@
 #define QTI_LOCAL_PSTATE_MASK		((1 << QTI_LOCAL_PSTATE_WIDTH) - 1)
 
 #if PSCI_OS_INIT_MODE
+/*
+ * In OS-initiated mode the State-ID also carries the highest power level
+ * at which the caller is the last CPU to idle. By default that field
+ * follows the local states of all power levels; a platform whose device
+ * tree places it elsewhere sets QTI_LAST_AT_PLVL_SHIFT.
+ */
+#ifndef QTI_LAST_AT_PLVL_SHIFT
+#define QTI_LAST_AT_PLVL_SHIFT		(QTI_LOCAL_PSTATE_WIDTH *	\
+					 (PLAT_MAX_PWR_LVL + 1))
+#endif
 #define QTI_LAST_AT_PLVL_MASK		(QTI_LOCAL_PSTATE_MASK <<	\
-					 (QTI_LOCAL_PSTATE_WIDTH *	\
-					  (PLAT_MAX_PWR_LVL + 1)))
+					 QTI_LAST_AT_PLVL_SHIFT)
 #endif
 
 /*******************************************************************************
@@ -70,8 +79,13 @@ int qti_validate_power_state(unsigned int power_state,
 		    QTI_LOCAL_PSTATE_MASK;
 		state_id >>= QTI_LOCAL_PSTATE_WIDTH;
 	}
+#if PLAT_QTI_PSTATE_MAP
+	plat_qti_map_pwr_state(req_state);
+#endif
 #if PSCI_OS_INIT_MODE
-	req_state->last_at_pwrlvl = state_id & QTI_LOCAL_PSTATE_MASK;
+	req_state->last_at_pwrlvl = (psci_get_pstate_id(power_state) >>
+				     QTI_LAST_AT_PLVL_SHIFT) &
+				    QTI_LOCAL_PSTATE_MASK;
 #endif
 
 	return PSCI_E_SUCCESS;
