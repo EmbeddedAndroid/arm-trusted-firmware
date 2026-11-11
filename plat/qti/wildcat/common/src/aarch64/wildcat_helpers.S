@@ -78,6 +78,17 @@ func plat_reset_handler
 	mov	x18, x30
 	bl	plat_set_my_stack
 
+	/*
+	 * The MMU is off, so the stack is accessed as Device memory, while a
+	 * core powered down at CPU_OFF can leave dirty lines of its stack in
+	 * the shared cache. Such a stale line can replace the return address
+	 * saved below before it is loaded back. Nothing on the stack survives
+	 * a reset: invalidate it before use.
+	 */
+	sub	x0, sp, #PLATFORM_STACK_SIZE
+	mov	x1, #PLATFORM_STACK_SIZE
+	bl	inv_dcache_range
+
 	str	x18, [sp, #-16]!
 
 	/* Invoke SDI flow if in pass-1 */
