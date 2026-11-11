@@ -96,6 +96,13 @@ const unsigned int *plat_qti_pm_idle_states(void);
 int plat_qti_validate_power_state(unsigned int power_state,
 				  psci_power_state_t *req_state);
 
+/*
+ * A platform that must end a power-down itself, instead of with the final
+ * WFI of the PSCI library, names its handler in PLAT_QTI_PWR_DOMAIN_PWR_DOWN
+ * (qti_platform_pm.h). A handler that returns leaves the WFI to the library.
+ */
+void plat_qti_pwr_domain_pwr_down(const psci_power_state_t *target_state);
+
 typedef struct chip_id_info {
 	uint16_t jtag_id;
 	uint16_t chipinfo_id;

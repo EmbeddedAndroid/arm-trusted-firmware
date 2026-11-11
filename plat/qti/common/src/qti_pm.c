@@ -271,6 +271,9 @@ static plat_psci_ops_t plat_qti_psci_pm_ops = {
 	.get_node_hw_state = NULL,
 	.translate_power_state_by_mpidr = NULL,
 	.validate_power_state = PLAT_QTI_VALIDATE_POWER_STATE,
+#ifdef PLAT_QTI_PWR_DOMAIN_PWR_DOWN
+	.pwr_domain_pwr_down = PLAT_QTI_PWR_DOMAIN_PWR_DOWN,
+#endif
 };
 
 /**
