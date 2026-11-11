@@ -31,8 +31,9 @@
 #define NCC_PWR_STS1_CORDOMISON(c)		BIT_64(c)
 #define NCC_PWR_STS1_CORSPRINITDONE(c)		BIT_64(8U + (c))
 #define NCC_RVBAR				0x328U
-#define NCC_PWR_CTL3				0x478U
+#define NCC_PWR_CTL3				0x410U
 #define NCC_PWR_CTL3_CORFRCCPURVBAR(c)		BIT_64(c)
+#define NCC_PWR_CTL3_CORFRCCPURVBAR_ALL		GENMASK_64(7, 0)
 
 #define NCC_POWERUP_POLL			2000000U
 
@@ -66,7 +67,8 @@ static void ncc_lpm_init(void)
 	unsigned int cl;
 
 	for (cl = 0U; cl < PLAT_CLUSTER_COUNT; cl++) {
-		mmio_write_64(ncc_base(cl) + NCC_PWR_CTL3, 0U);
+		ncc_clrbits_64(ncc_base(cl) + NCC_PWR_CTL3,
+			       NCC_PWR_CTL3_CORFRCCPURVBAR_ALL);
 	}
 	dsbsy();
 
