@@ -38,9 +38,31 @@ Status
 - CPU_ON powers a core up through its cluster's NCC, after powering its GIC
   redistributor, and vectors it to the warm boot entry point through the
   cluster's NCC_RVBAR. All 18 cores come up.
-- CPU standby (WFI) is the only idle state. CPU_OFF and suspend leave the core
-  powered: the NCC does not power a core down on its own, so a core taken
-  offline is not brought back by CPU_ON.
+- CPU_OFF parks the core in BL31 with its MMU off; CPU_ON releases it to the
+  warm boot entry point. The NCC power-up of CPU_ON is used only for a core's
+  first start.
+- SYSTEM_SUSPEND is not offered: there is no power down idle state. Linux
+  suspends to idle instead.
+- CPU_SUSPEND accepts the idle states of the Nord device tree, all retention
+  states (the cores keep their context), in OS-initiated mode:
+
+  - ``0x00000001``: WFI.
+  - ``0x00000003``: core C4. The cluster's NCC powers the core down in WFI
+    and resumes it after the WFI on its next interrupt.
+  - ``0x01000053``: cluster LPM, entered as CL4. Once every core of the
+    cluster is in C4, the NCC takes the cluster to CL4. CPUCP is told of the
+    entry and exit over its secure SCMI channel. CL5 is not entered: it
+    stops the cores' architected timers, and BL31 does not move them to a
+    QTimer frame.
+  - ``0x02000153``: CPU subsystem state. The subsystem LPMs need every
+    cluster in CL5, so only the cluster part is done.
+
+  The last level of an OS-initiated request is in State-ID bits [27:24], and
+  the cluster local state the device tree passes (5) is taken as 3, as deep
+  as C4. The last core to idle arms the cluster LPM, only when every other
+  core of the cluster is in C4 or off, and the first core to run again
+  disarms it. If the CPUCP channel is busy at boot or a CPUCP transaction
+  fails, only the core states are offered from then on.
 - BL31 services the secure APSS watchdog and the NCC QTimer frames, sets the
   APSS SPI types, initializes the PDC tables and configures the SMMUs.
 - SYSTEM_RESET and SYSTEM_OFF tell the safety island (SAIL) first, then go
