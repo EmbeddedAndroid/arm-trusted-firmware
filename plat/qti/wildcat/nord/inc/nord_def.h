@@ -28,4 +28,7 @@
 /* Core C4 is a retention state (see plat_qti_cpu_retention_enter()). */
 #define PLAT_QTI_CPU_RETENTION		1
 
+/* The device tree's cluster state needs mapping (see plat_qti_map_pwr_state()). */
+#define PLAT_QTI_PSTATE_MAP		1
+
 #endif /* NORD_DEF_H */
