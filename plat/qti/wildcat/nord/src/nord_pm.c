@@ -13,6 +13,7 @@
 #include <drivers/arm/gicv3.h>
 #include <lib/mmio.h>
 #include <lib/psci/psci.h>
+#include <lib/spinlock.h>
 #include <lib/utils_def.h>
 #include <plat/common/platform.h>
 
@@ -47,6 +48,9 @@
 #define APSS_CPUSS_LPM_CTL			0x188a0088U
 
 static uintptr_t warm_entry;
+
+/* Serialises the read-modify-writes of the NCC registers a cluster shares. */
+static spinlock_t ncc_lock;
 
 /*
  * Per core: started is set once the core has run (it is only written and
@@ -107,6 +111,8 @@ static int ncc_power_on_core(unsigned int cluster, unsigned int core)
 	uintptr_t base = ncc_base(cluster);
 	unsigned int to;
 
+	spin_lock(&ncc_lock);
+
 	mmio_write_64(base + NCC_RVBAR, (uint64_t)warm_entry);
 	mmio_setbits_64(base + NCC_PWR_CTL3, NCC_PWR_CTL3_CORFRCCPURVBAR(core));
 	mmio_setbits_64(base + NCC_BOOT_CFG1,
@@ -132,6 +138,7 @@ static int ncc_power_on_core(unsigned int cluster, unsigned int core)
 		}
 	}
 	if (to == NCC_POWERUP_POLL) {
+		spin_unlock(&ncc_lock);
 		return PSCI_E_INTERN_FAIL;
 	}
 
@@ -140,6 +147,8 @@ static int ncc_power_on_core(unsigned int cluster, unsigned int core)
 	ncc_clrbits_64(base + NCC_PWR_CTL3, NCC_PWR_CTL3_CORFRCCPURVBAR(core));
 	dsbsy();
 	isb();
+
+	spin_unlock(&ncc_lock);
 
 	return PSCI_E_SUCCESS;
 }
@@ -209,10 +218,51 @@ const unsigned int *plat_qti_pm_idle_states(void)
 	static const unsigned int idle_states[] = {
 		qti_make_pwrstate_lvl0(QTI_LOCAL_STATE_STB,
 				       PSTATE_TYPE_STANDBY),
+		qti_make_pwrstate_lvl0(QTI_LOCAL_STATE_C4,
+				       PSTATE_TYPE_STANDBY),
 		0,
 	};
 
 	return idle_states;
+}
+
+/*
+ * C4: with its ok2EnterC3 and ok2EnterC4 bits set in NCC_PWR_CFG1, the
+ * cluster NCC saves the core's context and powers it down once it is in
+ * WFI, and powers it up and resumes it after the WFI on the next interrupt
+ * for the core. The bits are only set around the WFI of a C4 request, so a
+ * WFI standby stays a WFI.
+ */
+static void ncc_core_c4_allow(bool allow)
+{
+	u_register_t mpidr = read_mpidr_el1();
+	unsigned int core = (unsigned int)MPIDR_AFFLVL1_VAL(mpidr);
+	uintptr_t cfg1 = ncc_base((unsigned int)MPIDR_AFFLVL2_VAL(mpidr)) +
+			 NCC_PWR_CFG1;
+	uint64_t bits = NCC_PWR_CFG1_OK2ENTERC3(core) |
+			NCC_PWR_CFG1_OK2ENTERC4(core);
+
+	spin_lock(&ncc_lock);
+	if (allow) {
+		mmio_write_64(cfg1, mmio_read_64(cfg1) | bits);
+	} else {
+		ncc_clrbits_64(cfg1, bits);
+	}
+	spin_unlock(&ncc_lock);
+}
+
+void plat_qti_cpu_retention_enter(plat_local_state_t cpu_state)
+{
+	if (cpu_state == QTI_LOCAL_STATE_C4) {
+		ncc_core_c4_allow(true);
+	}
+}
+
+void plat_qti_cpu_retention_exit(plat_local_state_t cpu_state)
+{
+	if (cpu_state == QTI_LOCAL_STATE_C4) {
+		ncc_core_c4_allow(false);
+	}
 }
 
 void plat_qti_pwr_domain_off(const uint8_t *states)

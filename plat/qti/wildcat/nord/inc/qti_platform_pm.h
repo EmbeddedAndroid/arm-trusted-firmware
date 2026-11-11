@@ -15,15 +15,18 @@
 #define QTI_PWR_LVL3				MPIDR_AFFLVL3
 
 /*
- * Local power states. The native back-end offers CPU standby (WFI) only:
- * cores are never power collapsed, so there is no off state but the one
- * CPU_OFF reports to PSCI.
+ * Local power states, in the encoding of the power_state values the Nord
+ * device tree passes to CPU_SUSPEND. STB is a WFI. C4 is the core state in
+ * which the cluster NCC powers the core down and keeps its context: it
+ * resumes after its WFI, so to PSCI it is a retention state. CPU_OFF uses
+ * the off states.
  */
 #define QTI_LOCAL_STATE_RUN			0
 #define QTI_LOCAL_STATE_STB			1
-#define QTI_LOCAL_STATE_RET			2
-#define QTI_LOCAL_STATE_OFF			3
-#define QTI_LOCAL_STATE_DEEPOFF			4
+#define QTI_LOCAL_STATE_C4			3
+#define QTI_LOCAL_STATE_RET			5
+#define QTI_LOCAL_STATE_OFF			6
+#define QTI_LOCAL_STATE_DEEPOFF			7
 
 #define PLAT_MAX_RET_STATE			QTI_LOCAL_STATE_RET
 #define PLAT_MAX_OFF_STATE			QTI_LOCAL_STATE_DEEPOFF

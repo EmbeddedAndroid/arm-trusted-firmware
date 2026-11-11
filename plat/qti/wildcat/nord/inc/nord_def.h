@@ -25,4 +25,7 @@
 /* No power down state for SYSTEM_SUSPEND (see plat_qti_pm_idle_states()). */
 #define PLAT_QTI_SYSTEM_SUSPEND		0
 
+/* Core C4 is a retention state (see plat_qti_cpu_retention_enter()). */
+#define PLAT_QTI_CPU_RETENTION		1
+
 #endif /* NORD_DEF_H */
