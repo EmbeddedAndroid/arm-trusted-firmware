@@ -21,6 +21,10 @@
 
 #define QTI_LOCAL_PSTATE_MASK		((1 << QTI_LOCAL_PSTATE_WIDTH) - 1)
 
+#ifndef PLAT_QTI_VALIDATE_POWER_STATE
+#define PLAT_QTI_VALIDATE_POWER_STATE	qti_validate_power_state
+#endif
+
 #if PSCI_OS_INIT_MODE
 #define QTI_LAST_AT_PLVL_MASK		(QTI_LOCAL_PSTATE_MASK <<	\
 					 (QTI_LOCAL_PSTATE_WIDTH *	\
@@ -266,7 +270,7 @@ static plat_psci_ops_t plat_qti_psci_pm_ops = {
 	.system_reset = qti_system_reset,
 	.get_node_hw_state = NULL,
 	.translate_power_state_by_mpidr = NULL,
-	.validate_power_state = qti_validate_power_state,
+	.validate_power_state = PLAT_QTI_VALIDATE_POWER_STATE,
 };
 
 /**

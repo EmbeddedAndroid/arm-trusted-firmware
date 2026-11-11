@@ -14,6 +14,7 @@
 #include <drivers/arm/gicv3.h>
 #include <lib/cassert.h>
 #include <lib/el3_runtime/cpu_data.h>
+#include <lib/psci/psci.h>
 #include <lib/xlat_tables/xlat_tables_v2.h>
 
 int qti_mmap_add_dynamic_region(uintptr_t base_pa, size_t size,
@@ -86,6 +87,14 @@ void plat_qti_invoke_unhandled_isr(uint32_t id, void *handle);
  * standby only, while qtiseclib_pm.c advertises the firmware power-down ladder.
  */
 const unsigned int *plat_qti_pm_idle_states(void);
+
+/*
+ * A platform whose idle State IDs do not follow the per-level layout that
+ * qti_validate_power_state() decodes provides its own validator and names it
+ * in PLAT_QTI_VALIDATE_POWER_STATE (qti_platform_pm.h).
+ */
+int plat_qti_validate_power_state(unsigned int power_state,
+				  psci_power_state_t *req_state);
 
 typedef struct chip_id_info {
 	uint16_t jtag_id;
