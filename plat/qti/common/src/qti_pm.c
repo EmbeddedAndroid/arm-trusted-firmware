@@ -126,7 +126,13 @@ static void qti_cpu_standby(plat_local_state_t cpu_state)
 {
 	u_register_t scr;
 
+#if PLAT_QTI_CPU_RETENTION
+	assert((cpu_state >= QTI_LOCAL_STATE_STB) &&
+	       (cpu_state <= PLAT_MAX_RET_STATE));
+	plat_qti_cpu_retention_enter(cpu_state);
+#else
 	assert(cpu_state == QTI_LOCAL_STATE_STB);
+#endif
 
 	/*
 	 * Enter standby retention with a WFI, routing non-secure interrupts to
@@ -143,6 +149,10 @@ static void qti_cpu_standby(plat_local_state_t cpu_state)
 
 	write_scr_el3(scr);
 	isb();
+
+#if PLAT_QTI_CPU_RETENTION
+	plat_qti_cpu_retention_exit(cpu_state);
+#endif
 }
 
 static void qti_node_power_off(const psci_power_state_t *target_state)

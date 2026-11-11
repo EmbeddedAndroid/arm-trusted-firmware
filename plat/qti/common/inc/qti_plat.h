@@ -65,6 +65,13 @@ void __dead2 plat_qti_cpu_park(const psci_power_state_t *target_state);
 #ifndef PLAT_QTI_SYSTEM_SUSPEND
 #define PLAT_QTI_SYSTEM_SUSPEND	1
 #endif
+#ifndef PLAT_QTI_CPU_RETENTION
+#define PLAT_QTI_CPU_RETENTION	0
+#endif
+#if PLAT_QTI_CPU_RETENTION
+void plat_qti_cpu_retention_enter(plat_local_state_t cpu_state);
+void plat_qti_cpu_retention_exit(plat_local_state_t cpu_state);
+#endif
 void plat_qti_pwr_domain_suspend(const uint8_t *states);
 void plat_qti_pwr_domain_suspend_finish(const uint8_t *states);
 int  plat_qti_pwr_psci_init(uintptr_t warmboot_entry);
