@@ -41,7 +41,7 @@ uint64_t drtm_get_error(void *ctx)
 	SMC_RET2(ctx, SUCCESS, error_code);
 }
 
-void drtm_enter_remediation(uint64_t err_code, const char *err_str)
+void __dead2 drtm_enter_remediation(uint64_t err_code, const char *err_str)
 {
 	int rc = plat_set_drtm_error(err_code);
 

@@ -194,15 +194,10 @@ enum drtm_retc drtm_dma_prot_disengage(void)
 	 * done during engage().
 	 */
 	/* Simply enter remediation for now. */
+	/* TODO: Undo GIC DMA restrictions. */
 	(void)smmus;
 	(void)num_smmus;
 	drtm_enter_remediation(DRTM_REMEDIATION_DMA_PROT, err_str);
-
-	/* TODO: Undo GIC DMA restrictions. */
-
-	active_prot.type = PROTECT_NONE;
-
-	return SUCCESS;
 }
 
 uint64_t drtm_unprotect_mem(void *ctx)
