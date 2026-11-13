@@ -14,7 +14,6 @@
 #include <string.h>
 
 #include <common/debug.h>
-#include <drivers/arm/smmu_v3.h>
 #include "drtm_dma_prot.h"
 #include "drtm_main.h"
 #include "drtm_remediation.h"
@@ -139,7 +138,7 @@ enum drtm_retc drtm_dma_prot_engage(const struct_drtm_dl_dma_prot_args *a,
 		 * that any outstanding device transactions are completed, see Section
 		 * 3.21.1, specification IHI_0070_C_a for an approximate reference.
 		 */
-		int rc = smmuv3_ns_set_abort_all(*smmu);
+		int rc = plat_drtm_engage_smmu(*smmu);
 		if (rc != 0) {
 			ERROR("DRTM: SMMU at PA 0x%lx failed to engage DMA protection"
 			      " rc=%d\n", *smmu, rc);

@@ -59,6 +59,11 @@ void plat_enumerate_smmus(const uintptr_t **smmus_out,
 	}
 }
 
+int plat_drtm_engage_smmu(uintptr_t smmu_base)
+{
+	return smmuv3_ns_set_abort_all(smmu_base);
+}
+
 /* DRTM DMA Protection Features */
 static const plat_drtm_dma_prot_features_t dma_prot_features = {
 	.max_num_mem_prot_regions = 0, /* No protection regions are present */

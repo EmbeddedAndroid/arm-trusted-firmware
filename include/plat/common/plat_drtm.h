@@ -45,6 +45,7 @@ bool plat_has_unmanaged_dma_peripherals(void);
 unsigned int plat_get_total_smmus(void);
 void plat_enumerate_smmus(const uintptr_t **smmus_out,
 			  size_t *smmu_count_out);
+int plat_drtm_engage_smmu(uintptr_t smmu_base);
 const plat_drtm_dma_prot_features_t *plat_drtm_get_dma_prot_features(void);
 uint64_t plat_drtm_dma_prot_get_max_table_bytes(void);
 

@@ -994,6 +994,21 @@ Function : plat_enumerate_smmus()
 This function returns an array of SMMU addresses and the actual number of SMMUs
 reported by the platform.
 
+Function : plat_drtm_engage_smmu()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    Argument : uintptr_t
+    Return   : int
+
+This function makes the SMMU at the given base address, one of those
+``plat_enumerate_smmus()`` reports, abort every Non-secure transaction, for
+complete DMA protection at a dynamic launch. It returns 0 on success. An
+implementation calls the helper for its SMMU architecture, for example
+``smmuv3_ns_set_abort_all()`` or ``smmuv2_ns_set_abort_all()``, together with
+any platform step the SMMU needs first, such as a clock vote.
+
 Function : plat_drtm_get_dma_prot_features()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
