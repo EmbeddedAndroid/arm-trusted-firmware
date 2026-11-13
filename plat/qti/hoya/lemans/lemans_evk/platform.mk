@@ -108,6 +108,12 @@ include drivers/qti/sail_comm/sail_comm.mk
 # Override this on the command line to point to the qtiseclib library
 QTISECLIB_PATH ?=
 
+# Set to 1 when the secure world owns the dTPM: its SPI engine (QUP2 SE2)
+# and pads (GPIO 86-89) are then closed to the normal world by the XPUs.
+QTI_SECURE_DTPM ?= 0
+$(eval $(call assert_boolean,QTI_SECURE_DTPM))
+$(eval $(call add_define,QTI_SECURE_DTPM))
+
 ifeq ($(QTISECLIB_PATH),)
 
 QTI_CLOCK_RAIL_VOTE := 1
@@ -134,6 +140,9 @@ BL31_SOURCES	+=	$(PLAT_PATH)/hoya/common/hoya_pm.c \
 			drivers/qti/qtimer/qtimer.c \
 			drivers/qti/watchdog/watchdog.c
 else
+ifeq (${QTI_SECURE_DTPM},1)
+$(error QTI_SECURE_DTPM needs the open access control driver)
+endif
 $(eval $(call add_define,QTISECLIB_PATH))
 # No access control backend: keep accepting MEM_ASSIGN as a no-op.
 QTI_MEM_ASSIGN_NOOP := 1

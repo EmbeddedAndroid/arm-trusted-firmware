@@ -104,6 +104,34 @@ Platform specifics:
   dynamic launch event; 1 (DMA protection could not be undone) is not
   reached with complete DMA protection, the only type Lemans offers.
 
+Secure dTPM
+-----------
+
+``QTI_SECURE_DTPM=1`` closes the discrete TPM to the normal world when the
+secure world owns it: BL31 makes the TPM's SPI engine (QUP2 SE2, resource
+group 23 of the QUP2 XPU) and its pads (GPIO 86 to 89, TLMM XPU resource
+groups 86 to 89) accessible to secure apps only. Both XPUs carry a
+built-in (XpressCfg) policy; BL31 loads it into every other resource
+group. The option needs the open access control driver and fails the
+build with ``QTISECLIB_PATH``.
+
+Two rules of the QUP2 built-in policy do not fit this boot chain and are
+overridden. The wrapper's common page (0x8c0000, group 15) is open to the
+normal world only there, and OP-TEE's SPI driver programs it, so BL31
+opens it to secure apps too. Pages 2 and 3 of every serial engine are
+secure-only there, and U-Boot and Linux write them when they load GENI
+firmware into an SE, so BL31 leaves them to the normal world for every SE
+but SE2.
+
+A normal-world access to SE2 or to GPIO 86 to 89 is an XPU violation,
+which BL31's NoC error handler reports and treats as fatal. Every
+normal-world stage must therefore keep the SE (``spi16``) disabled; the
+upstream ``lemans-evk.dts`` enables it with the TPM.
+
+Linux reads the direction of every valid GPIO when it registers the
+TLMM, so its device tree must also reserve the TPM pads with
+``gpio-reserved-ranges = <86 4>;`` on the TLMM node.
+
 How to flash
 ------------
 

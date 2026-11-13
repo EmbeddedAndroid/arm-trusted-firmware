@@ -70,6 +70,41 @@ struct rg_domain_ownership aoss_cnoc_mpu_rgs[] = {
 	{ 24, APPS_S_DOMAIN, APPS_NS_DOMAIN, APPS_NS_DOMAIN },
 };
 
+#if QTI_SECURE_DTPM
+/*
+ * The dTPM's SPI engine (QUP2 SE2, 0x888000) and pads (GPIO 86 to 89) are
+ * secure-only. Unlisted groups get the built-in policy; two of its rules
+ * are overridden: it makes the wrapper's common page (0x8c0000) normal world
+ * only, but the secure SPI driver programs it, and it makes pages 2 and 3
+ * of every SE secure-only, but U-Boot and Linux load GENI firmware into
+ * them.
+ */
+struct rg_domain_ownership qupv3_2_rgs[] = {
+	{ 15, APPS_S_DOMAIN, XPU_PERM_SEC | APPS_NS_DOMAIN,
+	  XPU_PERM_SEC | APPS_NS_DOMAIN },
+	{ 18, APPS_NS_DOMAIN, APPS_NS_DOMAIN, APPS_NS_DOMAIN },
+	{ 19, APPS_NS_DOMAIN, APPS_NS_DOMAIN, APPS_NS_DOMAIN },
+	{ 21, APPS_NS_DOMAIN, APPS_NS_DOMAIN, APPS_NS_DOMAIN },
+	{ 22, APPS_NS_DOMAIN, APPS_NS_DOMAIN, APPS_NS_DOMAIN },
+	{ 23, APPS_S_DOMAIN, XPU_PERM_SEC, XPU_PERM_SEC },
+	{ 27, APPS_NS_DOMAIN, APPS_NS_DOMAIN, APPS_NS_DOMAIN },
+	{ 28, APPS_NS_DOMAIN, APPS_NS_DOMAIN, APPS_NS_DOMAIN },
+	{ 30, APPS_NS_DOMAIN, APPS_NS_DOMAIN, APPS_NS_DOMAIN },
+	{ 31, APPS_NS_DOMAIN, APPS_NS_DOMAIN, APPS_NS_DOMAIN },
+	{ 33, APPS_NS_DOMAIN, APPS_NS_DOMAIN, APPS_NS_DOMAIN },
+	{ 34, APPS_NS_DOMAIN, APPS_NS_DOMAIN, APPS_NS_DOMAIN },
+	{ 36, APPS_NS_DOMAIN, APPS_NS_DOMAIN, APPS_NS_DOMAIN },
+	{ 37, APPS_NS_DOMAIN, APPS_NS_DOMAIN, APPS_NS_DOMAIN },
+};
+
+struct rg_domain_ownership tlmm_rgs[] = {
+	{ 86, APPS_S_DOMAIN, XPU_PERM_SEC, XPU_PERM_SEC },
+	{ 87, APPS_S_DOMAIN, XPU_PERM_SEC, XPU_PERM_SEC },
+	{ 88, APPS_S_DOMAIN, XPU_PERM_SEC, XPU_PERM_SEC },
+	{ 89, APPS_S_DOMAIN, XPU_PERM_SEC, XPU_PERM_SEC },
+};
+#endif
+
 struct xpu_instance msm_xpu_cfg[] = {
 	{ 0x09230000, ARRAY_SIZE(llcc_mpu_rgs), llcc_mpu_rgs,
 	  ARRAY_SIZE(llcc_mpu_rg_addr), llcc_mpu_rg_addr,
@@ -86,6 +121,13 @@ struct xpu_instance msm_xpu_cfg[] = {
 	{ 0x0eff0000, ARRAY_SIZE(aoss_cnoc_mpu_rgs), aoss_cnoc_mpu_rgs,
 	  ARRAY_SIZE(aoss_cnoc_mpu_rg_addr), aoss_cnoc_mpu_rg_addr,
 	  XPU_TYPE_AOSS_MPU, XPU_PROTECTION_STATIC },
+#if QTI_SECURE_DTPM
+	{ 0x00800000, ARRAY_SIZE(qupv3_2_rgs), qupv3_2_rgs, 0, NULL,
+	  XPU_TYPE_BAM_BLSP3_DMA,
+	  XPU_PROTECTION_STATIC | XPU_PROTECTION_XPRESSCFG },
+	{ 0x0f000000, ARRAY_SIZE(tlmm_rgs), tlmm_rgs, 0, NULL,
+	  XPU_TYPE_TLMM, XPU_PROTECTION_STATIC | XPU_PROTECTION_XPRESSCFG },
+#endif
 };
 
 const uint32_t msm_xpu_cfg_count = ARRAY_SIZE(msm_xpu_cfg);
