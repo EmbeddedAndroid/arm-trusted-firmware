@@ -63,6 +63,8 @@
  * version (all SpmiBlock.c configs use SPMI_BARE_OWNER_NUMBER = 1).
  */
 #define TZ_OWNER_ID				1U
+/* The HLOS's EE-id in the same table */
+#define HLOS_OWNER_ID				0U
 
 /* 1us poll interval; SPMI_TIMEOUT_USEC downstream is 400us. */
 #define SPMI_ARB_TIMEOUT_ITER			400U

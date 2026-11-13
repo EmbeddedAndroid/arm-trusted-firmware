@@ -8,7 +8,7 @@
 #include <lib/mmio.h>
 #include <platform_def.h>
 #include <qti_reset.h>
-#include <spmi_arb.h>
+#include <drivers/qti/pmic/spmi_arb.h>
 
 #if QTI_RESET2_COOKIE_STORE_ENABLE
 
@@ -31,7 +31,13 @@ static int qti_sdam_write_byte(uint8_t bus_id, uint32_t slave_id,
 	}
 
 	spmi_addr = (slave_id << SPMI_SLAVE_ID_SHIFT) | addr;
-	return spmi_arb_write8(spmi_addr, data);
+	/*
+	 * The SDAM holding the cookie belongs to the HLOS: the arbiter gives
+	 * the secure world no channel to it. PSCI takes SYSTEM_RESET2 only
+	 * from the normal world, which has stopped its other CPUs, so the HLOS
+	 * does not use that channel at the same time.
+	 */
+	return spmi_arb_write8_hlos(spmi_addr, data);
 }
 
 void qti_reset_write_sdam_cookie(uint8_t cookie)

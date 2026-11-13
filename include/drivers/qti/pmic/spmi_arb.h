@@ -19,5 +19,11 @@
 
 int spmi_arb_read8(uint32_t addr);
 int spmi_arb_write8(uint32_t addr, uint8_t data);
+/*
+ * Write through the channel the HLOS owns, for a peripheral the secure world
+ * has no channel to. Only on the SYSTEM_RESET2 path, which the normal world
+ * enters with its other CPUs stopped.
+ */
+int spmi_arb_write8_hlos(uint32_t addr, uint8_t data);
 
 #endif /* SPMI_ARB_H */

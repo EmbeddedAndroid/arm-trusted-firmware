@@ -24,12 +24,12 @@
 /*
  * Owner/EE-ID-aware channel resolution. Peripherals may appear on more than
  * one channel (e.g. shared across owners); a channel whose SID/PPID matches
- * is only a provisional match -- it must also match TZ_OWNER_ID to be
- * accepted. If no SID/PPID-matching channel is also owned by TZ, this is a
- * hard failure, even if a SID/PPID-only match existed on another owner's
- * channel.
+ * is only a provisional match: it must also match want_owner to be
+ * accepted. If no SID/PPID-matching channel is also owned by want_owner,
+ * this is a hard failure, even if a SID/PPID-only match existed on another
+ * owner's channel.
  */
-static int addr_to_channel(uint32_t addr)
+static int addr_to_channel_owner(uint32_t addr, uint8_t want_owner)
 {
 	uint8_t target_sid = ADDR_SID(addr);
 	uint8_t target_ppid = ADDR_PPID(addr);
@@ -62,7 +62,7 @@ static int addr_to_channel(uint32_t addr)
 				 SPMI_PERIPHM_2OWNER_TABLE_REG_PERIPH2OWNER_BMSK) >>
 				SPMI_PERIPHM_2OWNER_TABLE_REG_PERIPH2OWNER_SHFT;
 
-		if (owner == TZ_OWNER_ID) {
+		if (owner == want_owner) {
 			break;
 		}
 	}
@@ -77,6 +77,11 @@ static int addr_to_channel(uint32_t addr)
 	}
 
 	return found;
+}
+
+static int addr_to_channel(uint32_t addr)
+{
+	return addr_to_channel_owner(addr, TZ_OWNER_ID);
 }
 
 static int wait_for_done(unsigned int chan)
@@ -140,21 +145,11 @@ int spmi_arb_read8(uint32_t addr)
 	return (int)val;
 }
 
-int spmi_arb_write8(uint32_t addr, uint8_t data)
+static int write8_chan(int chan, uint32_t addr, uint8_t data)
 {
-	int chan;
 	int ret;
-	uint32_t wdata_addr;
 
-	chan = addr_to_channel(addr);
-	if (chan < 0) {
-		ERROR("SPMI_ARB write: no channel found for addr=0x%x\n", addr);
-		return chan;
-	}
-
-	wdata_addr = PMIC_ARB_CHNLN_WDATA0_ADDR(QTI_PMIC_ARB_BASE, chan);
-
-	mmio_write_32(wdata_addr, data);
+	mmio_write_32(PMIC_ARB_CHNLN_WDATA0_ADDR(QTI_PMIC_ARB_BASE, chan), data);
 
 	issue_command((unsigned int)chan, PMIC_ARB_CMD_EXTENDED_REG_WRITE_LONG, addr);
 
@@ -164,4 +159,36 @@ int spmi_arb_write8(uint32_t addr, uint8_t data)
 	}
 
 	return ret;
+}
+
+int spmi_arb_write8(uint32_t addr, uint8_t data)
+{
+	int chan;
+
+	chan = addr_to_channel(addr);
+	if (chan < 0) {
+		ERROR("SPMI_ARB write: no channel found for addr=0x%x\n", addr);
+		return chan;
+	}
+
+	return write8_chan(chan, addr, data);
+}
+
+/*
+ * Only for the SYSTEM_RESET2 path: PSCI takes SYSTEM_RESET2 only from the
+ * normal world, which has stopped its other CPUs, so the HLOS does not use
+ * its channel at the same time. Never use a channel of another EE this way;
+ * on SM8750 an access through a channel owned by AOP stalls BL31.
+ */
+int spmi_arb_write8_hlos(uint32_t addr, uint8_t data)
+{
+	int chan;
+
+	chan = addr_to_channel_owner(addr, HLOS_OWNER_ID);
+	if (chan < 0) {
+		ERROR("SPMI_ARB write: no HLOS channel for addr=0x%x\n", addr);
+		return chan;
+	}
+
+	return write8_chan(chan, addr, data);
 }
