@@ -21,6 +21,40 @@
 #define GPU_SMMU_BASE			0x03DA0000
 #define PCIE_SMMU_BASE			0x15200000
 
+/*
+ * SMMU-500 instances the DRTM service engages for DMA protection; the GPU
+ * SMMU sits in the GPU CX power domain with the GPU it serves.
+ */
+#define QTI_DRTM_SMMU_BASES		APPS_SMMU_BASE, PCIE_SMMU_BASE
+#define QTI_DRTM_GPU_SMMU_BASE		GPU_SMMU_BASE
+#define QTI_DRTM_GPU_CX_GDSCR		0x03D99108
+/* GPU_CC_TZ_VOTE_GPU_SMMU_CLK, the secure vote for the GPU SMMU clock */
+#define QTI_DRTM_GPU_SMMU_CLK_VOTE	0x03D95000
+
+/*
+ * Non-secure DRAM a DLME, its data and the DRTM parameters may live in: a
+ * DDR bank, above the last firmware carveout (QTEE, trusted applications,
+ * TZ statistics and CPUCP firmware end at 0xdb300000).
+ */
+#define QTI_DRTM_NS_DRAM_BASE		ULL(0xDB300000)
+
+/*
+ * DRTM event log algorithms: SHA-256 and SHA-384, the PCR banks the EVK's
+ * discrete TPM keeps active. plat_drtm_tpm_extend() takes these two only.
+ */
+#define PLAT_DRTM_EVENT_LOG_ALGS	EVLOG_TPM_ALG_SHA256, EVLOG_TPM_ALG_SHA384
+/* DLME address map: the peripheral range and up to 15 DDR banks */
+#define PLAT_DRTM_MMAP_ENTRIES		16
+
+/*
+ * DRTM error code (DEN0113 DRTM_SET_ERROR), eight bytes little endian at
+ * the top of the primary PMIC SDAM at SID 0 PPID 0x70, the SDAM the secure
+ * world owns an arbiter channel to; it keeps its contents across resets for
+ * as long as the PMIC is powered. Provisional: those bytes read zero on
+ * stock boots, but the allocation is not confirmed.
+ */
+#define QTI_DRTM_ERROR_SDAM_ADDR	0x70b8U
+
 /*----------------------------------------------------------------------------*/
 /* IP protected memory (TA execution area)                                    */
 /*----------------------------------------------------------------------------*/

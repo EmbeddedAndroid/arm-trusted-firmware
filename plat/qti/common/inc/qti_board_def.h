@@ -29,6 +29,11 @@
  */
 #define PLAT_QTI_MMAP_ENTRIES	12
 
+#if DRTM_SUPPORT
+/* DRTM: event log buffer of the DRTM service */
+#define PLAT_DRTM_EVENT_LOG_MAX_SIZE	UL(0x1000)
+#endif
+
 /*
  * Platform specific page table and MMU setup constants
  */

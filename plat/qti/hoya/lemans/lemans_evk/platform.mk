@@ -179,3 +179,5 @@ BL31_SOURCES += plat/common/plat_spmd_manifest.c \
 else
 BL31_SOURCES		+=	$(PLAT_PATH)/common/src/qti_interrupt_svc_el3.c
 endif
+
+include ${PLAT_PATH}/common/qti_drtm.mk
