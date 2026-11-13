@@ -291,6 +291,14 @@ and ``_verify_hash`` is used to verify raw images.
 The ``_calc_hash`` function is mainly used in the ``MEASURED_BOOT``
 and ``DRTM_SUPPORT`` features to calculate the hashes of various images/data.
 
+A CL may also provide ``_calc_hash_src``, registered with
+``REGISTER_CRYPTO_LIB_HASH_SRC()``, which takes the same arguments as
+``REGISTER_CRYPTO_LIB()`` with ``_calc_hash_src`` after ``_calc_hash``. It
+calculates the hash of data that a callback hands over in pieces, so that a
+caller can hash an image larger than what it can map at once
+(``crypto_mod_tcg_hash_src()``). ``DRTM_SUPPORT`` uses it to measure the DLME
+image.
+
 The ``_auth_decrypt`` function uses an authentication tag to perform
 authenticated decryption, providing guarantees on the authenticity
 of encrypted data. This function is used when the optional encrypted
@@ -1029,6 +1037,11 @@ exported functions, their implementations are compared side-by-side below:
    * - ``calc_hash``
      - Use the ``mbedtls_md`` API to calculate the hash of the given data.
      - Use ``psa_hash_compute`` to calculate the hash of the given data.
+   * - ``calc_hash_src``
+     - Use the ``mbedtls_md`` streaming API (``starts``, ``update``,
+       ``finish``) over the pieces the callback returns.
+     - Use ``psa_hash_setup``, ``psa_hash_update`` and ``psa_hash_finish``
+       over the pieces the callback returns.
    * - ``verify_hash``
      - Use the ``mbedtls_md`` API to calculate the hash of the given data,
        and then compare it against the data which is to be verified.

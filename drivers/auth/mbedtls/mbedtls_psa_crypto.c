@@ -503,6 +503,42 @@ static int calc_hash(enum crypto_md_algo md_algo, void *data_ptr,
 
 	return CRYPTO_SUCCESS;
 }
+
+/*
+ * Calculate a hash of data handed over in pieces by src
+ */
+static int calc_hash_src(enum crypto_md_algo md_algo, size_t data_len,
+			 crypto_hash_src_t src, void *cookie,
+			 unsigned char output[CRYPTO_MD_MAX_SIZE])
+{
+	psa_hash_operation_t op = PSA_HASH_OPERATION_INIT;
+	psa_status_t status;
+	size_t offset = 0U;
+	size_t hash_length;
+	size_t len;
+	void *ptr;
+
+	status = psa_hash_setup(&op,
+				mbedtls_md_psa_alg_from_type(md_type(md_algo)));
+
+	while ((status == PSA_SUCCESS) && (offset < data_len)) {
+		if ((src(cookie, offset, &ptr, &len) != 0) || (len == 0U) ||
+		    (len > data_len - offset)) {
+			status = PSA_ERROR_GENERIC_ERROR;
+			break;
+		}
+		status = psa_hash_update(&op, ptr, len);
+		offset += len;
+	}
+
+	if (status == PSA_SUCCESS) {
+		status = psa_hash_finish(&op, (uint8_t *)output,
+					 CRYPTO_MD_MAX_SIZE, &hash_length);
+	}
+	(void)psa_hash_abort(&op);
+
+	return (status == PSA_SUCCESS) ? CRYPTO_SUCCESS : CRYPTO_ERR_HASH;
+}
 #endif /*
 	* CRYPTO_SUPPORT == CRYPTO_HASH_CALC_ONLY || \
 	* CRYPTO_SUPPORT == CRYPTO_AUTH_VERIFY_AND_HASH_CALC
@@ -695,11 +731,13 @@ static int auth_decrypt(enum crypto_dec_algo dec_algo, void *data_ptr,
  */
 #if CRYPTO_SUPPORT == CRYPTO_AUTH_VERIFY_AND_HASH_CALC
 #if TF_MBEDTLS_USE_AES_AEAD
-REGISTER_CRYPTO_LIB(LIB_NAME, init, verify_signature, verify_hash, calc_hash,
-		    auth_decrypt, NULL, finish);
+REGISTER_CRYPTO_LIB_HASH_SRC(LIB_NAME, init, verify_signature, verify_hash,
+			     calc_hash, calc_hash_src, auth_decrypt, NULL,
+			     finish);
 #else
-REGISTER_CRYPTO_LIB(LIB_NAME, init, verify_signature, verify_hash, calc_hash,
-		    NULL, NULL, finish);
+REGISTER_CRYPTO_LIB_HASH_SRC(LIB_NAME, init, verify_signature, verify_hash,
+			     calc_hash, calc_hash_src, NULL, NULL,
+			     finish);
 #endif
 #elif CRYPTO_SUPPORT == CRYPTO_AUTH_VERIFY_ONLY
 #if TF_MBEDTLS_USE_AES_AEAD
@@ -710,5 +748,6 @@ REGISTER_CRYPTO_LIB(LIB_NAME, init, verify_signature, verify_hash, NULL,
 		    NULL, NULL, finish);
 #endif
 #elif CRYPTO_SUPPORT == CRYPTO_HASH_CALC_ONLY
-REGISTER_CRYPTO_LIB(LIB_NAME, init, NULL, NULL, calc_hash, NULL, NULL, finish);
+REGISTER_CRYPTO_LIB_HASH_SRC(LIB_NAME, init, NULL, NULL, calc_hash,
+			     calc_hash_src, NULL, NULL, finish);
 #endif /* CRYPTO_SUPPORT == CRYPTO_AUTH_VERIFY_AND_HASH_CALC */

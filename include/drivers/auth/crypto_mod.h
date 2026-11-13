@@ -44,6 +44,14 @@ enum crypto_md_algo {
 #define CRYPTO_MD_MAX_SIZE		64U
 
 /*
+ * Hands the data of a hash over in pieces: for the piece that starts at
+ * @offset, set @ptr and @len (at least 1, at most what is left). The piece
+ * stays readable until the next call or the end of the hash.
+ */
+typedef int (*crypto_hash_src_t)(void *cookie, size_t offset, void **ptr,
+				 size_t *len);
+
+/*
  * Cryptographic library descriptor
  */
 typedef struct crypto_lib_desc_s {
@@ -69,6 +77,11 @@ typedef struct crypto_lib_desc_s {
 	int (*calc_hash)(enum crypto_md_algo md_alg, void *data_ptr,
 			 unsigned int data_len,
 			 unsigned char output[CRYPTO_MD_MAX_SIZE]);
+
+	/* Calculate a hash of data handed over in pieces (optional) */
+	int (*calc_hash_src)(enum crypto_md_algo md_alg, size_t data_len,
+			     crypto_hash_src_t src, void *cookie,
+			     unsigned char output[CRYPTO_MD_MAX_SIZE]);
 
 	/* Convert Public key (optional) */
 	int (*convert_pk)(void *full_pk_ptr, unsigned int full_pk_len,
@@ -124,6 +137,9 @@ int crypto_mod_calc_hash(enum crypto_md_algo alg, void *data_ptr,
 			 unsigned char output[CRYPTO_MD_MAX_SIZE]);
 int crypto_mod_tcg_hash(uint32_t alg_id, void *data_ptr, unsigned int data_len,
 			uint8_t *digest);
+int crypto_mod_tcg_hash_src(uint32_t alg_id, size_t data_len,
+			    crypto_hash_src_t src, void *cookie,
+			    uint8_t *digest);
 #endif /* (CRYPTO_SUPPORT == CRYPTO_HASH_CALC_ONLY) || \
 	  (CRYPTO_SUPPORT == CRYPTO_AUTH_VERIFY_AND_HASH_CALC) */
 
@@ -138,19 +154,27 @@ static inline void crypto_mod_finish(void)
 }
 #endif /* CRYPTO_SUPPORT */
 
-/* Macro to register a cryptographic library */
-#define REGISTER_CRYPTO_LIB(_name, _init, _verify_signature, _verify_hash, \
-			    _calc_hash, _auth_decrypt, _convert_pk, _finish) \
+/* Macros to register a cryptographic library */
+#define REGISTER_CRYPTO_LIB_HASH_SRC(_name, _init, _verify_signature, \
+				     _verify_hash, _calc_hash, _calc_hash_src, \
+				     _auth_decrypt, _convert_pk, _finish) \
 	const crypto_lib_desc_t crypto_lib_desc = { \
 		.name = _name, \
 		.init = _init, \
 		.verify_signature = _verify_signature, \
 		.verify_hash = _verify_hash, \
 		.calc_hash = _calc_hash, \
+		.calc_hash_src = _calc_hash_src, \
 		.auth_decrypt = _auth_decrypt, \
 		.convert_pk = _convert_pk, \
 		.finish = _finish \
 	}
+
+#define REGISTER_CRYPTO_LIB(_name, _init, _verify_signature, _verify_hash, \
+			    _calc_hash, _auth_decrypt, _convert_pk, _finish) \
+	REGISTER_CRYPTO_LIB_HASH_SRC(_name, _init, _verify_signature, \
+				     _verify_hash, _calc_hash, NULL, \
+				     _auth_decrypt, _convert_pk, _finish)
 
 extern const crypto_lib_desc_t crypto_lib_desc;
 

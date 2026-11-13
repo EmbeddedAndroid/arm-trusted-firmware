@@ -145,6 +145,24 @@ int crypto_mod_calc_hash(enum crypto_md_algo alg, void *data_ptr,
 	return crypto_lib_desc.calc_hash(alg, data_ptr, data_len, output);
 }
 
+static int tcg_to_md_alg(uint32_t alg_id, enum crypto_md_algo *md_alg)
+{
+	switch (alg_id) {
+	case EVLOG_TPM_ALG_SHA256:
+		*md_alg = CRYPTO_MD_SHA256;
+		return 0;
+	case EVLOG_TPM_ALG_SHA384:
+		*md_alg = CRYPTO_MD_SHA384;
+		return 0;
+	case EVLOG_TPM_ALG_SHA512:
+		*md_alg = CRYPTO_MD_SHA512;
+		return 0;
+	default:
+		ERROR("Unsupported TCG algorithm ID %u.\n", alg_id);
+		return -1;
+	}
+}
+
 int crypto_mod_tcg_hash(uint32_t alg_id, void *data_ptr, unsigned int data_len,
 			uint8_t *digest)
 {
@@ -154,22 +172,43 @@ int crypto_mod_tcg_hash(uint32_t alg_id, void *data_ptr, unsigned int data_len,
 	assert(data_len != 0U);
 	assert(digest != NULL);
 
-	switch (alg_id) {
-	case EVLOG_TPM_ALG_SHA256:
-		crypto_alg_id = CRYPTO_MD_SHA256;
-		break;
-	case EVLOG_TPM_ALG_SHA384:
-		crypto_alg_id = CRYPTO_MD_SHA384;
-		break;
-	case EVLOG_TPM_ALG_SHA512:
-		crypto_alg_id = CRYPTO_MD_SHA512;
-		break;
-	default:
-		ERROR("Unsupported TCG algorithm ID %u.\n", alg_id);
+	if (tcg_to_md_alg(alg_id, &crypto_alg_id) != 0) {
 		return -1;
 	}
 
 	return crypto_mod_calc_hash(crypto_alg_id, data_ptr, data_len, digest);
+}
+
+/*
+ * Calculate a hash of data that does not have to be readable all at once
+ *
+ * Parameters:
+ *
+ *   alg_id: TCG algorithm ID of the message digest algorithm
+ *   data_len: total size of the data
+ *   src, cookie: hand the data over in pieces
+ *   digest: resulting hash
+ */
+int crypto_mod_tcg_hash_src(uint32_t alg_id, size_t data_len,
+			    crypto_hash_src_t src, void *cookie,
+			    uint8_t *digest)
+{
+	enum crypto_md_algo crypto_alg_id;
+
+	assert(data_len != 0U);
+	assert(src != NULL);
+	assert(digest != NULL);
+
+	if (crypto_lib_desc.calc_hash_src == NULL) {
+		return CRYPTO_ERR_HASH;
+	}
+
+	if (tcg_to_md_alg(alg_id, &crypto_alg_id) != 0) {
+		return -1;
+	}
+
+	return crypto_lib_desc.calc_hash_src(crypto_alg_id, data_len, src,
+					     cookie, digest);
 }
 #endif /* CRYPTO_SUPPORT == CRYPTO_HASH_CALC_ONLY || \
 	  CRYPTO_SUPPORT == CRYPTO_AUTH_VERIFY_AND_HASH_CALC */
