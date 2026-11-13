@@ -258,8 +258,12 @@ static enum drtm_retc drtm_dl_prepare_dlme_data(const struct_drtm_dl_args *args)
 		panic();
 	}
 
-	/* Map the DLME data region as NS memory. */
-	dlme_data_mapping_bytes = ALIGNED_UP(dlme_data_max_size, DRTM_PAGE_SIZE);
+	/*
+	 * Map as NS memory the part of the DLME data region that is written:
+	 * everything below is bounded by dlme_data_min_size, and mapping only
+	 * that keeps the tables this needs independent of the region size.
+	 */
+	dlme_data_mapping_bytes = ALIGNED_UP(dlme_data_min_size, DRTM_PAGE_SIZE);
 	rc = mmap_add_dynamic_region_alloc_va(dlme_data_paddr,
 					      &dlme_data_mapping,
 					      dlme_data_mapping_bytes,
@@ -538,22 +542,28 @@ static enum drtm_retc drtm_dl_check_args(uint64_t x1,
 	 * Map and sanitize the cache of data range passed by DCE Preamble. This
 	 * is required to avoid / defend against racing with cache evictions
 	 */
-	va_mapping_size = ALIGNED_UP((dlme_end - dlme_start), DRTM_PAGE_SIZE);
-	rc = mmap_add_dynamic_region_alloc_va(dlme_start, &va_mapping, va_mapping_size,
-					      MT_NS | MT_RO_DATA |
-					      MT_SHAREABILITY_ISH);
-	if (rc != 0) {
-		ERROR("DRTM: %s: mmap_add_dynamic_region_alloc_va() failed rc=%d\n",
-		      __func__, rc);
-		return INTERNAL_ERROR;
-	}
-	flush_dcache_range(va_mapping, va_mapping_size);
+	for (uint64_t pa = dlme_start; pa < dlme_end;
+	     pa += DRTM_MAP_WINDOW_SIZE) {
+		va_mapping_size = ALIGNED_UP(MIN(dlme_end - pa,
+						 (uint64_t)DRTM_MAP_WINDOW_SIZE),
+					     DRTM_PAGE_SIZE);
+		rc = mmap_add_dynamic_region_alloc_va(pa, &va_mapping,
+						      va_mapping_size,
+						      MT_NS | MT_RO_DATA |
+						      MT_SHAREABILITY_ISH);
+		if (rc != 0) {
+			ERROR("DRTM: %s: mmap_add_dynamic_region_alloc_va() failed rc=%d\n",
+			      __func__, rc);
+			return INTERNAL_ERROR;
+		}
+		flush_dcache_range(va_mapping, va_mapping_size);
 
-	rc = mmap_remove_dynamic_region(va_mapping, va_mapping_size);
-	if (rc) {
-		ERROR("%s(): mmap_remove_dynamic_region() failed unexpectedly"
-		      " rc=%d\n", __func__, rc);
-		panic();
+		rc = mmap_remove_dynamic_region(va_mapping, va_mapping_size);
+		if (rc != 0) {
+			ERROR("%s(): mmap_remove_dynamic_region() failed unexpectedly rc=%d\n",
+			      __func__, rc);
+			panic();
+		}
 	}
 
 	*a_out = *a;

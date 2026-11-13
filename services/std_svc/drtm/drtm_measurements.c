@@ -10,11 +10,13 @@
  *
  */
 #include <assert.h>
+#include <errno.h>
 
 #include <common/debug.h>
 #include <drivers/auth/crypto_mod.h>
 #include <event_measure.h>
 #include <event_print.h>
+#include <lib/utils_def.h>
 #include <lib/xlat_tables/xlat_tables_v2.h>
 
 #include "drtm_main.h"
@@ -22,6 +24,31 @@
 
 /* Event Log buffer */
 static uint8_t drtm_event_log[PLAT_DRTM_EVENT_LOG_MAX_SIZE];
+
+/* Hash algorithms of the DRTM event log, one digest each per event */
+static const tpm_alg_id drtm_event_log_algs[] = {
+	TPM_ALG_ID,
+};
+
+struct drtm_dlme_img_window {
+	uintptr_t pa;
+	size_t size;
+	uintptr_t va;
+	size_t mapped;
+};
+
+/* Record an event whose digests are in @digests (TPML_DIGEST_VALUES) */
+static int drtm_event_log_record(const uint8_t *digests, uint32_t event_type,
+				 const char *event_name, unsigned int pcr)
+{
+	size_t event_data_size =
+		(event_name != NULL) ? (strlen(event_name) + 1U) : 0U;
+
+	return event_log_write_pcr_event2(pcr, event_type,
+					  (const tpml_digest_values *)digests,
+					  (const uint8_t *)event_name,
+					  event_data_size);
+}
 
 /*
  * Calculate and write hash of various payloads as per DRTM specification
@@ -43,8 +70,6 @@ static int drtm_event_log_measure_and_record(uintptr_t data_base,
 {
 	int rc;
 	unsigned char hash_data[MAX_TPML_BUFFER_SIZE];
-	size_t event_data_size =
-		(event_name != NULL) ? (strlen(event_name) + 1U) : 0U;
 
 	/*
 	 * Measure the payloads requested by D-CRTM and DCE components
@@ -56,13 +81,103 @@ static int drtm_event_log_measure_and_record(uintptr_t data_base,
 		return rc;
 	}
 
-	/* Record the measurement in the EventLog buffer */
-	rc = event_log_write_pcr_event2(pcr, event_type,
-					(const tpml_digest_values *)hash_data,
-					(const uint8_t *)event_name,
-					event_data_size);
+	return drtm_event_log_record(hash_data, event_type, event_name, pcr);
+}
+
+static int drtm_dlme_img_unmap(struct drtm_dlme_img_window *w)
+{
+	int rc = 0;
+
+	if (w->mapped != 0U) {
+		rc = mmap_remove_dynamic_region(w->va, w->mapped);
+		w->mapped = 0U;
+	}
+
+	return rc;
+}
+
+/* Map the piece of the DLME image at @offset in place of the previous one */
+static int drtm_dlme_img_next(void *cookie, size_t offset, void **ptr,
+			      size_t *len)
+{
+	struct drtm_dlme_img_window *w = cookie;
+	size_t n = MIN(w->size - offset, DRTM_MAP_WINDOW_SIZE);
+	size_t bytes = page_align(n, UP);
+	int rc;
+
+	rc = drtm_dlme_img_unmap(w);
 	if (rc != 0) {
 		return rc;
+	}
+
+	rc = mmap_add_dynamic_region_alloc_va(w->pa + offset, &w->va, bytes,
+					      MT_RO_DATA | MT_NS);
+	if (rc != 0) {
+		WARN("DRTM: %s: mmap_add_dynamic_region() failed rc=%d\n",
+		     __func__, rc);
+		return rc;
+	}
+	w->mapped = bytes;
+
+	*ptr = (void *)w->va;
+	*len = n;
+
+	return 0;
+}
+
+static size_t drtm_digest_size(tpm_alg_id alg)
+{
+	switch (alg) {
+	case EVLOG_TPM_ALG_SHA256:
+		return SHA256_DIGEST_SIZE;
+	case EVLOG_TPM_ALG_SHA384:
+		return SHA384_DIGEST_SIZE;
+	case EVLOG_TPM_ALG_SHA512:
+		return SHA512_DIGEST_SIZE;
+	default:
+		return 0U;
+	}
+}
+
+/* Hash the DLME image in every algorithm of the event log */
+static int drtm_measure_dlme_img(const struct_drtm_dl_args *a,
+				 uint8_t *hash_buf, size_t hash_buf_size)
+{
+	struct drtm_dlme_img_window w = {
+		.pa = a->dlme_paddr + a->dlme_img_off,
+		.size = a->dlme_img_size,
+	};
+	tpml_digest_values *digests = (tpml_digest_values *)hash_buf;
+	uint8_t *cursor = (uint8_t *)digests->digests;
+	int rc = 0;
+
+	if (w.size == 0U) {
+		return -EINVAL;
+	}
+
+	digests->count = ARRAY_SIZE(drtm_event_log_algs);
+	for (size_t i = 0U; i < ARRAY_SIZE(drtm_event_log_algs); i++) {
+		tpmt_ha *ha = (tpmt_ha *)cursor;
+		size_t size = drtm_digest_size(drtm_event_log_algs[i]);
+
+		if ((size == 0U) ||
+		    (sizeof(*ha) + size > hash_buf_size -
+					  (size_t)(cursor - hash_buf))) {
+			return -ENOMEM;
+		}
+
+		ha->algorithm_id = drtm_event_log_algs[i];
+		rc = crypto_mod_tcg_hash_src(drtm_event_log_algs[i], w.size,
+					     drtm_dlme_img_next, &w,
+					     ha->digest);
+		if (drtm_dlme_img_unmap(&w) != 0) {
+			rc = -EINVAL;
+		}
+		if (rc != 0) {
+			return rc;
+		}
+
+		cursor += sizeof(*ha) + size;
 	}
 
 	return 0;
@@ -81,9 +196,6 @@ static void drtm_event_log_init(uint8_t *event_log_start,
 				uint8_t *event_log_finish)
 {
 	int rc;
-	tpm_alg_id algorithms[] = {
-		TPM_ALG_ID,
-	};
 
 	rc = event_log_init_and_reg(
 		drtm_event_log, drtm_event_log + PLAT_DRTM_EVENT_LOG_MAX_SIZE,
@@ -93,8 +205,8 @@ static void drtm_event_log_init(uint8_t *event_log_start,
 		panic();
 	}
 
-	rc = event_log_write_header(algorithms, ARRAY_SIZE(algorithms), 0, NULL,
-				    0);
+	rc = event_log_write_header(drtm_event_log_algs,
+				    ARRAY_SIZE(drtm_event_log_algs), 0, NULL, 0);
 	if (rc < 0) {
 		ERROR("Failed to write event log header (%d).\n", rc);
 		panic();
@@ -104,9 +216,8 @@ static void drtm_event_log_init(uint8_t *event_log_start,
 enum drtm_retc drtm_take_measurements(const struct_drtm_dl_args *a)
 {
 	int rc;
-	uintptr_t dlme_img_mapping;
 	uint64_t dlme_img_ep;
-	size_t dlme_img_mapping_bytes;
+	unsigned char hash_data[MAX_TPML_BUFFER_SIZE];
 	uint8_t drtm_null_data = 0U;
 	uint8_t pcr_schema = DL_ARGS_GET_PCR_SCHEMA(a);
 	const char *drtm_event_arm_sep_data = "ARM_DRTM";
@@ -190,23 +301,16 @@ enum drtm_retc drtm_take_measurements(const struct_drtm_dl_args *a)
 		 drtm_event_log_measure_and_record(DRTM_EVENT_ARM_DCE_PUBKEY));
 
 	/* PCR-18: Measure the DLME image. */
-	dlme_img_mapping_bytes = page_align(a->dlme_img_size, UP);
-	rc = mmap_add_dynamic_region_alloc_va(a->dlme_paddr + a->dlme_img_off,
-					      &dlme_img_mapping,
-					      dlme_img_mapping_bytes, MT_RO_DATA | MT_NS);
-	if (rc) {
-		WARN("DRTM: %s: mmap_add_dynamic_region() failed rc=%d\n",
+	rc = drtm_measure_dlme_img(a, hash_data, sizeof(hash_data));
+	if (rc != 0) {
+		WARN("DRTM: %s: DLME image measurement failed rc=%d\n",
 		     __func__, rc);
 		return INTERNAL_ERROR;
 	}
 
-	rc = drtm_event_log_measure_and_record(dlme_img_mapping, a->dlme_img_size,
-					       DRTM_EVENT_ARM_DLME, NULL,
-					       PCR_18);
-	CHECK_RC(rc, drtm_event_log_measure_and_record(DRTM_EVENT_ARM_DLME));
-
-	rc = mmap_remove_dynamic_region(dlme_img_mapping, dlme_img_mapping_bytes);
-	CHECK_RC(rc, mmap_remove_dynamic_region);
+	rc = drtm_event_log_record(hash_data, DRTM_EVENT_ARM_DLME, NULL,
+				   PCR_18);
+	CHECK_RC(rc, drtm_event_log_record(DRTM_EVENT_ARM_DLME));
 
 	/* PCR-18: Measure the DLME image entry point. */
 	dlme_img_ep = DL_ARGS_GET_DLME_ENTRY_POINT(a);
