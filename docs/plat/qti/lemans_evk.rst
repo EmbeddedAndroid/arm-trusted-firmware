@@ -50,6 +50,60 @@ when the BL32 entry point arrives without one::
 	$ make CROSS_COMPILE=aarch64-none-elf- PLAT=lemans_evk SPD=spmd \
 	    SPMD_SPM_AT_SEL2=0 bl31
 
+DRTM (Arm DEN0113)
+------------------
+
+``DRTM_SUPPORT=1`` (with ``SPD=spmd``) enables the DRTM service as the
+Dynamic Configuration Environment. It needs mbedTLS (``MBEDTLS_DIR``, for
+the SHA-256 and SHA-384 event log) and the ``contrib/libeventlog``
+submodule::
+
+	$ make CROSS_COMPILE=aarch64-none-elf- PLAT=lemans_evk SPD=spmd \
+	    SPMD_SPM_AT_SEL2=0 DRTM_SUPPORT=1 MBEDTLS_DIR=<mbedtls-3.6> bl31
+
+Platform specifics:
+
+- DMA protection: for a dynamic launch BL31 sets every non-secure stream of
+  the apps and PCIe SMMU-500 instances to fault
+  (``smmuv2_ns_set_abort_all()``), and of the GPU SMMU while the GPU CX
+  domain is powered (its registers read as zero and the GPU cannot master
+  while CX is collapsed), holding the secure GPU SMMU clock vote while it
+  does so. AOP, SAIL, CPUCP and the other always-running subsystem
+  processors run trusted firmware and are reported as non-host platforms.
+  The GIC is not covered: its redistributors access the LPI tables in DRAM
+  outside the SMMUs, which the generic DRTM DMA protection does not
+  restrict yet.
+- TPM: the discrete TPM belongs to OP-TEE. BL31 records the launch in it
+  with FF-A direct requests from an SPMD logical partition (ID 0xffc0,
+  ``ENABLE_SPMD_LP``) to OP-TEE's D-RTM measurement endpoint (ID 0x8100,
+  OP-TEE ``CFG_TPM2_DRTM_LSP``), which runs the locality 4 hash sequence
+  for the DCE event and extends PCRs 17 and 18 with the other events, in
+  both active PCR banks of the TPM (SHA-256 and SHA-384, the event log
+  carries both digests).
+  ``DRTM_SUPPORT=1`` therefore needs ``SPD=spmd``. The launch event tells
+  OP-TEE which banks are measured; OP-TEE refuses the launch when the TPM's
+  active banks differ.
+- Locality 2: after a successful launch BL31 tells OP-TEE to accept
+  ``TPM2_PCR_Event`` requests at locality 2 for PCRs 19 to 22 from the
+  DLME (FF-A source ID 0); ``DRTM_CLOSE_LOCALITY(2)`` and the next launch
+  end that. Xen as the DLME measures dom0 into PCR 19 this way.
+- DLME region: a DDR bank the boot firmware reports in its SMEM usable RAM
+  table, above the last firmware carveout (0xdb300000). The same banks are
+  the normal memory of the DLME address map, next to the peripheral range
+  as device memory, copied at DRTM setup. The DCE cleans the DLME region
+  and hashes the DLME image through a 2 MiB mapping window, so their size
+  is not limited by the BL31 translation tables and needs no padding.
+- Error code: ``DRTM_SET_ERROR`` stores the 64-bit code little endian in
+  eight bytes of the primary PMIC SDAM from ``QTI_DRTM_ERROR_SDAM_ADDR``
+  (0x70b8 to 0x70bf, the top of the SDAM at SID 0 PPID 0x70, the one the
+  secure world has an arbiter channel to), so ``DRTM_GET_ERROR`` returns it
+  after a reset for as long as the PMIC stays powered. The slot is
+  provisional: it reads zero on stock boots, but its allocation in the
+  Lemans SDAM map is not confirmed. A launch the DCE stops records 2 when
+  the TPM refused a measurement and 3 when the launch failed after the
+  dynamic launch event; 1 (DMA protection could not be undone) is not
+  reached with complete DMA protection, the only type Lemans offers.
+
 How to flash
 ------------
 
