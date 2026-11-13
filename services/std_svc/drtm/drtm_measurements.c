@@ -210,10 +210,10 @@ enum drtm_retc drtm_take_measurements(const struct_drtm_dl_args *a)
 
 	/* PCR-18: Measure the DLME image entry point. */
 	dlme_img_ep = DL_ARGS_GET_DLME_ENTRY_POINT(a);
-	drtm_event_log_measure_and_record((uintptr_t)&(a->dlme_img_ep_off),
-					  sizeof(dlme_img_ep),
-					  DRTM_EVENT_ARM_DLME_EP, NULL,
-					  PCR_18);
+	rc = drtm_event_log_measure_and_record((uintptr_t)&(a->dlme_img_ep_off),
+					       sizeof(dlme_img_ep),
+					       DRTM_EVENT_ARM_DLME_EP, NULL,
+					       PCR_18);
 	CHECK_RC(rc, drtm_event_log_measure_and_record(DRTM_EVENT_ARM_DLME_EP));
 
 	/* PCR-18: End of DCE measurements. */
