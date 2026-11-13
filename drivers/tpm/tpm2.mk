@@ -8,7 +8,7 @@ LIBTPM2_PATH	?= contrib/libtpm
 LIBTPM2_NAME		:= tpm2
 
 LIBTPM2_BUILD_DIR	:= $(BUILD_PLAT)/lib$(LIBTPM2_NAME)
-LIBTPM2_TARGET		:= $(LIB_DIR)/$(LIBTPM2_NAME).a
+LIBTPM2_TARGET		:= $(BUILD_PLAT)/lib/$(LIBTPM2_NAME).a
 
 LDLIBS		:= -l$(LIBTPM2_NAME) $(LDLIBS)
 INCLUDES	+= -I${LIBTPM2_PATH}/include
@@ -48,7 +48,7 @@ LIBTPM2_CFLAGS ?= $(foreach f,$(TF_CFLAGS),	\
     -I$(realpath $(patsubst -I%,%,$(f))),	\
     $(f)))
 
-$(LIBTPM2_TARGET): $(LIB_DIR)/libc.a
+$(LIBTPM2_TARGET): $(BUILD_PLAT)/lib/libc.a
 	$(s)echo "  CM      $@"
 	$(q)cmake -S $(LIBTPM2_PATH) -B $(LIBTPM2_BUILD_DIR) \
 		-DTPM_INTERFACE=$(TPM_INTERFACE) \
