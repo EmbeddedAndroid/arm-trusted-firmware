@@ -18,6 +18,8 @@ typedef struct {
 typedef struct {
 	bool tpm_based_hash_support;
 	uint16_t firmware_hash_algorithm;
+	/* plat_drtm_tpm_dlme_locality() hands locality 2 to the DLME */
+	bool dlme_locality_support;
 } plat_drtm_tpm_features_t;
 
 typedef struct {
@@ -65,6 +67,13 @@ int plat_drtm_tpm_dl_event(const uint8_t *data, size_t size);
  * TPML_DIGEST_VALUES layout of the DRTM event log.
  */
 int plat_drtm_tpm_extend(unsigned int pcr, const void *digests);
+
+/*
+ * Give TPM locality 2 to the DLME (@open) once a launch succeeded, or take
+ * it back on DRTM_CLOSE_LOCALITY. A new dynamic launch event takes it back
+ * as well. Only called when the platform sets dlme_locality_support.
+ */
+int plat_drtm_tpm_dlme_locality(bool open);
 
 /*
  * TODO: Implement these functions as per the platform use case,

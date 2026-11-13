@@ -1185,6 +1185,24 @@ TPML_DIGEST_VALUES written to the event log (one digest per
 DCE enters remediation. A platform without a TPM returns 0 and keeps the
 event log as the only record.
 
+Function : plat_drtm_tpm_dlme_locality()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    Argument : bool
+    Return   : int
+
+Called only when the platform's ``plat_drtm_tpm_features_t`` sets
+``dlme_locality_support``. With ``true``, after a successful launch, gives
+TPM locality 2 to the DLME so that it can measure what it starts next (PCRs
+19 to 22); with ``false``, on the DLME's DRTM_CLOSE_LOCALITY, takes it back.
+The next dynamic launch event must take it back as well. Returns 0 on
+success. After a failure to open, the DLME is entered with locality 2 closed
+(its PCR 19 to 22 measurements fail, which a verifier sees); a failure to
+close returns TPM_ERROR to the DLME, which may retry. A platform without the
+feature returns -1.
+
 Common mandatory function modifications
 ---------------------------------------
 

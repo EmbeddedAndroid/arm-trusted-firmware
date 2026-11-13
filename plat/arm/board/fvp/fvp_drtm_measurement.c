@@ -45,3 +45,11 @@ int plat_drtm_tpm_extend(unsigned int pcr, const void *digests)
 
 	return 0;
 }
+
+/* Never called: FVP does not set dlme_locality_support. */
+int plat_drtm_tpm_dlme_locality(bool open)
+{
+	(void)open;
+
+	return -1;
+}

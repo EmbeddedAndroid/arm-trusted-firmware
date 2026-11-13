@@ -23,6 +23,7 @@
 #include "drtm_remediation.h"
 #include <lib/el3_runtime/context_mgmt.h>
 #include <lib/psci/psci_lib.h>
+#include <lib/spinlock.h>
 #include <lib/utils_def.h>
 #include <lib/xlat_tables/xlat_tables_v2.h>
 #include <plat/common/platform.h>
@@ -38,6 +39,10 @@ static bool dlme_img_auth_supported;
 static drtm_memory_region_descriptor_table_t *plat_drtm_mem_map;
 static const plat_drtm_dma_prot_features_t *plat_dma_prot_feat;
 static const plat_drtm_tpm_features_t *plat_tpm_feat;
+/* The DLME holds TPM locality 2 */
+static bool drtm_dlme_locality_open;
+/* CLOSE_LOCALITY runs with the other PEs on */
+static spinlock_t drtm_locality_lock;
 
 /* DLME header */
 struct_dlme_data_header dlme_data_hdr_init;
@@ -711,6 +716,11 @@ static uint64_t drtm_dynamic_launch(uint64_t x1, void *handle)
 	 */
 
 	ret = drtm_take_measurements(&args);
+	/*
+	 * Its only returns come after the dynamic launch event, which took
+	 * locality 2 back from any DLME.
+	 */
+	drtm_dlme_locality_open = false;
 	if (ret != SUCCESS) {
 		goto err_undo_dma_prot;
 	}
@@ -718,6 +728,18 @@ static uint64_t drtm_dynamic_launch(uint64_t x1, void *handle)
 	ret = drtm_dl_prepare_dlme_data(&args);
 	if (ret != SUCCESS) {
 		goto err_undo_dma_prot;
+	}
+
+	/*
+	 * Without locality 2 the DLME cannot extend PCRs 19 to 22, which a
+	 * verifier sees; the launch itself is measured, so it goes on.
+	 */
+	if (plat_tpm_feat->dlme_locality_support) {
+		if (plat_drtm_tpm_dlme_locality(true) == 0) {
+			drtm_dlme_locality_open = true;
+		} else {
+			ERROR("DRTM: TPM locality 2 not opened to the DLME\n");
+		}
 	}
 
 	/*
@@ -758,6 +780,32 @@ err_undo_dma_prot:
 		      " rc=%d\n", __func__, ret);
 		panic();
 	}
+
+	SMC_RET1(handle, ret);
+}
+
+static uint64_t drtm_close_locality(uint64_t locality, void *handle)
+{
+	enum drtm_retc ret = SUCCESS;
+
+	if (!plat_tpm_feat->dlme_locality_support) {
+		SMC_RET1(handle, NOT_SUPPORTED);
+	}
+
+	if ((locality != 2U) && (locality != 3U)) {
+		SMC_RET1(handle, INVALID_PARAMETERS);
+	}
+
+	/* The DLME is only ever given locality 2 */
+	spin_lock(&drtm_locality_lock);
+	if ((locality == 3U) || !drtm_dlme_locality_open) {
+		ret = ALREADY_CLOSED;
+	} else if (plat_drtm_tpm_dlme_locality(false) != 0) {
+		ret = TPM_ERROR;
+	} else {
+		drtm_dlme_locality_open = false;
+	}
+	spin_unlock(&drtm_locality_lock);
 
 	SMC_RET1(handle, ret);
 }
@@ -805,8 +853,9 @@ uint64_t drtm_smc_handler(uint32_t smc_fid,
 				break;	/* not reached */
 
 			case ARM_DRTM_SVC_CLOSE_LOCALITY:
-				WARN("ARM_DRTM_SVC_CLOSE_LOCALITY feature %s",
-				     "is not supported\n");
+				if (plat_tpm_feat->dlme_locality_support) {
+					SMC_RET1(handle, SUCCESS);
+				}
 				SMC_RET1(handle, NOT_SUPPORTED);
 				break;	/* not reached */
 
@@ -891,9 +940,8 @@ uint64_t drtm_smc_handler(uint32_t smc_fid,
 		break;	/* not reached */
 
 	case ARM_DRTM_SVC_CLOSE_LOCALITY:
-		WARN("DRTM service handler: close locality %s\n",
-		     "is not supported");
-		SMC_RET1(handle, NOT_SUPPORTED);
+		INFO("DRTM service handler: close locality\n");
+		return drtm_close_locality(x1, handle);
 		break;	/* not reached */
 
 	case ARM_DRTM_SVC_GET_ERROR:
