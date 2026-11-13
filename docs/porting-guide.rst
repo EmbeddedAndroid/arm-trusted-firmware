@@ -681,6 +681,19 @@ defined:
    Number of the MMAP entries used by the DRTM implementation to calculate the
    size of address map region of the platform.
 
+The following DRTM constant is optional:
+
+-  **#define : PLAT_DRTM_EVENT_LOG_ALGS**
+
+   Comma-separated list of the TPM hash algorithm IDs (``EVLOG_TPM_ALG_*``)
+   of the DRTM event log; every event then carries one digest per algorithm.
+   A platform whose TPM has several active PCR banks lists all of them so that
+   each bank records the launch. Defaults to ``TPM_ALG_ID``, the algorithm
+   selected with ``MBOOT_EL_HASH_ALG``. ``MBOOT_EL_HASH_ALG`` limits the event
+   log library to one digest per event (``LIBEVLOG_MAX_HASH_COUNT`` 1), so a
+   list of several algorithms needs it unset, or ``LIBEVLOG_MAX_HASH_COUNT``
+   at least the length of the list; the build fails otherwise.
+
 File : plat_macros.S [mandatory]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

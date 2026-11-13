@@ -16,19 +16,32 @@
 #include <drivers/auth/crypto_mod.h>
 #include <event_measure.h>
 #include <event_print.h>
+#include <lib/cassert.h>
 #include <lib/utils_def.h>
 #include <lib/xlat_tables/xlat_tables_v2.h>
 
 #include "drtm_main.h"
 #include "drtm_measurements.h"
 
+/*
+ * Hash algorithms of the DRTM event log, one digest each per event: a
+ * platform with several active TPM PCR banks lists them all.
+ */
+#ifndef PLAT_DRTM_EVENT_LOG_ALGS
+#define PLAT_DRTM_EVENT_LOG_ALGS	TPM_ALG_ID
+#endif
+
 /* Event Log buffer */
 static uint8_t drtm_event_log[PLAT_DRTM_EVENT_LOG_MAX_SIZE];
 
 /* Hash algorithms of the DRTM event log, one digest each per event */
 static const tpm_alg_id drtm_event_log_algs[] = {
-	TPM_ALG_ID,
+	PLAT_DRTM_EVENT_LOG_ALGS,
 };
+
+/* The digest buffers of libeventlog hold HASH_ALG_COUNT digests at most */
+CASSERT(ARRAY_SIZE(drtm_event_log_algs) <= HASH_ALG_COUNT,
+	assert_drtm_event_log_algs_fit_libeventlog);
 
 struct drtm_dlme_img_window {
 	uintptr_t pa;
