@@ -53,6 +53,20 @@ uint64_t plat_drtm_dma_prot_get_max_table_bytes(void);
 const plat_drtm_tpm_features_t *plat_drtm_get_tpm_features(void);
 
 /*
+ * Record the dynamic launch event in the TPM: the locality 4
+ * _TPM_Hash_Start/_TPM_Hash_Data/_TPM_Hash_End sequence over @data, which
+ * resets PCRs 17 to 22 and extends PCR 17 with the digest of @data.
+ * Called once per launch, for the DCE event, before any plat_drtm_tpm_extend().
+ */
+int plat_drtm_tpm_dl_event(const uint8_t *data, size_t size);
+
+/*
+ * Extend D-RTM PCR @pcr in the TPM with the digests of an event, in the
+ * TPML_DIGEST_VALUES layout of the DRTM event log.
+ */
+int plat_drtm_tpm_extend(unsigned int pcr, const void *digests);
+
+/*
  * TODO: Implement these functions as per the platform use case,
  * as of now none of the platform uses these functions
  */

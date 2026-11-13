@@ -19,9 +19,11 @@
 #include <lib/cassert.h>
 #include <lib/utils_def.h>
 #include <lib/xlat_tables/xlat_tables_v2.h>
+#include <plat/common/plat_drtm.h>
 
 #include "drtm_main.h"
 #include "drtm_measurements.h"
+#include "drtm_remediation.h"
 
 /*
  * Hash algorithms of the DRTM event log, one digest each per event: a
@@ -50,17 +52,47 @@ struct drtm_dlme_img_window {
 	size_t mapped;
 };
 
-/* Record an event whose digests are in @digests (TPML_DIGEST_VALUES) */
+/*
+ * Record an event whose digests are in @digests (TPML_DIGEST_VALUES) in the
+ * event log and in the TPM. @data and @data_size are the measured data of
+ * the DCE event.
+ */
 static int drtm_event_log_record(const uint8_t *digests, uint32_t event_type,
-				 const char *event_name, unsigned int pcr)
+				 const char *event_name, unsigned int pcr,
+				 const uint8_t *data, size_t data_size)
 {
+	int rc;
 	size_t event_data_size =
 		(event_name != NULL) ? (strlen(event_name) + 1U) : 0U;
 
-	return event_log_write_pcr_event2(pcr, event_type,
-					  (const tpml_digest_values *)digests,
-					  (const uint8_t *)event_name,
-					  event_data_size);
+	rc = event_log_write_pcr_event2(pcr, event_type,
+					(const tpml_digest_values *)digests,
+					(const uint8_t *)event_name,
+					event_data_size);
+	if (rc != 0) {
+		return rc;
+	}
+
+	/*
+	 * The DCE event is the dynamic launch event: the TPM resets the D-RTM
+	 * PCRs and hashes its data into PCR 17 itself.
+	 */
+	if (event_type == DRTM_EVENT_ARM_DCE) {
+		rc = plat_drtm_tpm_dl_event(data, data_size);
+	} else {
+		rc = plat_drtm_tpm_extend(pcr, digests);
+	}
+
+	/*
+	 * The D-RTM PCRs may already hold part of this launch: record why and
+	 * stop rather than start a DLME the TPM does not describe.
+	 */
+	if (rc != 0) {
+		drtm_enter_remediation(DRTM_REMEDIATION_TPM,
+				       "TPM measurement failed");
+	}
+
+	return 0;
 }
 
 /*
@@ -94,7 +126,8 @@ static int drtm_event_log_measure_and_record(uintptr_t data_base,
 		return rc;
 	}
 
-	return drtm_event_log_record(hash_data, event_type, event_name, pcr);
+	return drtm_event_log_record(hash_data, event_type, event_name, pcr,
+				     (const uint8_t *)data_base, data_size);
 }
 
 static int drtm_dlme_img_unmap(struct drtm_dlme_img_window *w)
@@ -322,7 +355,7 @@ enum drtm_retc drtm_take_measurements(const struct_drtm_dl_args *a)
 	}
 
 	rc = drtm_event_log_record(hash_data, DRTM_EVENT_ARM_DLME, NULL,
-				   PCR_18);
+				   PCR_18, NULL, 0U);
 	CHECK_RC(rc, drtm_event_log_record(DRTM_EVENT_ARM_DLME));
 
 	/* PCR-18: Measure the DLME image entry point. */

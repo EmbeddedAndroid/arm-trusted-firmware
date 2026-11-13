@@ -1156,6 +1156,35 @@ Function : plat_get_drtm_error()
 This function reads a 64 bit error code from the non-volatile storage
 into the received address, and returns 0 on success and -1 on failure.
 
+Function : plat_drtm_tpm_dl_event()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    Argument : const uint8_t *, size_t
+    Return   : int
+
+Records the start of a dynamic launch in the TPM: the locality 4
+_TPM_Hash_Start/_TPM_Hash_Data/_TPM_Hash_End sequence over the given data
+(the DCE event), which resets PCRs 17 to 22 and extends PCR 17 with the
+digest of the data in every active bank. Returns 0 on success; on failure the
+DCE enters remediation. A platform without a TPM returns 0 and keeps the
+event log as the only record.
+
+Function : plat_drtm_tpm_extend()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    Argument : unsigned int, const void *
+    Return   : int
+
+Extends the given D-RTM PCR with the digests of one event, passed as the
+TPML_DIGEST_VALUES written to the event log (one digest per
+``PLAT_DRTM_EVENT_LOG_ALGS`` algorithm). Returns 0 on success; on failure the
+DCE enters remediation. A platform without a TPM returns 0 and keeps the
+event log as the only record.
+
 Common mandatory function modifications
 ---------------------------------------
 
