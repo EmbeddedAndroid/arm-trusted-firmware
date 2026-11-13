@@ -666,7 +666,6 @@ static void drtm_dl_prepare_eret_to_dlme(const struct_drtm_dl_args *args, enum d
 static uint64_t drtm_dynamic_launch(uint64_t x1, void *handle)
 {
 	enum drtm_retc ret = SUCCESS;
-	enum drtm_retc dma_prot_ret;
 	struct_drtm_dl_args args;
 	/* DLME should be highest NS exception level */
 	enum drtm_dlme_el dlme_el = (el_implemented(2) != EL_IMPL_NONE) ? MODE_EL2 : MODE_EL1;
@@ -721,13 +720,18 @@ static uint64_t drtm_dynamic_launch(uint64_t x1, void *handle)
 	 * locality 2 back from any DLME.
 	 */
 	drtm_dlme_locality_open = false;
-	if (ret != SUCCESS) {
-		goto err_undo_dma_prot;
+	if (ret == SUCCESS) {
+		ret = drtm_dl_prepare_dlme_data(&args);
 	}
 
-	ret = drtm_dl_prepare_dlme_data(&args);
+	/*
+	 * Both fail only after the dynamic launch event has reset and extended
+	 * the D-RTM PCRs: record why and stop rather than return to a caller
+	 * whose PCRs describe a launch that did not take place.
+	 */
 	if (ret != SUCCESS) {
-		goto err_undo_dma_prot;
+		drtm_enter_remediation(DRTM_REMEDIATION_LAUNCH,
+				       "launch failed after the dynamic launch event");
 	}
 
 	/*
@@ -772,16 +776,6 @@ static uint64_t drtm_dynamic_launch(uint64_t x1, void *handle)
 
 	/* Return the DLME region's address in x0, and the DLME data offset in x1.*/
 	SMC_RET2(handle, args.dlme_paddr, args.dlme_data_off);
-
-err_undo_dma_prot:
-	dma_prot_ret = drtm_dma_prot_disengage();
-	if (dma_prot_ret != SUCCESS) {
-		ERROR("%s(): drtm_dma_prot_disengage() failed unexpectedly"
-		      " rc=%d\n", __func__, ret);
-		panic();
-	}
-
-	SMC_RET1(handle, ret);
 }
 
 static uint64_t drtm_close_locality(uint64_t locality, void *handle)

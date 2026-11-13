@@ -17,6 +17,7 @@ uint64_t drtm_get_error(void *ctx);
 /* Error codes the DCE records before it stops a launch */
 #define DRTM_REMEDIATION_DMA_PROT	ULL(1)
 #define DRTM_REMEDIATION_TPM		ULL(2)
+#define DRTM_REMEDIATION_LAUNCH		ULL(3)
 
 void drtm_enter_remediation(uint64_t error_code, const char *error_str);
 
