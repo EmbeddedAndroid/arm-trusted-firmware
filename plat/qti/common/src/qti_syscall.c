@@ -89,6 +89,15 @@ static uintptr_t qti_sip_handler(uint32_t smc_fid,
 		}
 		SMC_RET1(handle, qti_sip_secure_io_write(x2, x3));
 		break;
+	case QTI_SIP_SVC_GPU_INIT_REGS_ID:
+		if (is_caller_secure(flags)) {
+			SMC_RET1(handle, QTI_SIP_NOT_SUPPORTED);
+		}
+		if (x1 != QTI_SIP_SVC_GPU_INIT_REGS_PARAM_ID) {
+			SMC_RET1(handle, QTI_SIP_INVALID_PARAM);
+		}
+		SMC_RET1(handle, qti_sip_gpu_init_regs(x2));
+		break;
 	case QTI_SIP_SVC_MEM_ASSIGN_ID:
 		if (is_caller_secure(flags)) {
 			SMC_RET1(handle, QTI_SIP_NOT_SUPPORTED);

@@ -8,6 +8,7 @@
 #ifndef QTI_PLAT_H
 #define QTI_PLAT_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <common/bl_common.h>
@@ -26,6 +27,13 @@ void qti_setup_page_tables(uintptr_t total_base, size_t total_size,
 			   uintptr_t coherent_ram_start,
 			   uintptr_t coherent_ram_limit);
 int qti_io_setup(void);
+
+/*
+ * GPU registers set up for the OS GPU driver (SiP GPU_INIT_REGS): @mask is
+ * the set of features requested. Returns 0 on success.
+ */
+bool plat_qti_gpu_init_regs_supported(void);
+int plat_qti_gpu_init_regs(uint32_t mask);
 struct image_info *qti_get_image_info(unsigned int image_id);
 
 void plat_qti_gic_driver_init(void);

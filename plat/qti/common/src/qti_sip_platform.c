@@ -49,6 +49,20 @@ static bool qti_is_secure_io_access_allowed(u_register_t addr)
 	return false;
 }
 
+#pragma weak plat_qti_gpu_init_regs_supported
+bool plat_qti_gpu_init_regs_supported(void)
+{
+	return false;
+}
+
+#pragma weak plat_qti_gpu_init_regs
+int plat_qti_gpu_init_regs(uint32_t mask)
+{
+	(void)mask;
+
+	return -1;
+}
+
 u_register_t qti_sip_call_count(void)
 {
 	return QTI_SIP_SVC_CALL_COUNT;
@@ -66,6 +80,8 @@ bool qti_sip_is_available(u_register_t smc_fid, bool caller_secure)
 	case QTI_SIP_SVC_SECURE_IO_WRITE_ID:
 	case QTI_SIP_SVC_MEM_ASSIGN_ID:
 		return !caller_secure;
+	case QTI_SIP_SVC_GPU_INIT_REGS_ID:
+		return !caller_secure && plat_qti_gpu_init_regs_supported();
 	default:
 		return false;
 	}
@@ -88,6 +104,18 @@ int qti_sip_secure_io_write(u_register_t addr, u_register_t value)
 	}
 
 	*((volatile uint32_t *)addr) = value;
+	return QTI_SIP_SUCCESS;
+}
+
+int qti_sip_gpu_init_regs(u_register_t mask)
+{
+	if (!plat_qti_gpu_init_regs_supported()) {
+		return QTI_SIP_NOT_SUPPORTED;
+	}
+	if (plat_qti_gpu_init_regs((uint32_t)mask) != 0) {
+		return QTI_SIP_INVALID_PARAM;
+	}
+
 	return QTI_SIP_SUCCESS;
 }
 

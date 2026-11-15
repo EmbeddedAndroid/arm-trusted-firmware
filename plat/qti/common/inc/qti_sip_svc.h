@@ -22,6 +22,7 @@
 #define QTI_SIP_SVC_AVAILABLE_ID			U(0x02000601)
 #define QTI_SIP_SVC_SECURE_IO_READ_ID			U(0x02000501)
 #define QTI_SIP_SVC_SECURE_IO_WRITE_ID			U(0x02000502)
+#define QTI_SIP_SVC_GPU_INIT_REGS_ID			U(0x02002801)
 
 /*
  * QTI SiP call supported by Hoya. Wildcat currently returns
@@ -41,6 +42,7 @@
 #define QTI_SIP_SVC_AVAILABLE_ID_PARAM_ID		U(0x1)
 #define QTI_SIP_SVC_SECURE_IO_READ_PARAM_ID		U(0x1)
 #define QTI_SIP_SVC_SECURE_IO_WRITE_PARAM_ID		U(0x2)
+#define QTI_SIP_SVC_GPU_INIT_REGS_PARAM_ID		U(0x1)
 
 /* Parameter for the Hoya-only MEM_ASSIGN call. */
 #define QTI_SIP_SVC_MEM_ASSIGN_PARAM_ID		U(0x1117)
@@ -65,6 +67,12 @@ bool qti_sip_is_available(u_register_t smc_fid, bool caller_secure);
  */
 int qti_sip_secure_io_read(u_register_t addr, u_register_t *value);
 int qti_sip_secure_io_write(u_register_t addr, u_register_t value);
+
+/*
+ * Set up the GPU registers only the secure world may write, for the features
+ * in @mask, on platforms that provide plat_qti_gpu_init_regs().
+ */
+int qti_sip_gpu_init_regs(u_register_t mask);
 
 int qti_sip_config_cpu_errata(u_register_t x1);
 int qti_sip_get_arm_feature_status(u_register_t *status);
