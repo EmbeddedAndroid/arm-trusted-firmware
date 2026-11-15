@@ -22,6 +22,19 @@
 #define XPU_UMR_RG (XPU_RG_ALL - 1)
 
 #define XPU_PROTECTION_STATIC 0x1
+/*
+ * Load the XPU's built-in (XpressCfg) policy into every resource group the
+ * instance does not list, before the listed groups are programmed.
+ */
+#define XPU_PROTECTION_XPRESSCFG 0x4
+
+/*
+ * APU/RPU resource group access, for perm_r/perm_w: XPU_PERM_SEC enables
+ * secure apps access (RGn_CR0/CR2), the domain bits enable non-secure access
+ * of that domain (RGn_CR1/CR3).
+ */
+#define XPU_PERM_SEC BIT(XPU3_RGn_GCR0_RG_SEC_SHIFT)
+#define XPU_PERM_NS_MASK (APPS_NS_DOMAIN | QAD0_NS_DOMAIN | QAD1_NS_DOMAIN)
 
 enum xpu {
 	XPU_TYPE_NONE,

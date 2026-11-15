@@ -41,7 +41,12 @@
 #define XPU3_IDR2_OFFSET 0x3F0
 #define XPU3_REV_OFFSET 0x3FC
 #define XPU3_LOG_MODE_DIS_OFFSET 0x400
+#define XPU3_GRP0_RG_PRG_OFFSET 0x408
+#define XPU3_GRP1_RG_PRG_OFFSET 0x40C
+#define XPU3_HW_POLICY_IGNORED_OFFSET 0x420
+#define XPU3_IDR0_XPRESSCFG BIT(2)
 #define XPU3_RGn_GCR0_OFFSET 0x1000
+#define XPU3_RGn_GCR0_CFG_BMSK (GENMASK(2, 0) | BIT(8))
 #define XPU3_RGn_CR0_OFFSET 0x1010
 #define XPU3_RGn_CR1_OFFSET 0x1014
 #define XPU3_RGn_CR2_OFFSET 0x1018
@@ -407,6 +412,92 @@ static void set_mpu_dynamic_permissions(struct xpu_instance *xpu,
 	}
 }
 
+/*
+ * APU/RPU groups of an XpressCfg instance: secure apps access goes to
+ * RGn_CR0/CR2, non-secure domain access to RGn_CR1/CR3; ownership (RGn_GCR0)
+ * is written by set_region_ownership().
+ */
+static int set_rpu_permissions(struct xpu_instance *xpu)
+{
+	const struct rg_domain_ownership *owner = xpu->rg_owner;
+	uintptr_t rg;
+	uint32_t cr[4];
+
+	if (get_xpu_type(xpu) == XPU_TYPE_MPU)
+		return -1;
+
+	for (size_t i = 0; i < xpu->owner_arr_size; i++, owner++) {
+		if (owner->rg_num == XPU_UMR_RG)
+			return -1;
+
+		rg = xpu->xpu_base_addr + XPU3_RGn_REG_SPACE_SIZE * owner->rg_num;
+		cr[0] = (owner->perm_r & XPU_PERM_SEC) ? 1U : 0U;
+		cr[1] = owner->perm_r & XPU_PERM_NS_MASK;
+		cr[2] = (owner->perm_w & XPU_PERM_SEC) ? 1U : 0U;
+		cr[3] = owner->perm_w & XPU_PERM_NS_MASK;
+
+		for (size_t j = 0; j < ARRAY_SIZE(cr); j++)
+			mmio_write_32(rg + XPU3_RGn_CR0_OFFSET + 4U * j, cr[j]);
+
+		if ((mmio_read_32(rg + XPU3_RGn_GCR0_OFFSET) &
+		     XPU3_RGn_GCR0_CFG_BMSK) != owner->owner_domain)
+			return -1;
+
+		for (size_t j = 0; j < ARRAY_SIZE(cr); j++) {
+			if (mmio_read_32(rg + XPU3_RGn_CR0_OFFSET + 4U * j) !=
+			    cr[j])
+				return -1;
+		}
+	}
+
+	dmbsy();
+	isb();
+
+	return 0;
+}
+
+/*
+ * The GRPn_RG_PRG registers are write-once: the built-in policy is loaded a
+ * single time per boot, into every group whose HW_POLICY_IGNORED bit is clear.
+ */
+static int load_xpresscfg_policy(struct xpu_instance *xpu)
+{
+	uintptr_t base = xpu->xpu_base_addr;
+	uint32_t nrg = get_idr0_nrg(xpu);
+
+	if ((mmio_read_32(base + XPU3_IDR0_OFFSET) & XPU3_IDR0_XPRESSCFG) == 0U)
+		return -1;
+
+	for (uint32_t w = 0; w < (nrg + 31U) / 32U; w++) {
+		uintptr_t reg = base + XPU3_HW_POLICY_IGNORED_OFFSET + 4U * w;
+		uint32_t val = 0U;
+
+		for (size_t i = 0; i < xpu->owner_arr_size; i++) {
+			uint32_t rg = xpu->rg_owner[i].rg_num;
+
+			if (rg != XPU_UMR_RG && rg >= nrg)
+				return -1;
+			if (rg / 32U == w)
+				val |= BIT_32(rg % 32U);
+		}
+
+		mmio_write_32(reg, val);
+		if (mmio_read_32(reg) != val)
+			return -1;
+	}
+
+	mmio_write_32(base + XPU3_GRP0_RG_PRG_OFFSET, 1);
+	mmio_write_32(base + XPU3_GRP1_RG_PRG_OFFSET, 1);
+	if (mmio_read_32(base + XPU3_GRP0_RG_PRG_OFFSET) != 1U ||
+	    mmio_read_32(base + XPU3_GRP1_RG_PRG_OFFSET) != 1U)
+		return -1;
+
+	dmbsy();
+	isb();
+
+	return 0;
+}
+
 static void program_mpu_partitions(struct xpu_instance *xpu, uint32_t rg_num)
 {
 	struct rg_partition_range *range = xpu->partition_range;
@@ -487,9 +578,22 @@ void xpu_lock_down_assets(struct xpu_instance *xpus, uint8_t xpu_count)
 
 		enable_domain(xpus);
 
+		if ((xpus->flag & XPU_PROTECTION_XPRESSCFG) != 0U &&
+		    load_xpresscfg_policy(xpus) != 0) {
+			ERROR("XPU 0x%lx: XpressCfg policy not loaded\n",
+			      (unsigned long)xpus->xpu_base_addr);
+			panic();
+		}
+
 		program_mpu_partitions(xpus, XPU_RG_ALL);
 		set_region_ownership(xpus, XPU_RG_ALL);
 		set_mpu_permissions(xpus, XPU_RG_ALL);
+		if ((xpus->flag & XPU_PROTECTION_XPRESSCFG) != 0U &&
+		    set_rpu_permissions(xpus) != 0) {
+			ERROR("XPU 0x%lx: resource group access not set\n",
+			      (unsigned long)xpus->xpu_base_addr);
+			panic();
+		}
 	}
 }
 
