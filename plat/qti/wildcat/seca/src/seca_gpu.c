@@ -45,6 +45,22 @@
 #define SW_FUSE_SLICES			0x7U
 #define SW_FUSE_FREQ_LIMIT_SEL		0x1U
 
+/*
+ * GPU SMMU aperture (GPU CX): slots the CP uses to reach GPU SMMU context
+ * banks, each holding the bank's offset in the GPU address space. The
+ * control enables the LPAC and ECP snoop slots, as on Glymur.
+ */
+#define GPU_SMMU_APERTURE_CTL		0x03d60008U
+#define GPU_SMMU_APERTURE_CTL_EN	0x6U
+#define GPU_SMMU_CB_BASE		0x03dc0000U
+#define GPU_SMMU_CB_SIZE		0x1000U
+#define GPU_SMMU_APERTURE_CBS		3U
+#define GPU_REG_OFFSET_MASK		0xfffffU
+
+static const uintptr_t gpu_smmu_aperture[] = {
+	0x03d60000U, 0x03d60004U, 0x03d6000cU, 0x03d60010U,
+};
+
 static spinlock_t gpu_lock;
 
 bool plat_qti_gpu_init_regs_supported(void)
@@ -105,4 +121,34 @@ int plat_qti_gpu_init_regs(uint32_t mask)
 	}
 
 	return ret;
+}
+
+bool plat_qti_gpu_smmu_aperture_supported(void)
+{
+	return true;
+}
+
+static void gpu_smmu_aperture_set(uint32_t cb, uint32_t slot)
+{
+	if ((cb >= GPU_SMMU_APERTURE_CBS) ||
+	    (slot >= ARRAY_SIZE(gpu_smmu_aperture))) {
+		return;
+	}
+
+	mmio_write_32(gpu_smmu_aperture[slot],
+		      (GPU_SMMU_CB_BASE + cb * GPU_SMMU_CB_SIZE) &
+		      GPU_REG_OFFSET_MASK);
+}
+
+int plat_qti_gpu_smmu_aperture(const uint32_t pairs[4])
+{
+	spin_lock(&gpu_lock);
+	for (unsigned int i = 0U; i < 4U; i++) {
+		gpu_smmu_aperture_set(pairs[i] & 0xffU, (pairs[i] >> 8) & 0xffU);
+		gpu_smmu_aperture_set((pairs[i] >> 16) & 0xffU, pairs[i] >> 24);
+	}
+	mmio_write_32(GPU_SMMU_APERTURE_CTL, GPU_SMMU_APERTURE_CTL_EN);
+	spin_unlock(&gpu_lock);
+
+	return 0;
 }

@@ -18,6 +18,7 @@ BL2 and BL31 booting natively) with ``NORD_SECA=1``, which selects:
   the CBCAST voltage routing. The feature fuse and frequency limit values are
   the Kaanapali ones; the GPU temperature sensor and BCL broadcast routing are
   not set up.
+- the SiP GPU SMMU aperture call, with the Glymur aperture enables.
 
 Boot flow, memory layout, signing and the status of the native back-ends are
 the ones described for Nord.
