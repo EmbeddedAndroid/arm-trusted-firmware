@@ -34,6 +34,14 @@ int qti_io_setup(void);
  */
 bool plat_qti_gpu_init_regs_supported(void);
 int plat_qti_gpu_init_regs(uint32_t mask);
+
+/*
+ * GPU SMMU aperture (SiP CP_SMMU_APERTURE): each of the four @pairs holds
+ * two (context bank, aperture slot) byte pairs; 0xff entries are unused.
+ * Returns 0 on success.
+ */
+bool plat_qti_gpu_smmu_aperture_supported(void);
+int plat_qti_gpu_smmu_aperture(const uint32_t pairs[4]);
 struct image_info *qti_get_image_info(unsigned int image_id);
 
 void plat_qti_gic_driver_init(void);

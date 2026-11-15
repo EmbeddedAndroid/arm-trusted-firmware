@@ -63,6 +63,20 @@ int plat_qti_gpu_init_regs(uint32_t mask)
 	return -1;
 }
 
+#pragma weak plat_qti_gpu_smmu_aperture_supported
+bool plat_qti_gpu_smmu_aperture_supported(void)
+{
+	return false;
+}
+
+#pragma weak plat_qti_gpu_smmu_aperture
+int plat_qti_gpu_smmu_aperture(const uint32_t pairs[4])
+{
+	(void)pairs;
+
+	return -1;
+}
+
 u_register_t qti_sip_call_count(void)
 {
 	return QTI_SIP_SVC_CALL_COUNT;
@@ -82,6 +96,8 @@ bool qti_sip_is_available(u_register_t smc_fid, bool caller_secure)
 		return !caller_secure;
 	case QTI_SIP_SVC_GPU_INIT_REGS_ID:
 		return !caller_secure && plat_qti_gpu_init_regs_supported();
+	case QTI_SIP_SVC_CP_SMMU_APERTURE_ID:
+		return !caller_secure && plat_qti_gpu_smmu_aperture_supported();
 	default:
 		return false;
 	}
@@ -113,6 +129,18 @@ int qti_sip_gpu_init_regs(u_register_t mask)
 		return QTI_SIP_NOT_SUPPORTED;
 	}
 	if (plat_qti_gpu_init_regs((uint32_t)mask) != 0) {
+		return QTI_SIP_INVALID_PARAM;
+	}
+
+	return QTI_SIP_SUCCESS;
+}
+
+int qti_sip_gpu_smmu_aperture(const uint32_t pairs[4])
+{
+	if (!plat_qti_gpu_smmu_aperture_supported()) {
+		return QTI_SIP_NOT_SUPPORTED;
+	}
+	if (plat_qti_gpu_smmu_aperture(pairs) != 0) {
 		return QTI_SIP_INVALID_PARAM;
 	}
 

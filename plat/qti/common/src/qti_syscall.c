@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include <common/runtime_svc.h>
+#include <context.h>
 #include <lib/utils_def.h>
 #include <smccc_helpers.h>
 #include <tools_share/uuid.h>
@@ -98,6 +99,23 @@ static uintptr_t qti_sip_handler(uint32_t smc_fid,
 		}
 		SMC_RET1(handle, qti_sip_gpu_init_regs(x2));
 		break;
+	case QTI_SIP_SVC_CP_SMMU_APERTURE_ID: {
+		uint32_t pairs[4];
+
+		if (is_caller_secure(flags)) {
+			SMC_RET1(handle, QTI_SIP_NOT_SUPPORTED);
+		}
+		if (x1 != QTI_SIP_SVC_CP_SMMU_APERTURE_PARAM_ID) {
+			SMC_RET1(handle, QTI_SIP_INVALID_PARAM);
+		}
+		pairs[0] = (uint32_t)x2;
+		pairs[1] = (uint32_t)x3;
+		pairs[2] = (uint32_t)x4;
+		pairs[3] = (uint32_t)read_ctx_reg(get_gpregs_ctx(handle),
+						  CTX_GPREG_X5);
+		SMC_RET1(handle, qti_sip_gpu_smmu_aperture(pairs));
+		break;
+	}
 	case QTI_SIP_SVC_MEM_ASSIGN_ID:
 		if (is_caller_secure(flags)) {
 			SMC_RET1(handle, QTI_SIP_NOT_SUPPORTED);

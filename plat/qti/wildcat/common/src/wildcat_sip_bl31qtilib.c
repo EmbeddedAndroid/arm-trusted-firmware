@@ -96,6 +96,13 @@ int qti_sip_gpu_init_regs(u_register_t mask)
 	return QTI_SIP_NOT_SUPPORTED;
 }
 
+int qti_sip_gpu_smmu_aperture(const uint32_t pairs[4])
+{
+	(void)pairs;
+
+	return QTI_SIP_NOT_SUPPORTED;
+}
+
 int qti_sip_config_cpu_errata(u_register_t x1)
 {
 	if (x1 == QTI_SIP_SVC_CONFIG_CPU_ERRATA_PARAM_ID) {
