@@ -12,3 +12,5 @@ $(error NORD_XBL_BL31 is not supported on SecaAU)
 endif
 
 include plat/qti/wildcat/nord/nord.mk
+
+include drivers/qti/cmd_db/cmd_db.mk
