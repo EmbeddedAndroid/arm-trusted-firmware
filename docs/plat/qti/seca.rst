@@ -13,6 +13,11 @@ BL2 and BL31 booting natively) with ``NORD_SECA=1``, which selects:
 - the SecaAU APSS SPI trigger types,
 - the TCSR PCIe link mode left at its reset value,
 - no configuration of the second GPU SMMU.
+- the SiP GPU register setup call of the Adreno driver: it enables the
+  software feature fuses, the GPU slices the hardware slice mask reports and
+  the CBCAST voltage routing. The feature fuse and frequency limit values are
+  the Kaanapali ones; the GPU temperature sensor and BCL broadcast routing are
+  not set up.
 
 Boot flow, memory layout, signing and the status of the native back-ends are
 the ones described for Nord.

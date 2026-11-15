@@ -14,3 +14,5 @@ endif
 include plat/qti/wildcat/nord/nord.mk
 
 include drivers/qti/cmd_db/cmd_db.mk
+
+BL31_SOURCES		+=	$(PLAT_PATH)/wildcat/seca/src/seca_gpu.c
