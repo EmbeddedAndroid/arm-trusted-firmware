@@ -15,9 +15,10 @@ BL2 and BL31 booting natively) with ``NORD_SECA=1``, which selects:
 - no configuration of the second GPU SMMU.
 - the SiP GPU register setup call of the Adreno driver: it enables the
   software feature fuses, the GPU slices the hardware slice mask reports and
-  the CBCAST voltage routing. The feature fuse and frequency limit values are
-  the Kaanapali ones; the GPU temperature sensor and BCL broadcast routing are
-  not set up.
+  the CBCAST voltage routing, and on request the GPU temperature sensor
+  routing. The feature fuse and frequency limit values are the Kaanapali ones;
+  the sensor ids follow the Pakala, Kaanapali and Glymur encoding. The BCL
+  broadcast routing is not set up.
 - the SiP GPU SMMU aperture call, with the Glymur aperture enables.
 
 Boot flow, memory layout, signing and the status of the native back-ends are

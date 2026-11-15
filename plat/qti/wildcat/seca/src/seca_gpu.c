@@ -35,7 +35,19 @@
 #define GMU_CBCAST_GX_VRM_1_ID		0x03d81050U
 #define GMU_CBCAST_MX_VRM_1_ID		0x03d81088U
 
+#define GMU_CBCAST_TSENSE_ID(n)		(0x03d81200U + 4U * (n))
+
+#define CBCAST_DATA_EN_TSENSE		(1U << 0)
 #define CBCAST_DATA_EN_VOLTAGE		(1U << 1)
+
+/*
+ * The GPU temperature sensors are TSENS0 and TSENS1 channels 7..13, in the
+ * order of the GPU thermal zones (gpu-0-0 TSENS0 7, gpu-0-1 TSENS1 7, ...).
+ * The SecaAU ids are not known: these follow the Pakala, Kaanapali and Glymur
+ * ids, 0x500 | controller << 4 | channel.
+ */
+#define GPU_TSENSE_IDS			14U
+#define GPU_TSENSE_FIRST_CH		7U
 
 /*
  * LPAC, ray tracing and fast blend, and frequency limit select 1: the values
@@ -105,6 +117,18 @@ static int gpu_always_en(void)
 	return 0;
 }
 
+static void gpu_tsense_en(void)
+{
+	for (unsigned int i = 0U; i < GPU_TSENSE_IDS; i++) {
+		uint32_t tsens = i % 2U;
+		uint32_t ch = GPU_TSENSE_FIRST_CH + i / 2U;
+
+		mmio_write_32(GMU_CBCAST_TSENSE_ID(i),
+			      0x500U | (tsens << 4) | ch);
+	}
+	mmio_setbits_32(GMU_CBCAST_DATA_EN, CBCAST_DATA_EN_TSENSE);
+}
+
 int plat_qti_gpu_init_regs(uint32_t mask)
 {
 	int ret = 0;
@@ -113,11 +137,14 @@ int plat_qti_gpu_init_regs(uint32_t mask)
 	if ((mask & GPU_ALWAYS_EN) != 0U) {
 		ret = gpu_always_en();
 	}
+	if ((ret == 0) && ((mask & GPU_TSENSE_EN) != 0U)) {
+		gpu_tsense_en();
+	}
 	spin_unlock(&gpu_lock);
 
-	/* The GPU sensor and BCL broadcast ids of SecaAU are not known. */
-	if ((mask & (GPU_BCL_EN | GPU_CLX_EN | GPU_TSENSE_EN)) != 0U) {
-		NOTICE("GPU: BCL, CLX and TSENSE not set up (mask 0x%x)\n", mask);
+	/* The BCL broadcast id and CLX payload of SecaAU are not known. */
+	if ((mask & (GPU_BCL_EN | GPU_CLX_EN)) != 0U) {
+		NOTICE("GPU: BCL and CLX not set up (mask 0x%x)\n", mask);
 	}
 
 	return ret;
