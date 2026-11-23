@@ -16,15 +16,15 @@
  * SM7750 MTP EL3 image memory map.
  *
  * BL2 is the reset entry image (RESET_TO_BL2=1) that XBL loads from the tz
- * partition and enters at 0x14693000 in system IMEM. XBL accepts tz segments
- * only inside its IMEM TZ window (0x14693000, 80 KB) or in DDR, so BL2,
- * including its bss and translation tables, must fit that window.
+ * partition and enters at 0x14693000 in system IMEM. XBL rejects a tz
+ * segment at the start of the DARE-TZ QTEE slot (0xd80e0000), so BL2,
+ * including its bss and translation tables, must fit the IMEM TZ window
+ * (0x14693000, 80 KB).
  *
- * BL31 sits in the TZ carve-out that the SM7750 device tree reserves
- * (tz-merged, 0xd8000000 + 0x600000), above the XBL_SC data XBL keeps at its
- * base: 1 MB at 0xd8100000. BL32 (OP-TEE, 30 MB with its TA RAM) does not
- * fit there and runs from the region the device tree reserves for a
- * Gunyah VM (oem-vm, 0xf7c00000 + 0x4c00000), unused with Linux at EL2.
+ * BL31 and BL32 take the place of QTEE in the DARE-TZ region (0xd8000000 +
+ * 0x3800000), above the XBL_SC data XBL keeps at its base: BL31 1 MB at
+ * 0xd8100000, BL32 (OP-TEE, 30 MB with its TA RAM) from 0xd8200000, running
+ * on into the DARE-TZ TA region at 0xd8600000.
  *
  * XBL loads the FIP as the APPSBL (uefi partition) at 0xa7000000 and BL2
  * reads it from there. BL33 runs from non-secure
@@ -41,7 +41,7 @@
 #define BL31_SIZE			0x00100000
 #define BL31_LIMIT			(BL31_BASE + BL31_SIZE)
 
-#define BL32_BASE			0xf7c00000
+#define BL32_BASE			0xd8200000
 #define BL32_SIZE			0x01e00000
 #define BL32_LIMIT			(BL32_BASE + BL32_SIZE)
 
