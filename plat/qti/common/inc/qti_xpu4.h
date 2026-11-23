@@ -11,7 +11,8 @@
 
 /* XPU4 (MPU) registers; resource group n */
 #define XPU4_IDR0				0x0U
-#define XPU4_IDR0_NRG(v)			(((v) >> 16) & 0x3ffU)
+/* IDR0.NRG holds the highest resource group; this is the count */
+#define XPU4_IDR0_NRG(v)			((((v) >> 16) & 0x3ffU) + 1U)
 #define XPU4_RGCR1(n)				(0x1004U + (0x40U * (n)))
 #define XPU4_RGCSAR1(n)				(0x1008U + (0x40U * (n)))
 #define XPU4_RGCSAR0(n)				(0x100cU + (0x40U * (n)))
