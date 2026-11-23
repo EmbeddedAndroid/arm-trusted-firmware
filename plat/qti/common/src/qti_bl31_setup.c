@@ -155,6 +155,7 @@ void bl31_platform_setup(void)
 
 	qti_smem_init();
 	qti_llcc_mpu_open_adsp_smem();
+	qti_llcc_mpu_protect_tz();
 
 	if (qti_chipinfo_init() != CHIPINFO_SUCCESS) {
 		WARN("ChipInfo initialization error\n");

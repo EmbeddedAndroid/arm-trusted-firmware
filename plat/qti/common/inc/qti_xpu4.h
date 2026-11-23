@@ -20,12 +20,14 @@
 #define XPU4_RGCEAR0(n)				(0x1014U + (0x40U * (n)))
 #define XPU4_RGRDR(n)				(0x1018U + (0x40U * (n)))
 #define XPU4_RGWRR(n)				(0x101cU + (0x40U * (n)))
+#define XPU4_QADRGL(n)				(0x1030U + (0x40U * (n)))
 #define XPU4_RGCR1_RGE				BIT_32(0)
 /* Number of resource groups inside a mapping of size bytes from the base */
 #define XPU4_NRG_MAPPED(size)			(((size) - 0x1000U) / 0x40U)
 
-/* Access domains in RGRDR/RGWRR */
+/* Access domains in RGRDR/RGWRR/QADRGL */
 #define XPU4_QAD_APPS				BIT_32(0)
 #define XPU4_QAD_NS				BIT_32(30)
+#define XPU4_QAD_S				BIT_32(31)
 
 #endif /* QTI_XPU4_H */

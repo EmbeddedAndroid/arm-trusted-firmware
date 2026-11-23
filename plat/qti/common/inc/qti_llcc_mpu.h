@@ -24,4 +24,18 @@ static inline void qti_llcc_mpu_open_adsp_smem(void)
 }
 #endif
 
+/*
+ * Restrict [QTI_LLCC_MPU_TZ_BASE, QTI_LLCC_MPU_TZ_LIMIT) to the secure apps
+ * domain with LLCC MPU resource group QTI_LLCC_MPU_TZ_RG, which must be
+ * free, and set its lock vector to that domain. Panics if the MPU does not
+ * take the setting.
+ */
+#if defined(QTI_LLCC_MPU_BASE) && defined(QTI_LLCC_MPU_TZ_RG)
+void qti_llcc_mpu_protect_tz(void);
+#else
+static inline void qti_llcc_mpu_protect_tz(void)
+{
+}
+#endif
+
 #endif /* QTI_LLCC_MPU_H */

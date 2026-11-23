@@ -9,6 +9,7 @@
 
 #include <common/debug.h>
 #include <drivers/qti/smem/smem.h>
+#include <lib/cassert.h>
 #include <lib/mmio.h>
 
 #include <platform_def.h>
@@ -107,3 +108,44 @@ void qti_llcc_mpu_open_adsp_smem(void)
 		ERROR("LLCC MPU: SMEM partition table: %d\n", ret);
 	}
 }
+
+#ifdef QTI_LLCC_MPU_TZ_RG
+CASSERT(QTI_LLCC_MPU_TZ_RG < XPU4_NRG_MAPPED(QTI_LLCC_MPU_SIZE),
+	assert_llcc_mpu_tz_rg_mapped);
+
+void qti_llcc_mpu_protect_tz(void)
+{
+	const uintptr_t b = QTI_LLCC_MPU_BASE;
+	const unsigned int rg = QTI_LLCC_MPU_TZ_RG;
+	const uint64_t start = QTI_LLCC_MPU_TZ_BASE;
+	const uint64_t end = QTI_LLCC_MPU_TZ_LIMIT;
+	const uint32_t qads = XPU4_QAD_APPS | XPU4_QAD_S;
+
+	if ((rg >= XPU4_IDR0_NRG(mmio_read_32(b + XPU4_IDR0))) ||
+	    ((mmio_read_32(b + XPU4_RGCR1(rg)) & XPU4_RGCR1_RGE) != 0U)) {
+		ERROR("LLCC MPU: RG %u not available\n", rg);
+		panic();
+	}
+
+	mmio_write_32(b + XPU4_RGCSAR1(rg), (uint32_t)(start >> 32));
+	mmio_write_32(b + XPU4_RGCSAR0(rg), (uint32_t)start);
+	mmio_write_32(b + XPU4_RGCEAR1(rg), (uint32_t)(end >> 32));
+	mmio_write_32(b + XPU4_RGCEAR0(rg), (uint32_t)end);
+	mmio_write_32(b + XPU4_RGRDR(rg), qads);
+	mmio_write_32(b + XPU4_RGWRR(rg), qads);
+	mmio_write_32(b + XPU4_RGCR1(rg), XPU4_RGCR1_RGE);
+	mmio_write_32(b + XPU4_QADRGL(rg), qads);
+
+	if ((llcc_mpu_find_rg(start, end) != (int)rg) ||
+	    (mmio_read_32(b + XPU4_RGRDR(rg)) != qads) ||
+	    (mmio_read_32(b + XPU4_RGWRR(rg)) != qads) ||
+	    (mmio_read_32(b + XPU4_QADRGL(rg)) != qads)) {
+		ERROR("LLCC MPU: RG %u did not take 0x%llx-0x%llx\n", rg,
+		      (unsigned long long)start, (unsigned long long)end);
+		panic();
+	}
+
+	INFO("LLCC MPU: 0x%llx-0x%llx secure only (RG %u)\n",
+	     (unsigned long long)start, (unsigned long long)end, rg);
+}
+#endif
