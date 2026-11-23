@@ -25,9 +25,11 @@ partitions::
 - XBL authenticates and loads TF-A BL2 from the ``tz_a/b`` partition into
   system IMEM (0x14693000) and the FIP payload from ``uefi_a/b`` into DRAM at
   0xa7000000.
-- BL2 parses the FIP and loads BL31 into the ``tz-merged`` carve-out
-  (0xd8100000), BL32 into the ``oem-vm`` region (0xf7c00000, 30 MB) and BL33
-  at 0xa7800000.
+- BL2 parses the FIP and loads BL31 at 0xd8100000, BL32 at 0xd8200000 (30 MB
+  with the OP-TEE TA RAM) and BL33 at 0xa7800000. BL31 and BL32 take the
+  place of QTEE in the DARE-TZ region (0xd8000000 + 0x3800000); BL32 runs on
+  into its TA region from 0xd8600000. The OS device tree must reserve that
+  TA region (0xd8600000-0xdb800000) as well as ``tz-merged``.
 
 Status
 ------
@@ -69,11 +71,13 @@ Status
   same domain and gains access to those partitions too.
 - BL31 gives the apps PDC inputs to the HLOS DRV; the AOP owns the PDC
   sequences.
-- TF-A programs no XPU for its own carve-outs: whether the boot chain
-  protects the carve-outs that hold BL31 and BL32 is not verified. The QTI
-  SiP MEM_ASSIGN call is accepted without effect, as on the other platforms
-  without an access control back-end; the kernel's remoteproc and FastRPC
-  drivers need it to succeed.
+- BL31 restricts DARE-TZ from the QTEE slot to the end of BL32
+  (0xd80e0000-0xda000000) to the secure apps domain with LLCC MPU resource
+  group 65 and sets the group's lock vector, before BL32 runs. The boot
+  chain already denies the normal world the top of the TA region, from
+  0xdae00000. The QTI SiP MEM_ASSIGN call is accepted without effect,
+  as on the other platforms without an access control back-end; the
+  kernel's remoteproc and FastRPC drivers need it to succeed.
 
 How to build
 ------------

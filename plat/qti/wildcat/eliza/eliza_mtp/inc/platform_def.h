@@ -24,7 +24,9 @@
  * BL31 and BL32 take the place of QTEE in the DARE-TZ region (0xd8000000 +
  * 0x3800000), above the XBL_SC data XBL keeps at its base: BL31 1 MB at
  * 0xd8100000, BL32 (OP-TEE, 30 MB with its TA RAM) from 0xd8200000, running
- * on into the DARE-TZ TA region at 0xd8600000.
+ * on into the DARE-TZ TA region at 0xd8600000. BL31 restricts the QTEE slot
+ * up to the end of BL32 (0xd80e0000-0xda000000) to the secure apps domain at
+ * the LLCC MPU, with a resource group XBL leaves free.
  *
  * XBL loads the FIP as the APPSBL (uefi partition) at 0xa7000000 and BL2
  * reads it from there. BL33 runs from non-secure
@@ -44,6 +46,10 @@
 #define BL32_BASE			0xd8200000
 #define BL32_SIZE			0x01e00000
 #define BL32_LIMIT			(BL32_BASE + BL32_SIZE)
+
+#define QTI_LLCC_MPU_TZ_RG		65U
+#define QTI_LLCC_MPU_TZ_BASE		0xd80e0000
+#define QTI_LLCC_MPU_TZ_LIMIT		BL32_LIMIT
 
 #define BL33_BASE			0xa7800000
 #define BL33_SIZE			0x00800000
